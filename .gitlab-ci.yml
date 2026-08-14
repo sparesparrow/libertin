@@ -1,4 +1,4 @@
-# Libertin CI — GitLab translation of .github/workflows/libertin-ci.yml.
+# Libertin CI — GitLab translation of .github/workflows/ci.yml.
 #
 # Status: NOT EXECUTED. The project lives on GitHub today (backlog D-002, the
 # contract mandates GitLab per C10/C11.1). This file is kept faithful to the
@@ -6,11 +6,9 @@
 # run it on a GitLab runner yet. Treat it as reviewed-but-unverified until a
 # runner has actually gone green. See docs/ci.md.
 #
-# Assumption to re-check on first real run: this file is written for a
-# repository whose root IS the pnpm workspace root. In the current GitHub repo
-# the workspace root is the `libertin/` subdirectory; if that layout is carried
-# over to GitLab, set `default.before_script` to `cd libertin` first (or set
-# GIT_CLONE_PATH / a `workspace` variable) instead of assuming the root.
+# This file is written for a repository whose root IS the pnpm workspace root,
+# which now matches the actual layout: Libertin has its own repository and the
+# git root is the workspace root.
 
 stages:
   - install
@@ -45,10 +43,9 @@ default:
     - apps/*/node_modules
     - packages/*/node_modules
 
-# Merge requests, branch pipelines and manual runs. The GitHub `paths:` filter
-# on `libertin/**` has no counterpart here because on GitLab the whole project
-# IS Libertin — if the subdirectory layout is carried over instead, add a
-# `changes: [libertin/**/*]` clause to these rules.
+# Merge requests, branch pipelines and manual runs. No `changes:` clause is
+# needed because the whole project IS Libertin — the same reason the GitHub
+# workflow carries no `paths:` filter.
 .libertin_rules: &libertin_rules
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'

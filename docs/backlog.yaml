@@ -38,6 +38,12 @@ decisions:
     req: [C10, C11]
     status: blocked
     blocker: Smlouva vyžaduje GitLab; vývoj běží na GitHubu. Mirror nebo přesun?
+    note: >
+      2026-08: projekt dostal vlastní repozitář sparesparrow/libertin (dříve
+      podadresář libertin/ v sparesparrow/mia, PR sparesparrow/mia#102). Kořen
+      gitu je nově kořen pnpm workspace, takže případný přesun na GitLab je
+      čistý import repozitáře — .gitlab-ci.yml už žádné úpravy cest nepotřebuje.
+      Samotná volba GitLab vs GitHub zůstává otevřená.
   - id: D-003
     title: Backend stack — rozšířit legacy Laravel, nebo psát nově?
     req: [A3, C3, C6]

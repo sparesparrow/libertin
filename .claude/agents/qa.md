@@ -16,7 +16,7 @@ explicit acceptance condition, not a nice-to-have.
   for.
 - Support the **30-day owner beta** (C12.2) by making regressions visible fast.
 - **Contract drift detection**: the live API shape must be diffed against
-  `libertin/contracts/openapi.snapshot.yaml` and CI must fail loudly on
+  `contracts/openapi.snapshot.yaml` and CI must fail loudly on
   breaking change (removed paths, changed required fields or types).
 - Validate **data migration integrity** from `swingerslife.cz` — C13.
 

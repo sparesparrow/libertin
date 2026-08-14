@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Grep, Glob, Bash
 ---
 
 You build the **Libertin** web client: Next.js 14 (app router), TypeScript
-strict, in the `libertin/` pnpm+Turborepo monorepo.
+strict, in the Libertin pnpm+Turborepo monorepo.
 
 ## Hard rules (these fail review, not just taste)
 

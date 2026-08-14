@@ -10,13 +10,13 @@ platform delivered as contract work.
 ## Context you must respect
 
 - **The OpenAPI snapshot is the interface contract.**
-  `libertin/contracts/openapi.snapshot.yaml` is authoritative and shared with
+  `contracts/openapi.snapshot.yaml` is authoritative and shared with
   the clients. Changing it is a deliberate, loudly-announced act — never an
   incidental side effect. Keep MSW handlers in `packages/api/src/mocks` in sync
   so clients keep booting offline.
 - **Legacy reality**: `swingerslife.cz` runs Laravel; its login posts a `user`
   field (not `email`), form-encoded with a CSRF token — see
-  `libertin/docs/live-audit.md`. Data must migrate from it (C13), including
+  `docs/live-audit.md`. Data must migrate from it (C13), including
   **unregistered sign-ups to events**.
 - Contract mandates: role-based permissions (B1), audit log with configurable
   verbosity and retention (B2), encryption at rest (B4.3), S3-compatible object

@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Grep, Glob, Bash
 ---
 
 You build the **Libertin** mobile app: Expo 52 / React Native 0.76, TypeScript
-strict, inside the `libertin/` pnpm+Turborepo monorepo.
+strict, inside the Libertin pnpm+Turborepo monorepo.
 
 ## Hard rules
 

@@ -9,50 +9,37 @@ Soubory, které tento dokument popisuje:
 
 | Soubor | Účel |
 |---|---|
-| `../../.github/workflows/libertin-ci.yml` | běžící pipeline (GitHub Actions). Leží v **kořeni gitu**, tj. o úroveň výš než `libertin/`. |
+| `../.github/workflows/ci.yml` | běžící pipeline (GitHub Actions) |
 | `.gitlab-ci.yml` | překlad téže pipeline do GitLabu — **zatím nespuštěný**, viz [GitLab vs. GitHub](#gitlab-vs-github) |
 
 ## Kdy se pipeline spouští
 
-Repozitář je sdílený s nesouvisejícím projektem MIA. Pipeline je proto úzce
-ohraničená a **nesmí** se rozšiřovat:
+Libertin má **vlastní repozitář** (`sparesparrow/libertin`) — kořen gitu je
+zároveň kořenem pnpm workspace. Pipeline proto nepotřebuje žádný `paths` filtr
+ani `working-directory`:
 
 ```yaml
 on:
   pull_request:
-    paths: ['libertin/**', '.github/workflows/libertin-ci.yml']
   push:
-    branches: ['claude/libertin-monorepo-setup-VxRLF']
-    paths: ['libertin/**', '.github/workflows/libertin-ci.yml']
+    branches: ['main', 'claude/**']
   workflow_dispatch:
 ```
 
-- Změna kdekoliv mimo `libertin/**` pipeline nespustí.
-- Workflow projektu MIA (`ci.yml`, `android-test.yml`, `security.yml`) mají vlastní
-  `paths` filtry, které `libertin/**` neobsahují — nekolidujeme s nimi.
-  `main.yml` je jen `workflow_dispatch`.
-  **Výjimka, kterou nevlastníme:** `deploy.yml` se spouští na `push` do `main`
-  a na tagy `v*` **bez `paths` filtru** — merge Libertinu do `main` ho tedy
-  zbytečně nastartuje. Oprava patří majiteli MIA workflow (doplnit `paths-ignore:
-  ['libertin/**']`), my do cizích souborů nesaháme.
-- `push` je zatím napojený na jednu pracovní branch. **Až se práce sloučí do
-  hlavní branche, doplň sem `main` (nebo příslušný název).** Pipeline běží
-  i tak na každém pull requestu.
+- Běží na každém pull requestu a na každém pushi do `main` nebo pracovní
+  branche `claude/**`.
 - `concurrency` s `cancel-in-progress: true` ruší předchozí běh téhož ref —
   rychlá zpětná vazba, žádné utrácení runner minut za neaktuální commity.
 
-Pracovní adresář je nastavený globálně:
+`pnpm/action-setup` i `actions/setup-node` čtou `package.json` a
+`pnpm-lock.yaml` z kořene repozitáře; připnutá verze pnpm (`pnpm@10.33.0`) jde
+z pole `packageManager`.
 
-```yaml
-defaults:
-  run:
-    working-directory: libertin
-```
-
-**Kořen pnpm workspace je `libertin/`, ne kořen gitu** (v kořeni gitu žádné
-`package.json` není). Proto má i `pnpm/action-setup` explicitní
-`package_json_file: libertin/package.json` — odtud si bere připnutou verzi
-z pole `packageManager` (`pnpm@10.33.0`).
+> **Historie:** do 2026-08 žil tento monorepo v podadresáři `libertin/`
+> repozitáře `sparesparrow/mia` (PR sparesparrow/mia#102). Tehdejší workflow byl
+> úzce ohraničený na `paths: ['libertin/**']` s `working-directory: libertin`,
+> aby nekolidoval s nesouvisejícím projektem MIA. Po přesunu do vlastního
+> repozitáře odpadlo obojí.
 
 ## Stupně
 
@@ -69,7 +56,7 @@ To je záměr: přenos na GitLab (C10) je pak překlad, ne přepis.
 Stupně jsou zřetězené přes `needs:`, takže `test` neběží nad kódem, který
 neprošel `type-check`. Každá job si `install` zopakuje; je to levné, protože
 pnpm store se drží v cache klíčované hashem `pnpm-lock.yaml`
-(`actions/setup-node` s `cache: pnpm`, `cache-dependency-path: libertin/pnpm-lock.yaml`).
+(`actions/setup-node` s `cache: pnpm`).
 
 Node je připnutý na **22**, `engines` v `package.json` říká `>=20`.
 
@@ -79,11 +66,9 @@ pipeline nemá zápisová práva a nesahá na žádné secrets.
 
 ## Jak to zopakovat lokálně
 
-Všechno se pouští z adresáře `libertin/`:
+Všechno se pouští z kořene repozitáře:
 
 ```bash
-cd libertin
-
 pnpm install --frozen-lockfile   # stupeň install
 pnpm type-check                  # stupeň type-check
 pnpm test:all                    # stupeň test
@@ -100,33 +85,42 @@ pnpm --filter=@libertin/ui test               # jen testy UI balíčku
 pnpm type-check --force                       # obejde turbo cache
 ```
 
-### Ověřený výstup (lokálně, 2026-08-09)
+### Ověřený výstup (lokálně, 2026-08-14, po přesunu do vlastního repozitáře)
+
+Všechny čtyři stupně proběhly z kořene repozitáře, ve stejném pořadí jako v CI,
+na Node v22.22.2 / pnpm 10.33.0:
 
 ```
+$ pnpm install --frozen-lockfile
+Progress: resolved 1020, downloaded 1020, added 1020, done
+Done in 12.4s using pnpm v10.33.0
+
 $ pnpm type-check
  Tasks:    6 successful, 6 total
-Cached:    6 cached, 6 total
-  Time:    21ms >>> FULL TURBO
+Cached:    0 cached, 6 total
+  Time:    9.883s
 
 $ pnpm test:all
- Test Files  8 passed (8)
-      Tests  79 passed (79)
-   Duration  3.96s
+ Test Files  10 passed (10)
+      Tests  116 passed (116)
+   Duration  4.73s
 
 $ pnpm build
 @libertin/web:build: ✓ Generating static pages (7/7)
+@libertin/web:build: ┌ ƒ /                     196 B     92.5 kB First Load JS
  Tasks:    1 successful, 1 total
-  Time:    17.512s
+  Time:    30.676s
 ```
 
-Workflow prošel i `actionlint` v1.7.7 bez nálezu a oba YAML soubory se parsují
-(`yaml.safe_load`).
+`pnpm install --frozen-lockfile` tím **je nově ověřený** — dřívější iterace ho
+spustit nemohly (instalace závislostí byla v pracovním stromu zakázaná), takže
+soulad `pnpm-lock.yaml` s `package.json` byl do teď jen předpoklad. Oba YAML
+soubory pipeline se parsují (`yaml.safe_load`).
 
-**Co ověřené není:** samotný běh GitHub Actions. Z vývojového prostředí nejde
-runner spustit — první skutečný běh uvidíme až na pull requestu. Stejně tak
-`pnpm install --frozen-lockfile` nebyl v této iteraci spuštěn (instalace závislostí
-je v pracovním stromu zakázaná); lockfile je v repu, verze `9.0`, ale že projde
-`--frozen-lockfile`, potvrdí až CI.
+**Co ověřené není:** samotný běh GitHub Actions na runneru. Z vývojového
+prostředí ho spustit nejde — první skutečný běh uvidíme až na pull requestu
+v novém repozitáři. `actionlint` v tomto prostředí není k dispozici, takže
+workflow po přepsání na kořen repozitáře prošel jen parsováním YAML, ne lintem.
 
 ## GitLab vs. GitHub
 
@@ -134,18 +128,16 @@ Smlouva (**C10**, **C11.1**) předepisuje GitLab. Repozitář je dnes na GitHubu
 volba je otevřené rozhodnutí objednatele — **D-002** v `backlog.yaml`. Nechceme
 ani obcházet smlouvu, ani nechat branch bez kontroly, takže:
 
-1. **Běží GitHub Actions** — `.github/workflows/libertin-ci.yml`. Reálně kontroluje
+1. **Běží GitHub Actions** — `.github/workflows/ci.yml`. Reálně kontroluje
    každý PR už dnes.
 2. **`.gitlab-ci.yml` existuje jako věrný překlad** týchž čtyř stupňů
    (`stages: install, type-check, test, build`, cache pnpm store klíčovaná
    `pnpm-lock.yaml`, `image: node:22-bookworm-slim`, `corepack enable`).
    **Nikdy nespuštěný** — GitLab runner tu nemáme. Dokud nedoběhne zeleně na
    skutečném runneru, ber ho jako revidovaný, ne ověřený.
-3. Otevřený předpoklad v `.gitlab-ci.yml`: je psaný pro repozitář, jehož kořen
-   **je** kořen pnpm workspace. Pokud se na GitLab přenese i dnešní vnoření
-   (`libertin/` jako podadresář), musí se doplnit `cd libertin` do
-   `default.before_script` a `changes:` klauzule do pravidel. Je to popsané
-   v komentáři přímo v souboru.
+3. Předpoklad `.gitlab-ci.yml` — repozitář, jehož kořen **je** kořen pnpm
+   workspace — po přesunu do vlastního repozitáře sedí. Migrace na GitLab tedy
+   znamená jen import repozitáře, žádné úpravy cest.
 
 Protože každý stupeň je jeden příkaz, migrace znamená přepsat obal, ne pipeline.
 
