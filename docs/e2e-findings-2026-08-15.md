@@ -22,7 +22,7 @@ Sada je proto psaná proti *libovolnému* nasazení: jediný přepínač je
 z tohoto repozitáře už dnes a beze změny poběží proti modulům, až sem přistanou.
 
 **Otevřená otázka na objednatele:** které nasazení má e2e hlídat a kde ten kód
-žije? Vedeno jako **D-008**.
+žije? Vedeno jako **D-009**.
 
 ## Těch 92 pending testů
 
@@ -35,7 +35,7 @@ tvrdit vůbec nic, takže se přeskakují, ne „propouštějí“.
 Zelený běh, který devětkrát otestoval přihlašovací stránku, by hlásil pokrytí,
 které neexistuje. Počet pending je to poctivé číslo.
 
-Odblokování vyžaduje jednorázový testovací účet (**D-008**). Sami jsme si ho
+Odblokování vyžaduje jednorázový testovací účet (**D-009**). Sami jsme si ho
 nezaložili: zakládat účty na nasazení, které nevlastníme, je rozhodnutí
 objednatele.
 

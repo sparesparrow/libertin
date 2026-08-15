@@ -12,6 +12,9 @@ Soubory, které tento dokument popisuje:
 | `../.github/workflows/ci.yml` | běžící pipeline (GitHub Actions) |
 | `.gitlab-ci.yml` | překlad téže pipeline do GitLabu — **zatím nespuštěný**, viz [GitLab vs. GitHub](#gitlab-vs-github) |
 
+Publikování (release z tagu, npm balíčky, image do GHCR) má vlastní workflow
+a vlastní dokument — [docs/publishing.md](publishing.md).
+
 ## Kdy se pipeline spouští
 
 Libertin má **vlastní repozitář** (`sparesparrow/libertin`) — kořen gitu je
@@ -52,9 +55,11 @@ To je záměr: přenos na GitLab (C10) je pak překlad, ne přepis.
 | `type-check` | `pnpm type-check` | `turbo run type-check` — `tsc --noEmit` ve všech 6 workspace balíčcích |
 | `test` | `pnpm test:all` | root `vitest run` — projede všechny workspace projekty naráz |
 | `build` | `pnpm build` | `turbo run build` — dnes produkční `next build` v `apps/web` |
+| `pack` | `pnpm publish --dry-run` | hlídá publikovatelnou plochu balíčků — [docs/publishing.md](publishing.md) |
 
 Stupně jsou zřetězené přes `needs:`, takže `test` neběží nad kódem, který
-neprošel `type-check`. Každá job si `install` zopakuje; je to levné, protože
+neprošel `type-check`. Výjimkou je `pack`: visí rovnou na `install` a běží
+souběžně s ostatními — na buildu nezávisí a chceme jeho výsledek co nejdřív. Každá job si `install` zopakuje; je to levné, protože
 pnpm store se drží v cache klíčované hashem `pnpm-lock.yaml`
 (`actions/setup-node` s `cache: pnpm`).
 
@@ -148,15 +153,15 @@ pokrytí, které neexistuje.
 
 | Chybí | Proč / kde to je |
 |---|---|
-| ~~**E2E testy hlavních toků**~~ | **E11-T5 hotovo** — Cypress harness v `apps/e2e`. V pipeline jsou dva joby: `e2e` (lokální sada proti `apps/web`, deterministická, **gatuje merge**) a **manuální** `e2e-modules` proti nasazenému klientovi. Modulový job je manuální ze dvou důvodů: míří na nasazení, které tahle pipeline nevyrábí (červený běh může reportovat cizí push), a sedm z devíti modulů je za loginem, takže potřebuje testovací účet z maskovaných proměnných (**D-008**). Bez účtu se ty testy přeskočí, ne "propustí". Viz [apps/e2e/README.md](../apps/e2e/README.md) a [e2e-findings-2026-08-15.md](e2e-findings-2026-08-15.md). |
+| ~~**E2E testy hlavních toků**~~ | **E11-T5 hotovo** — Cypress harness v `apps/e2e`. V pipeline jsou dva joby: `e2e` (lokální sada proti `apps/web`, deterministická, **gatuje merge**) a **manuální** `e2e-modules` proti nasazenému klientovi. Modulový job je manuální ze dvou důvodů: míří na nasazení, které tahle pipeline nevyrábí (červený běh může reportovat cizí push), a sedm z devíti modulů je za loginem, takže potřebuje testovací účet z maskovaných proměnných (**D-009**). Bez účtu se ty testy přeskočí, ne "propustí". Viz [apps/e2e/README.md](../apps/e2e/README.md) a [e2e-findings-2026-08-15.md](e2e-findings-2026-08-15.md). |
 | **Výkonnostní brána ≤ 1,5 s** (k6, C12.1) | **E11-T4 hotovo** — harness v `perf/k6/`, budget je zapsaný jako k6 threshold (k6 končí kódem 99 při překročení). V obou pipeline je jako **manuální** job: časy sdíleného runneru kolísají o stovky ms, a flaky výkonnostní brána naučí tým jen mačkat re-run. Vlastní akceptační měření proti backendu je E11-T4b, čeká na D-007. Viz [perf/k6/README.md](../perf/k6/README.md). |
 | **Contract drift proti živému API** | **E11-T3**. `packages/api` je ručně psaný proti `contracts/openapi.snapshot.yaml`, žádný codegen. Shodu dnes drží jen disciplína — CI ji nekontroluje. |
 | **Lint jako samostatná brána** | `pnpm lint` má dnes obsah jen pro `apps/web` (`next lint`) a ten se stejně pouští uvnitř `next build`. Samostatný stupeň se přidá, až bude lint nakonfigurovaný napříč balíčky. |
 | **Build mobilní aplikace** (Expo) | `apps/mobile` má jen `type-check` — ten v CI běží. EAS build je věc E10. |
 | **Storybook build** | `pnpm --filter=@libertin/ui build-storybook` se v CI nepouští. |
 | **Měření pokrytí** | **E11-T6**, `blocked_by: E11-T5`. |
-| **Bezpečnostní scan závislostí, SBOM** | Není zatím zadaný task; `pnpm audit` v pipeline není. |
-| **Deploy / CD** | Pipeline je čistě CI. Nic nenasazuje, nemá zápisová oprávnění ani secrets. Nasazení řeší `docs/deployment.md` a Ansible (**C11.2**). |
+| **Bezpečnostní scan závislostí** | Není zatím zadaný task; `pnpm audit` v pipeline není. SBOM se generuje, ale jen pro image webu (`publish-image.yml`), ne pro balíčky. |
+| **Deploy / CD** | `ci.yml` je čistě CI — nic nenasazuje, nemá zápisová oprávnění ani secrets. Publikování artefaktů (balíčky, image) dělají oddělené workflow s vlastními oprávněními, viz [docs/publishing.md](publishing.md); ani ta ale nikam **nenasazují**. Nasazení řeší `docs/deployment.md` a Ansible (**C11.2**). |
 
 ## Diskrétnost
 

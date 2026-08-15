@@ -96,7 +96,44 @@ jobs:
       - name: pnpm build
         run: pnpm build
 
-  # Stage 5 — end-to-end against this repo's own client (backlog E11-T5).
+  # Stage 5 — pack. Guards the publishable surface of the four shared packages
+  # without publishing anything: a dry-run publish resolves the same manifests,
+  # `files` globs and workspace: rewrites that release.yml would.
+  #
+  # This exists because packaging mistakes are silent — nothing in
+  # type-check/test/build notices a stray test file in `files` or an app that
+  # lost its "private": true — and they are only expensive once a bad tarball
+  # is on a registry, where it cannot be taken back.
+  pack:
+    name: pack
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: apps must stay unpublishable
+        run: |
+          set -euo pipefail
+          publishable="$(pnpm -r list --depth -1 --json \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+                console.log(JSON.parse(s).filter(p=>p.private!==true&&p.name).map(p=>p.name).sort().join(" "));
+              })')"
+          expected='@libertin/api @libertin/i18n @libertin/theme @libertin/ui'
+          if [ "$publishable" != "$expected" ]; then
+            echo "::error::Publishable set changed. expected: $expected / actual: $publishable"
+            exit 1
+          fi
+      - name: pnpm publish --dry-run
+        # Contacts no registry and needs no token; it packs and reports.
+        run: pnpm publish -r --filter './packages/*' --dry-run --no-git-checks
+
+  # Stage 6 — end-to-end against this repo's own client (backlog E11-T5).
   #
   # Gates merges, because it is deterministic: it builds apps/web, serves the
   # production build and drives it with stubbed network calls. No deployment,
@@ -139,7 +176,7 @@ jobs:
             apps/e2e/reports/
           if-no-files-found: ignore
 
-  # Stage 6 — end-to-end against a deployed client. Manual, on purpose.
+  # Stage 7 — end-to-end against a deployed client. Manual, on purpose.
   #
   # Two reasons it cannot gate merges. It targets a deployment this pipeline
   # does not produce, so a red run may be reporting on someone else's push; and
@@ -183,7 +220,7 @@ jobs:
             apps/e2e/screenshots/
           if-no-files-found: warn
 
-  # Stage 7 — performance (C12.1). Manual only, on purpose.
+  # Stage 8 — performance (C12.1). Manual only, on purpose.
   #
   # Shared runners are noisy neighbours: the same commit can swing by hundreds
   # of milliseconds between runs. Gating merges on that yields flaky red builds

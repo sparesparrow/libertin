@@ -2,28 +2,36 @@
 
 Modernized client layer for the `swingerslife.cz` → **Libertin** rebrand.
 Next.js 14 web + Expo mobile, pnpm + Turborepo monorepo. See [CLAUDE.md](CLAUDE.md)
-for the working agreement and [docs/live-audit.md](docs/live-audit.md) for the
-audit of the legacy site this project replaces.
+for the working agreement and [docs/setup.md](docs/setup.md) for complete local
+development setup instructions.
 
 ## Quickstart
 
-### bash / zsh (Linux, macOS)
+**Automated setup** (recommended):
+
+```bash
+git clone https://github.com/sparesparrow/libertin.git
+cd libertin
+./setup.sh
+```
+
+`setup.sh` is a bash script; on Windows run it from Git Bash or WSL, or follow
+the PowerShell steps below.
+
+**Manual setup — bash / zsh (Linux, macOS):**
 
 ```bash
 pnpm install
+pnpm type-check
 
 # Storybook — all UI components + screens (web & native via react-native-web)
 pnpm storybook                          # → http://localhost:6006
 
-# Web (Next.js) — needs the MSW worker file once:
-pnpm --filter=@libertin/web msw:init    # generates apps/web/public/mockServiceWorker.js
+# Web (Next.js)
 pnpm --filter=@libertin/web dev         # → http://localhost:3000
 
 # Mobile (Expo)
 pnpm --filter=@libertin/mobile start    # then i / a for simulator
-
-# Type check everything
-pnpm type-check
 
 # End-to-end (Cypress) — builds apps/web, serves it, drives it
 pnpm e2e
@@ -32,7 +40,7 @@ pnpm e2e
 CYPRESS_BASE_URL=https://example.com pnpm e2e:modules
 ```
 
-### PowerShell (Windows)
+**Manual setup — PowerShell (Windows):**
 
 Identical apart from environment variables: PowerShell has no `VAR=value
 command` syntax, so the variable is set first.
@@ -73,6 +81,8 @@ Everything boots offline against MSW mocks derived from
 backend credentials needed. Never call `fetch` directly; always go through
 `@libertin/api`.
 
+**→ Full setup guide:** [docs/setup.md](docs/setup.md)
+
 ## Workspace layout
 
 | Path | What |
@@ -85,6 +95,20 @@ backend credentials needed. Never call `fetch` directly; always go through
 | `packages/i18n` | i18next setup + `locales.json` (cs/en, source of truth for all copy) |
 | `packages/api` | Typed client + MSW mocks, locked to the OpenAPI snapshot |
 | `contracts/` | Frozen API contract — run `/contract-check` to detect drift |
+
+## Releases
+
+A `vX.Y.Z` tag packs the four shared packages, attaches the tarballs to a
+GitHub Release, and pushes the web container image to GHCR. Pushing to an npm
+registry is opt-in and still waiting on an owner decision (D-008).
+
+```bash
+pnpm -r --filter './packages/*' exec npm version 0.1.0 --no-git-tag-version
+git commit -am "chore: release 0.1.0" && git tag v0.1.0
+git push origin main --tags
+```
+
+Full process, tag scheme and caveats: [docs/publishing.md](docs/publishing.md).
 
 ## Conventions (enforced)
 

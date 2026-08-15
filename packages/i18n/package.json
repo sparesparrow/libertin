@@ -1,11 +1,27 @@
 {
   "name": "@libertin/i18n",
   "version": "0.0.1",
+  "description": "Libertin i18next setup and the cs/en message catalogue.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sparesparrow/libertin.git",
+    "directory": "packages/i18n"
+  },
   "main": "./index.ts",
+  "types": "./index.ts",
   "exports": {
     ".": "./index.ts",
     "./dict": "./dict.ts",
     "./locales.json": "./locales.json"
+  },
+  "files": [
+    "index.ts",
+    "dict.ts",
+    "locales.json"
+  ],
+  "publishConfig": {
+    "access": "restricted"
   },
   "scripts": {
     "test": "vitest run",

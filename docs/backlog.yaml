@@ -102,7 +102,7 @@ decisions:
       Do vyřešení platí, že zelený běh dokazuje funkční harness, ne splněnou
       smlouvu. Blokuje E11-T4b.
 
-  - id: D-008
+  - id: D-009
     title: Testovací účet a cílové nasazení pro modulové e2e
     req: [C12, C11]
     status: blocked
@@ -133,6 +133,29 @@ decisions:
       Adult platforma prakticky potřebuje moderaci nahrávaného obsahu, smlouva
       ji ale nezmiňuje a C2 nařizuje minimalizaci externích služeb. Vyžaduje
       výslovné schválení (rozsah, cena, právní rámec) i volbu on-prem vs API.
+
+  - id: D-008
+    title: Do jakého registru patří npm balíčky @libertin/* — a smí být veřejné?
+    req: [C2, C8, C10]
+    status: blocked
+    blocker: >
+      GitHub Packages tyhle balíčky přijmout NEMŮŽE: jeho npm registr vyžaduje,
+      aby se scope rovnal vlastníkovi repozitáře (@sparesparrow/*), zatímco naše
+      balíčky jsou @libertin/*. Přejmenování by sáhlo do každého importu
+      v repozitáři i do CLAUDE.md, takže se o něm nerozhoduje mimochodem.
+      Zbývají dvě cesty: (1) npmjs.com s organizací "libertin" — scope sedí beze
+      změny, ale restricted balíčky tam vyžadují placenou organizaci;
+      (2) vlastní privátní registr (Verdaccio on-premise), což je blíž C2.
+      Součástí rozhodnutí je i viditelnost: publishConfig má schválně
+      "access": "restricted", protože veřejný @libertin/ui vystaví návrh a texty
+      adult platformy pod jménem objednatele. Zveřejnění musí být rozhodnutí, ne
+      výchozí stav.
+    note: >
+      Nic tím není zablokované do doby rozhodnutí: release z tagu vyrobí
+      kompletní GitHub Release s tarbally i image v GHCR, publikace do registru
+      se bez secretu NPM_TOKEN jen přeskočí. Po rozhodnutí stačí přidat secret
+      (u varianty 2 navíc "registry" do publishConfig každého balíčku) —
+      workflow se nemění. Detaily: docs/publishing.md.
 
 # ---------------------------------------------------------------------------
 epics:
@@ -566,6 +589,27 @@ epics:
         role: devops
         status: todo
 
+      - id: E10-T8
+        title: Publikování image webu do registru (GHCR)
+        scope: infra
+        role: devops
+        status: review
+        blocked_by: [E10-T1]
+        note: >
+          .github/workflows/publish-image.yml — tag vX.Y.Z dá 1.2.3/1.2/latest,
+          push do main dá edge, každý build navíc sha-<sha>. K image se připojuje
+          provenance (mode=max) a SBOM, aby se externí provozovatel (C8) nemusel
+          ptát nás, co je uvnitř. Pull request, který sáhne na apps/web nebo
+          packages, image jen postaví a nepublikuje — Dockerfile jinak žádná
+          brána nekontroluje.
+          Nepotřebuje žádný nastavený secret: GITHUB_TOKEN má na ghcr.io právo
+          zápisu. Je to tedy jediná publikační cesta, která funguje bez D-008.
+          NEOVĚŘENO, a říkáme to rovnou: v prostředí neběží Docker daemon, takže
+          build image tímto úkolem spuštěný nebyl (ověřený je YAML a Dockerfile
+          z E10-T1). Proto review, ne done — stejná hranice jako u E10-T3.
+          Caveat pro předání: NEXT_PUBLIC_SITE_URL se zapéká do bundlu, image je
+          tedy vázaný na jeden host. Viz docs/publishing.md.
+
   - id: E11
     title: Kvalita, testy a CI/CD
     req: [C11, C12]
@@ -643,6 +687,33 @@ epics:
           renderují ze statických slovníků), reprezentativní host přes síť
           a hlavně čísla z D-006 — kolik je "špičkové zatížení" a na jakém
           percentilu se budget posuzuje.
+      - id: E11-T8
+        title: Release pipeline — publikování sdílených balíčků z tagu
+        scope: qa
+        role: devops
+        status: done
+        blocked_by: [E11-T2]
+        note: >
+          .github/workflows/release.yml (verify → pack → npm → GitHub Release)
+          plus stupeň pack v ci.yml, který hlídá publikovatelnou plochu na
+          každém PR. apps/web i apps/mobile dostaly "private": true, aby se
+          appka nemohla dostat do registru; CI to kontroluje proti očekávané
+          množině čtyř balíčků.
+          Stupeň verify znovu pouští celou bránu schválně: ci.yml se spouští na
+          push:branches a push tagu nesedí na žádnou branch, takže otagování
+          commitu jinak CI nespustí — bez toho by šlo vydat kód, který nikdy
+          neprošel buildem.
+          Balíčky se vydávají jako TypeScript zdroj, ne jako dist — apps/web je
+          konzumuje přes transpilePackages a mobil přes Metro, takže se v repu
+          dnes nic nebuilduje. Omezení (konzument bez transpilace balíček
+          nepoužije) je zapsané v docs/publishing.md včetně podmínky, kdy se to
+          změní.
+          Ověřeno lokálně skutečným během: pnpm pack všech čtyř balíčků,
+          kontrola obsahu tarballů (žádný test/story/vitest.d.ts), přepis
+          workspace:* na reálné verze, guard publikovatelné množiny, kontrola
+          shody verze s tagem i negativní test, že guard podstrčený testovací
+          soubor opravdu najde. Neověřeno: běh na runneru a samotná publikace —
+          ta čeká na D-008.
       - id: E11-T5
         title: E2E testy hlavních toků (Cypress)
         scope: qa
@@ -672,7 +743,7 @@ epics:
           seedovaného testovacího účtu nelze o modulu tvrdit nic. Testy se proto
           přeskakují, ne "propouštějí" — zelený běh, který devětkrát otestoval
           přihlašovací stránku, by hlásil pokrytí, které neexistuje. Odblokuje
-          to CYPRESS_TEST_USERNAME / CYPRESS_TEST_PASSWORD (viz D-008).
+          to CYPRESS_TEST_USERNAME / CYPRESS_TEST_PASSWORD (viz D-009).
 
           CI: job `e2e` (lokální sada, gatuje merge, deterministický) a manuální
           `e2e-modules` v .github/workflows/ci.yml i .gitlab-ci.yml.
@@ -681,7 +752,7 @@ epics:
         scope: qa
         role: qa
         status: blocked
-        blocked_by: [D-008]
+        blocked_by: [D-009]
         note: >
           92 přeskočených testů čeká pouze na účet. Harness je hotový a ověřený,
           chybí jen přihlašovací údaje k nasazení, proti kterému běží.
