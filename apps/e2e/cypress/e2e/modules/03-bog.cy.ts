@@ -40,7 +40,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
       M.id,
       M.path,
       'coverage-gap',
-      'no seeded conversation — composer, send and receive are untested',
+      'v nasazení není žádná konverzace — kompozitor, odeslání ani příjem nejsou otestované',
     );
   });
 });

@@ -15,6 +15,8 @@ is currently split across two of them:
 
 Nothing in the specs hardcodes a host. `CYPRESS_BASE_URL` is the only switch.
 
+### bash / zsh (Linux, macOS)
+
 ```bash
 # this repo's client, production build, server started and stopped for you
 pnpm --filter @libertin/e2e e2e:local:ci
@@ -26,6 +28,81 @@ CYPRESS_BASE_URL=https://example.vercel.app pnpm --filter @libertin/e2e e2e:modu
 CYPRESS_BASE_URL=https://example.vercel.app pnpm --filter @libertin/e2e cy:open
 ```
 
+### PowerShell (Windows)
+
+`VAR=value command` is shell syntax that PowerShell does not have — it will try
+to run a command literally named `CYPRESS_BASE_URL=https://…` and fail. Set the
+variable in the environment first, then run:
+
+```powershell
+# this repo's client, production build, server started and stopped for you
+pnpm --filter @libertin/e2e e2e:local:ci
+
+# a deployed client
+$env:CYPRESS_BASE_URL = "https://example.vercel.app"
+pnpm --filter @libertin/e2e e2e:modules
+
+# interactive
+pnpm --filter @libertin/e2e cy:open
+
+# the variable lives for the rest of the session — clear it when you switch back
+Remove-Item Env:\CYPRESS_BASE_URL
+```
+
+Scoped to a single command, without leaving the variable set:
+
+```powershell
+$env:CYPRESS_BASE_URL = "https://example.vercel.app"
+try { pnpm --filter @libertin/e2e e2e:modules }
+finally { Remove-Item Env:\CYPRESS_BASE_URL -ErrorAction SilentlyContinue }
+```
+
+#### Windows notes
+
+- **Run from the repo root or with `--filter`.** Both work; `--filter` is what
+  the examples use so the working directory does not matter.
+- **`cy:open` needs a desktop session.** It will not work over plain SSH or in
+  a container without a display. `cypress run` is headless and works anywhere.
+- **Long paths.** Cypress and pnpm both nest deeply. If installs fail with
+  `ENAMETOOLONG` or `EPERM`, enable long paths once, from an elevated shell:
+
+  ```powershell
+  New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
+    -Name LongPathsEnabled -Value 1 -PropertyType DWORD -Force
+  git config --global core.longpaths true
+  ```
+
+- **Antivirus and the binary.** The Cypress binary unpacks to
+  `$env:LOCALAPPDATA\Cypress\Cache` and is ~250 MB. Real-time scanning makes
+  the first run noticeably slow; excluding that folder helps. To relocate it,
+  set `CYPRESS_CACHE_FOLDER` before installing.
+- **Corporate proxy.** Set `HTTPS_PROXY` before `pnpm install` so the binary
+  download goes through it, and `NODE_EXTRA_CA_CERTS` to your CA bundle if TLS
+  is intercepted:
+
+  ```powershell
+  $env:HTTPS_PROXY = "http://proxy.example:8080"
+  $env:NODE_EXTRA_CA_CERTS = "C:\path\to\ca-bundle.crt"
+  pnpm install
+  ```
+
+- **If the binary download fails partway**, `pnpm install` reports a checksum
+  mismatch rather than retrying. Download the zip yourself and install from it:
+
+  ```powershell
+  Invoke-WebRequest -Uri "https://cdn.cypress.io/desktop/15.20.1/win32-x64/cypress.zip" `
+    -OutFile "$env:TEMP\cypress.zip"
+  $env:CYPRESS_INSTALL_BINARY = "$env:TEMP\cypress.zip"
+  pnpm --filter @libertin/e2e exec cypress install --force
+  Remove-Item Env:\CYPRESS_INSTALL_BINARY
+  pnpm --filter @libertin/e2e cy:verify
+  ```
+
+- **`pnpm install` skips the Cypress binary by default** unless the package is
+  allowed to run build scripts. The root `package.json` already lists it under
+  `pnpm.onlyBuiltDependencies`, so a plain `pnpm install` is enough. If it was
+  skipped anyway, `pnpm approve-builds` or the manual install above fixes it.
+
 ## The test account
 
 Seven of the nine modules redirect an anonymous visitor to `/login` on
@@ -34,7 +111,27 @@ about the module — they would only ever be testing the login page — so they
 are **skipped**, not passed:
 
 ```bash
+# bash / zsh
 CYPRESS_TEST_USERNAME=... CYPRESS_TEST_PASSWORD=... pnpm e2e:modules
+```
+
+```powershell
+# PowerShell
+$env:CYPRESS_TEST_USERNAME = "..."
+$env:CYPRESS_TEST_PASSWORD = "..."
+pnpm --filter @libertin/e2e e2e:modules
+Remove-Item Env:\CYPRESS_TEST_USERNAME, Env:\CYPRESS_TEST_PASSWORD
+```
+
+Do not put the password in a script you commit, and be aware that typing it as
+a literal above puts it in your PowerShell history
+(`$env:APPDATA\Microsoft\Windows\PowerShell\PSReadline\ConsoleHost_history.txt`).
+`Read-Host -AsSecureString` avoids that:
+
+```powershell
+$cred = Get-Credential -Message "Libertin e2e test account"
+$env:CYPRESS_TEST_USERNAME = $cred.UserName
+$env:CYPRESS_TEST_PASSWORD = $cred.GetNetworkCredential().Password
 ```
 
 A skipped test is reported as pending and the run says how many. That is

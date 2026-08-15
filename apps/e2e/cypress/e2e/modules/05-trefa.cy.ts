@@ -31,7 +31,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
     cy.visibleText().then((text) => {
       const hasShell = text.includes('Zeď') && text.includes('Události');
       if (!hasShell) {
-        note(M.id, M.path, 'missing-shell', 'global navigation not rendered');
+        note(M.id, M.path, 'missing-shell', 'globální navigace se nevykreslila');
       }
       expect(hasShell, 'global navigation present').to.equal(true);
     });
@@ -43,7 +43,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
       M.id,
       M.path,
       'coverage-gap',
-      'deck is empty in this deployment — like/pass/undo interactions untested',
+      'balíček je v tomto nasazení prázdný — interakce líbí/přeskočit/zpět nejsou otestované',
     );
   });
 });

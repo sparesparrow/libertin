@@ -53,7 +53,7 @@ describe('Navigace — žádný odkaz nesmí vést na 404', () => {
 
         cy.then(() => {
           for (const route of dead) {
-            note('shell', route, 'dead-nav-link', 'linked from the shell but renders a 404');
+            note('shell', route, 'dead-nav-link', 'odkaz ze shellu, ale vykreslí 404');
           }
           expect(dead, 'shell links resolving to the framework 404').to.deep.equal([]);
         });

@@ -36,7 +36,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
       const settled =
         !text.includes('Načítám') || text.includes('Zatím') || text.includes('Žádn');
       if (!settled) {
-        note(M.id, M.path, 'stuck-loading', 'listing grid never resolved');
+        note(M.id, M.path, 'stuck-loading', 'mřížka inzerátů se nikdy nedonačetla');
       }
       expect(settled, 'listing grid resolved').to.equal(true);
     });

@@ -35,7 +35,7 @@ describe('Diskrétnost — co stránka prozradí o návštěvníkovi', () => {
           'discretion',
           '/',
           'missing-referrer-policy',
-          'no Referrer-Policy header — an outbound click tells the destination which page the member came from',
+          'chybí hlavička Referrer-Policy — odchozí kliknutí prozradí cíli, ze které stránky člen přišel',
         );
       }
 
@@ -53,7 +53,7 @@ describe('Diskrétnost — co stránka prozradí o návštěvníkovi', () => {
         missing.push('X-Frame-Options (or a CSP frame-ancestors)');
       }
       for (const header of missing) {
-        note('discretion', '/', 'missing-security-header', `${header} not set`);
+        note('discretion', '/', 'missing-security-header', `hlavička ${header} není nastavená`);
       }
       expect(missing, 'security headers').to.deep.equal([]);
     });
@@ -85,7 +85,7 @@ describe('Diskrétnost — co stránka prozradí o návštěvníkovi', () => {
           'discretion',
           '/',
           'gdpr-cookie-banner',
-          `no one-click refusal on the cookie banner; offered: ${labels.slice(0, 8).join(', ')}`,
+          `cookie lišta nenabízí odmítnutí na jedno kliknutí; nabízí: ${labels.slice(0, 8).join(', ')}`,
         );
       }
       expect(rejects, 'cookie banner offers a one-click refusal').to.equal(true);
@@ -132,7 +132,7 @@ describe('Diskrétnost — co stránka prozradí o návštěvníkovi', () => {
         .filter((a) => !(a.getAttribute('rel') ?? '').includes('noreferrer'))
         .map((a) => a.getAttribute('href') ?? '(no href)');
       for (const href of unsafe) {
-        note('discretion', '/', 'missing-noreferrer', `target=_blank without noreferrer: ${href}`);
+        note('discretion', '/', 'missing-noreferrer', `target=_blank bez rel="noreferrer": ${href}`);
       }
       expect(unsafe, 'target=_blank links without rel=noreferrer').to.deep.equal([]);
     });
@@ -157,7 +157,7 @@ describe('Diskrétnost — co stránka prozradí o návštěvníkovi', () => {
     cy.visibleText().then((text) => {
       const cardLike = [...text.matchAll(/\b(?:\d[ -]?){13,19}\b/g)].map((m) => m[0]);
       for (const hit of cardLike) {
-        note(M.id, M.path, 'possible-pan', `card-number-shaped string rendered: ${hit}`);
+        note(M.id, M.path, 'possible-pan', `vykreslen řetězec tvaru čísla karty: ${hit}`);
       }
       expect(cardLike, 'card-number-shaped strings in the payments page').to.deep.equal([]);
     });

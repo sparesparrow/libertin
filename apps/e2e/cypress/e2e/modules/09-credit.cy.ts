@@ -33,7 +33,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
           M.id,
           M.path,
           'missing-price',
-          'membership tiers are offered without any price shown',
+          'úrovně členství jsou nabízeny bez uvedené ceny',
         );
       }
       expect(hasPrice, 'a price is shown next to the tiers').to.equal(true);
@@ -48,7 +48,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
           M.id,
           M.path,
           'stuck-loading',
-          'credit balance never resolved — the payments page shows a spinner where the balance belongs',
+          'zůstatek kreditu se nikdy nedonačetl — na místě zůstatku je na platební stránce spinner',
         );
       }
       expect(settled, 'credit balance resolved').to.equal(true);
@@ -72,7 +72,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
       M.id,
       M.path,
       'coverage-gap',
-      'checkout not automated — needs a payment-gateway sandbox and test credentials',
+      'checkout není automatizovaný — vyžaduje sandbox platební brány a testovací přístupy',
     );
   });
 });

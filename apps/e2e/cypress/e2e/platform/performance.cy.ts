@@ -50,7 +50,7 @@ describe('Výkon — rozpočet C12.1 (≤ 1,5 s, jeden uživatel)', () => {
               module.id,
               module.path,
               'perf-budget',
-              `load ${timing.loadMs} ms exceeds the ${budgetMs} ms budget (ttfb ${timing.ttfbMs} ms)`,
+              `načtení ${timing.loadMs} ms překračuje rozpočet ${budgetMs} ms (ttfb ${timing.ttfbMs} ms)`,
             );
           }
           cy.task(

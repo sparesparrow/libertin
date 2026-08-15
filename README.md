@@ -7,6 +7,8 @@ audit of the legacy site this project replaces.
 
 ## Quickstart
 
+### bash / zsh (Linux, macOS)
+
 ```bash
 pnpm install
 
@@ -29,6 +31,42 @@ pnpm e2e
 # End-to-end against a deployed client
 CYPRESS_BASE_URL=https://example.com pnpm e2e:modules
 ```
+
+### PowerShell (Windows)
+
+Identical apart from environment variables: PowerShell has no `VAR=value
+command` syntax, so the variable is set first.
+
+```powershell
+pnpm install
+
+# Storybook — all UI components + screens (web & native via react-native-web)
+pnpm storybook                          # → http://localhost:6006
+
+# Web (Next.js) — needs the MSW worker file once:
+pnpm --filter=@libertin/web msw:init    # generates apps/web/public/mockServiceWorker.js
+pnpm --filter=@libertin/web dev         # → http://localhost:3000
+
+# Mobile (Expo)
+pnpm --filter=@libertin/mobile start    # then i / a for simulator
+
+# Type check everything
+pnpm type-check
+
+# End-to-end (Cypress) — builds apps/web, serves it, drives it
+pnpm e2e
+
+# End-to-end against a deployed client
+$env:CYPRESS_BASE_URL = "https://example.com"
+pnpm e2e:modules
+Remove-Item Env:\CYPRESS_BASE_URL
+
+# Interactive Cypress runner (needs a desktop session)
+pnpm e2e:open
+```
+
+Windows specifics for the e2e suite — the ~250 MB browser binary, long paths,
+proxies and CA bundles — are in [apps/e2e/README.md](apps/e2e/README.md).
 
 Everything boots offline against MSW mocks derived from
 [`contracts/openapi.snapshot.yaml`](contracts/openapi.snapshot.yaml) — no

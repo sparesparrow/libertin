@@ -31,7 +31,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
       const settled =
         !text.includes('Načítání') || text.includes('Zatím') || text.includes('Žádn');
       if (!settled) {
-        note(M.id, M.path, 'stuck-loading', 'room list never resolved');
+        note(M.id, M.path, 'stuck-loading', 'seznam místností se nikdy nedonačetl');
       }
       expect(settled, 'room list resolved').to.equal(true);
     });

@@ -95,7 +95,7 @@ export default defineConfig({
           byKind.set(finding.kind, bucket);
         }
 
-        const lines = [`\n=== Libertin e2e findings (${findings.size}) ===`];
+        const lines = [`\n=== Nálezy Libertin e2e (${findings.size}) ===`];
         for (const [kind, bucket] of [...byKind.entries()].sort()) {
           lines.push(`\n${kind} (${bucket.length})`);
           for (const finding of bucket) {

@@ -24,7 +24,7 @@ function report(module: string, route: string) {
         module,
         route,
         `a11y-${violation.id}`,
-        `${violation.impact ?? 'unknown'}: ${violation.help} — ${violation.nodes.length} node(s), first: ${first}`,
+        `${violation.impact ?? 'neznámý'}: ${violation.help} — ${violation.nodes.length} uzlů, první: ${first}`,
       );
     }
   };

@@ -22,7 +22,7 @@ describe('Čeština — zakázané řetězce', () => {
       const leftovers = [...text.matchAll(/\{\{[^}]{1,40}\}\}/g)].map((m) => m[0]);
       const unique = [...new Set(leftovers)];
       for (const placeholder of unique) {
-        note('copy', '/', 'untranslated-placeholder', `${placeholder} rendered literally`);
+        note('copy', '/', 'untranslated-placeholder', `${placeholder} se vykreslil doslovně`);
       }
       expect(unique, 'raw i18n placeholders in rendered copy').to.deep.equal([]);
     });
@@ -39,7 +39,7 @@ describe('Čeština — zakázané řetězce', () => {
           text.includes(needle),
         );
         if (filler.length > 0) {
-          note('copy', route, 'placeholder-copy', `filler text still rendered: ${filler.join(', ')}`);
+          note('copy', route, 'placeholder-copy', `na stránce je stále výplňový text: ${filler.join(', ')}`);
         }
         expect(filler, `filler text on ${route}`).to.deep.equal([]);
       });

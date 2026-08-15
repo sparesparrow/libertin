@@ -23,7 +23,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
         const settled =
           !text.includes('Načítám') || text.includes('Zatím') || text.includes('Žádn');
         if (!settled) {
-          note(M.id, M.path, 'stuck-loading', 'people directory never resolved');
+          note(M.id, M.path, 'stuck-loading', 'adresář lidí se nikdy nedonačetl');
         }
         expect(settled, 'directory resolved').to.equal(true);
       });
@@ -67,7 +67,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
           M.id,
           '/profile/[id]',
           'missing-empty-state',
-          'unknown profile id renders without a not-found state',
+          'neznámé id profilu se vykreslí bez stavu "nenalezeno"',
         );
       }
     });

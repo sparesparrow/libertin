@@ -60,7 +60,7 @@ Cypress.Commands.add('visitModule', (path: string, options: VisitModuleOptions =
 
   cy.location('pathname').then((pathname) => {
     if (pathname !== path && !path.startsWith(pathname)) {
-      record(module, path, 'redirect', `redirected to ${pathname}`);
+      record(module, path, 'redirect', `přesměrováno na ${pathname}`);
     }
   });
 });
@@ -149,7 +149,7 @@ Cypress.Commands.add('settle', (module: string, route: string, timeout = 8000): 
           module,
           route,
           'stuck-loading',
-          `still showing "${stuck.join('", "')}" after ${timeout} ms`,
+          `stále zobrazuje "${stuck.join('", "')}" po ${timeout} ms`,
         );
         return;
       }
@@ -194,7 +194,7 @@ Cypress.Commands.add('assertCzechCopy', (module: string, route: string): void =>
   cy.visibleText().then((text) => {
     const hits = CZECH_TYPO_BLOCKLIST.filter((typo) => text.includes(typo.wrong));
     for (const hit of hits) {
-      record(module, route, 'czech-typo', `"${hit.wrong}" should be "${hit.right}"`);
+      record(module, route, 'czech-typo', `"${hit.wrong}" má být "${hit.right}"`);
     }
     expect(
       hits.map((h) => `"${h.wrong}" (should be "${h.right}")`),

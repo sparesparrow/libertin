@@ -50,7 +50,7 @@ describe('Únik dat — anonymní odpověď nesmí nést členský obsah', () =>
             'privacy',
             check.route,
             'anonymous-payload-leak',
-            `"${marker}" is in the body served to a signed-out visitor, although the rendered page shows the guest view`,
+            `"${marker}" je v těle odpovědi pro nepřihlášeného návštěvníka, ačkoli vykreslená stránka ukazuje hostovský pohled`,
           );
         }
 

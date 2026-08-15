@@ -39,7 +39,7 @@ describe('Shell — globální navigace a patička', () => {
               module.id,
               module.path,
               'a11y-heading',
-              `expected exactly one h1, found ${$h1.length}`,
+              `očekáván právě jeden h1, nalezeno ${$h1.length}`,
             );
           }
           expect($h1.length, 'number of h1 elements').to.equal(1);
@@ -66,7 +66,7 @@ describe('Shell — globální navigace a patička', () => {
         }
         const found = [...repeated];
         for (const label of found) {
-          note('shell', '/wall', 'duplicate-label', `"${label}" rendered twice in a row`);
+          note('shell', '/wall', 'duplicate-label', `"${label}" vykreslen dvakrát za sebou`);
         }
         expect(found, 'labels rendered twice in a row').to.deep.equal([]);
       });

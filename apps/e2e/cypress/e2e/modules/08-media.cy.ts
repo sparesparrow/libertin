@@ -33,7 +33,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
           M.id,
           M.path,
           'a11y-img-alt',
-          `${missing.length} image(s) without alt: ${missing.slice(0, 5).join(', ')}`,
+          `${missing.length} obrázků bez atributu alt: ${missing.slice(0, 5).join(', ')}`,
         );
       }
       expect(missing, 'images without alt text').to.deep.equal([]);
@@ -47,7 +47,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
           M.id,
           M.path,
           'placeholder-copy',
-          'ad slots still render lorem-style placeholder copy ("Hlavní nadpis reklamy")',
+          'reklamní pozice stále vykreslují zástupný text ("Hlavní nadpis reklamy")',
         );
       }
     });

@@ -8,10 +8,10 @@
     "cy:verify": "cypress verify",
     "cy:info": "cypress info",
     "e2e": "cypress run",
-    "e2e:modules": "cypress run --spec 'cypress/e2e/modules/**/*.cy.ts'",
-    "e2e:platform": "cypress run --spec 'cypress/e2e/platform/**/*.cy.ts'",
-    "e2e:local": "cypress run --spec 'cypress/e2e/local/**/*.cy.ts'",
-    "e2e:local:ci": "start-server-and-test 'pnpm --filter @libertin/web start' http://localhost:3000/gate 'pnpm e2e:local'",
+    "e2e:modules": "cypress run --spec \"cypress/e2e/modules/**/*.cy.ts\"",
+    "e2e:platform": "cypress run --spec \"cypress/e2e/platform/**/*.cy.ts\"",
+    "e2e:local": "cypress run --spec \"cypress/e2e/local/**/*.cy.ts\"",
+    "e2e:local:ci": "start-server-and-test \"pnpm --filter @libertin/web start\" http://localhost:3000/gate \"pnpm e2e:local\"",
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {

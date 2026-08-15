@@ -40,7 +40,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
       cy.get('body').then(($body) => {
         const visible = $body.find(':visible').text().includes('Vytvořit příběh');
         if (visible) {
-          note(M.id, M.path, 'guest-gate', 'story composer is visible to a signed-out visitor');
+          note(M.id, M.path, 'guest-gate', 'kompozitor příběhů je viditelný nepřihlášenému návštěvníkovi');
         }
         expect(visible, 'story composer visible to a guest').to.equal(false);
       });
@@ -69,7 +69,7 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
         const settled =
           !text.includes('Načítám') || text.includes('Zatím') || text.includes('Žádné');
         if (!settled) {
-          note(M.id, M.path, 'stuck-loading', 'feed never left the loading state');
+          note(M.id, M.path, 'stuck-loading', 'feed nikdy neopustil stav načítání');
         }
         expect(settled, 'feed resolved to content or an empty state').to.equal(true);
       });
