@@ -30,6 +30,27 @@ export interface VisitModuleOptions {
 const COOKIE_BANNER_BUTTONS = ['Odmítnout vše', 'Souhlas', 'Povolit vše'] as const;
 
 /**
+ * Consent cookie the banner writes, seeded before a visit so the banner never
+ * mounts in the first place.
+ *
+ * Clicking it away afterwards is not reliable on its own: the banner mounts on
+ * the client a beat after the page is interactive, so a single look right after
+ * `cy.visit` can miss it, and every later click is then silently swallowed by
+ * an overlay that was not there when we checked. That is what made the
+ * registration specs fail with "element is covered by another element" on some
+ * runs and not others. Seeding removes the race instead of narrowing it.
+ */
+const COOKIE_CONSENT_NAME = 'libertine_cookie_consent';
+const COOKIE_CONSENT_VALUE = JSON.stringify({
+  preferences: true,
+  statistics: true,
+  marketing: true,
+  unclassified: true,
+  necessary: true,
+  decidedAt: '2026-01-01T00:00:00.000Z',
+});
+
+/**
  * Reported but non-fatal: buffered now, flushed to the reporter in `afterEach`.
  * See `support/findings.ts` for why this is not a direct `cy.task`.
  */
@@ -50,11 +71,17 @@ function record(module: string, route: string, kind: string, detail: string): vo
 Cypress.Commands.add('visitModule', (path: string, options: VisitModuleOptions = {}): void => {
   const module = options.module ?? path;
 
+  if (options.keepCookieBanner !== true) {
+    cy.seedCookieConsent();
+  }
+
   cy.visit(path, { failOnStatusCode: false });
   cy.get(NEXT_ERROR_HEADING, { timeout: 4000 }).should('not.exist');
   cy.get('body').should('be.visible');
 
   if (options.keepCookieBanner !== true) {
+    // Belt and braces: if the banner's cookie shape ever changes, the seed
+    // stops working silently and this is what keeps the suite usable.
     cy.dismissCookieBanner();
   }
 
@@ -73,6 +100,11 @@ Cypress.Commands.add('visitModule', (path: string, options: VisitModuleOptions =
  * covered by another element". That is also how it behaves for a real member
  * on their first visit, which the discretion spec records separately.
  */
+/** Pre-accept cookies so the banner never renders. Must run before `cy.visit`. */
+Cypress.Commands.add('seedCookieConsent', (): void => {
+  cy.setCookie(COOKIE_CONSENT_NAME, COOKIE_CONSENT_VALUE, { log: false });
+});
+
 Cypress.Commands.add('dismissCookieBanner', (): void => {
   cy.get('body', { log: false }).then(($body) => {
     for (const label of COOKIE_BANNER_BUTTONS) {
@@ -109,6 +141,7 @@ Cypress.Commands.add('login', (): void => {
   cy.session(
     ['libertin', username],
     () => {
+      cy.seedCookieConsent();
       cy.visit('/login', { failOnStatusCode: false });
       cy.dismissCookieBanner();
 
@@ -221,6 +254,7 @@ declare global {
   namespace Cypress {
     interface Chainable {
       visitModule(path: string, options?: VisitModuleOptions): Chainable<void>;
+      seedCookieConsent(): Chainable<void>;
       dismissCookieBanner(): Chainable<void>;
       login(): Chainable<void>;
       settle(module: string, route: string, timeout?: number): Chainable<void>;

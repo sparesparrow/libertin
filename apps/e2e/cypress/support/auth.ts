@@ -31,5 +31,43 @@ export function hasCredentials(): boolean {
   return testUsername() !== undefined && testPassword() !== undefined;
 }
 
+export interface SignupAccount {
+  readonly nickname: string;
+  readonly email: string;
+  readonly password: string;
+}
+
+/**
+ * Whether this run may create an account on the target deployment.
+ *
+ * Off unless `CYPRESS_ALLOW_SIGNUP=1`. Writing to someone else's member table
+ * is not something a test suite should do as a side effect of running, and on
+ * an adult platform a stray half-registered account is worse than ordinary
+ * test debris.
+ */
+export function signupAllowed(): boolean {
+  return String(Cypress.env('ALLOW_SIGNUP') ?? '') === '1';
+}
+
+/**
+ * A throwaway account with no real personal data.
+ *
+ * The address is on `example.com`, which RFC 2606 reserves precisely so it can
+ * never belong to anyone and can never receive mail. The nickname is stamped
+ * so two runs never collide, and is obviously machine-made — anyone looking at
+ * the member table should be able to tell at a glance that it is test debris
+ * and not a person. The registration form marks the phone number optional, so
+ * none is invented: a fabricated CZ number could belong to a real person.
+ */
+export function generateSignup(): SignupAccount {
+  const stamp = `${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+  return {
+    // The form caps the nickname at 12 characters.
+    nickname: `cyp${stamp}`.slice(0, 12),
+    email: `cypress-e2e+${stamp}@example.com`,
+    password: `Cy!${stamp}Aa1`,
+  };
+}
+
 export const NO_CREDENTIALS_REASON =
   'skipped: no CYPRESS_TEST_USERNAME / CYPRESS_TEST_PASSWORD configured — this module requires a signed-in session';
