@@ -1,0 +1,52 @@
+# Baseline every Libertin host gets, regardless of what it runs.
+---
+- name: Assert the host runs a supported distribution
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == 'Debian'
+    fail_msg: >-
+      These roles target Debian/Ubuntu. The host reports
+      {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}.
+      Porting is a deliberate change, not something to paper over with a
+      package-manager conditional — see docs/ansible.md.
+    quiet: true
+
+- name: Set the system timezone
+  community.general.timezone:
+    name: "{{ libertin_timezone }}"
+  become: true
+  notify: Restart cron
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - unattended-upgrades
+      - chrony
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+
+- name: Enable time synchronisation
+  # TOTP (B4.2) fails on a host whose clock has drifted, and audit-log entries
+  # (E6-T1) are worth little if their timestamps cannot be compared across
+  # machines. Both make this a functional dependency, not housekeeping.
+  ansible.builtin.service:
+    name: chrony
+    state: started
+    enabled: true
+  become: true
+
+- name: Enable unattended security upgrades
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+    owner: root
+    group: root
+    mode: "0644"
+  become: true

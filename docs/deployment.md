@@ -272,14 +272,14 @@ Nic z následujícího tento task neřeší a **nepředstírá, že je hotové**
 | Chybí | Kde se to dělá |
 |---|---|
 | Backend, DB, Redis, S3 storage, mail — propojení kontejnerů | E10-T2 (blokováno D-003) |
-| Ansible IaC — celý systém ze zdrojového textu (C11.2) | E10-T3 (blokováno D-004) |
+| Ansible IaC — zbývající služby a ostrý běh proti hostu | E10-T3b (blokováno D-003, D-004); kostra a webová vrstva jsou hotové, viz [ansible.md](ansible.md) |
 | HA, load balancer, multi-node DB, skutečné rolling restarty (C5, C9) | E10-T4 |
 | Zálohy, verzování obsahu, selektivní i PITR obnova (B5) | E10-T5 |
 | TLS terminace, reverzní proxy, certifikáty (A4) | E10-T4 |
 | Šifrování at-rest a správa klíčů (B4.3, B4.4) | epika bezpečnosti |
 | CI/CD, registry, podepisování a skenování image (C10) | E11 |
 | Secret management (dnes jen gitignorovaný `.env`) | E10-T3 |
-| Rozpočet odezvy ≤ 1,5 s pod zátěží (C12.1) — k6 měření | QA |
+| Rozpočet odezvy ≤ 1,5 s pod zátěží (C12.1) — akceptační měření proti backendu | E11-T4b (blokováno E9-T3, D-007); harness hotový, viz [perf/k6/README.md](../perf/k6/README.md) |
 
 ## Nálezy k předání
 

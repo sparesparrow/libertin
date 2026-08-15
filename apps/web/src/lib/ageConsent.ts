@@ -1,14 +1,12 @@
 import { cookies } from 'next/headers';
 import type { Dict } from '@libertin/i18n/dict';
 
-/**
- * Session cookie that records the 18+ confirmation.
- *
- * Deliberately boring name: cookies are visible to anyone who opens devtools on
- * a borrowed laptop, so it must not describe what the site is. It carries no
- * value beyond `1` — no identity, no timestamp, nothing to correlate.
- */
-export const AGE_CONSENT_COOKIE = 'libertin.age';
+import { AGE_CONSENT_COOKIE, isAgeConsentValue } from './ageConsentCookie';
+
+// Re-exported so existing server-component imports keep working; the value
+// itself lives in `ageConsentCookie.ts`, which the edge middleware can also
+// import (this module cannot cross that boundary — it uses `next/headers`).
+export { AGE_CONSENT_COOKIE };
 
 /**
  * Reads the consent decision on the server, before any HTML is produced.
@@ -23,18 +21,16 @@ export const AGE_CONSENT_COOKIE = 'libertin.age';
  * That is unavoidable for a per-visitor decision, and the alternative (leaking
  * the page to unconfirmed visitors) is not a trade we are willing to make.
  *
- * Known residual, measured on `next build` + `next start` (Next 14.2.35): the
- * rendered markup of an unconfirmed response contains the gate and nothing
- * else, but Next still streams the child segment's RSC seed data inside a
- * `self.__next_f.push(...)` script, so the page tree is present in the response
- * *source* even though nothing renders it. That is structural — Next builds the
- * cache-node seed for child segments before the layout decides whether to
- * render them, so no layout-level change can suppress it. Closing it needs the
- * request to be stopped before routing, i.e. `apps/web/middleware.ts` rewriting
- * unconfirmed requests to a gate route. Tracked as a follow-up to E14-T5.
+ * The RSC-seed residual this comment used to describe — the requested page's
+ * tree appearing inside `self.__next_f.push(...)` even though only the gate
+ * rendered — is closed by `src/middleware.ts` (E14-T5b), which diverts
+ * unconfirmed requests before routing reaches the page. This check remains as
+ * the backstop: if the middleware ever stops running (dropped from a deploy, or
+ * a matcher edited too narrowly), the server still refuses to render content
+ * without consent instead of failing open.
  */
 export function hasAgeConsent(): boolean {
-  return cookies().get(AGE_CONSENT_COOKIE)?.value === '1';
+  return isAgeConsentValue(cookies().get(AGE_CONSENT_COOKIE)?.value);
 }
 
 /**

@@ -1,0 +1,6 @@
+---
+- name: Restart the libertin stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ libertin_deploy_dir }}"
+    state: restarted
+  become: true

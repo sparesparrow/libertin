@@ -10,3 +10,18 @@ coverage/
 storybook-static/
 .DS_Store
 *.tsbuildinfo
+
+# k6 run output. The harness and its budget are source; individual run results
+# are measurements of one machine on one day and must never be mistaken for the
+# contracted acceptance evidence. CI archives them as build artefacts instead.
+perf/k6/.results/*
+!perf/k6/.results/.gitkeep
+
+# Ansible: vendored Galaxy collections and the fact cache. Both are reproduced
+# from requirements.yml — see docs/ansible.md.
+infra/ansible/collections/
+infra/ansible/.facts/
+# Real inventories name real machines, and hostnames of this platform are
+# themselves sensitive. Only inventories/example/ is committed.
+infra/ansible/inventories/*
+!infra/ansible/inventories/example/

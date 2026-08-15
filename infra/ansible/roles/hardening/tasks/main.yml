@@ -1,0 +1,111 @@
+# Host hardening.
+#
+# Scope note: this covers the host. Container-level hardening (read-only root,
+# dropped capabilities, no-new-privileges) lives in docker-compose.yml, and
+# application-level controls live in the app. All three are needed; none
+# substitutes for another.
+---
+- name: Install hardening packages
+  ansible.builtin.apt:
+    name:
+      - nftables
+      - fail2ban
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+
+# --- SSH ---------------------------------------------------------------------
+- name: Harden the SSH daemon
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/10-libertin.conf
+    content: |
+      # Managed by Ansible (infra/ansible/roles/hardening). Edits are overwritten.
+      Port {{ libertin_ssh_port }}
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PubkeyAuthentication yes
+      X11Forwarding no
+      AllowAgentForwarding no
+      MaxAuthTries 3
+      ClientAliveInterval 300
+      ClientAliveCountMax 2
+    owner: root
+    group: root
+    mode: "0600"
+    # Never leave a host unreachable: a config that sshd rejects would lock the
+    # operator out on restart, and this is exactly the file that can do it.
+    validate: /usr/sbin/sshd -t -f %s
+  become: true
+  notify: Restart sshd
+
+# --- firewall ----------------------------------------------------------------
+- name: Deploy the nftables ruleset
+  ansible.builtin.template:
+    src: nftables.conf.j2
+    dest: /etc/nftables.conf
+    owner: root
+    group: root
+    mode: "0600"
+    validate: /usr/sbin/nft --check --file %s
+  become: true
+  notify: Reload nftables
+
+- name: Enable nftables
+  ansible.builtin.service:
+    name: nftables
+    state: started
+    enabled: true
+  become: true
+
+# --- fail2ban ----------------------------------------------------------------
+- name: Configure fail2ban for SSH
+  ansible.builtin.copy:
+    dest: /etc/fail2ban/jail.d/libertin-sshd.local
+    content: |
+      # Managed by Ansible (infra/ansible/roles/hardening). Edits are overwritten.
+      [sshd]
+      enabled = true
+      port = {{ libertin_ssh_port }}
+      maxretry = 4
+      findtime = 10m
+      bantime = 1h
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Restart fail2ban
+
+- name: Enable fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    state: started
+    enabled: true
+  become: true
+
+# --- kernel ------------------------------------------------------------------
+- name: Apply sysctl hardening
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    sysctl_file: /etc/sysctl.d/60-libertin.conf
+    reload: true
+    state: present
+  become: true
+  loop:
+    # Do not accept source-routed packets or ICMP redirects — both let an
+    # attacker on the path steer traffic.
+    - { name: net.ipv4.conf.all.accept_source_route, value: "0" }
+    - { name: net.ipv4.conf.all.accept_redirects, value: "0" }
+    - { name: net.ipv6.conf.all.accept_redirects, value: "0" }
+    - { name: net.ipv4.conf.all.send_redirects, value: "0" }
+    # Log packets with impossible source addresses.
+    - { name: net.ipv4.conf.all.log_martians, value: "1" }
+    # SYN cookies: keep accepting connections under a SYN flood.
+    - { name: net.ipv4.tcp_syncookies, value: "1" }
+    # Restrict kernel pointer and dmesg exposure to unprivileged users.
+    - { name: kernel.kptr_restrict, value: "2" }
+    - { name: kernel.dmesg_restrict, value: "1" }
+  loop_control:
+    label: "{{ item.name }}"

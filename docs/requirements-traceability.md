@@ -29,7 +29,7 @@ vývoj běží na GitHubu — vedeno jako D-002.
 
 | Požadavek | Stav | Poznámka |
 |---|---|---|
-| Vzhled a rozsah definován Figma hand-off návrhem | ⚠️ | Hand-off dodán: [Figma — Libertin](https://www.figma.com/design/BF3X0FKBKEbt5uTcrO4jkk/Libertin?node-id=3786-159470), node `3786:159470`. **Blokováno přístupem**: účet má na souboru jen seat „View" (starter tier), Figma MCP vyžaduje editor access → design-parity průchod ani extrakci tokenů/inventury obrazovek zatím nelze provést. Potřeba editor invite od vlastníka souboru, nebo export mockupů (PNG/PDF) do repa. |
+| Vzhled a rozsah definován Figma hand-off návrhem | ⚠️ | Hand-off dodán: [Figma — Libertin](https://www.figma.com/design/BF3X0FKBKEbt5uTcrO4jkk/Libertin?node-id=3786-159470), node `3786:159470`. **Blokováno přístupem (D-001)** — znovu ověřeno 2026-08-15: `get_metadata`, `get_screenshot` i `get_variable_defs` vracejí shodně „Looks like you don't have edit access to this file"; `whoami` hlásí seat **View**, tier starter. Načtení URL bez přihlášení vrací jen SPA shell. Pozor na snadnou záměnu: Figma vyžaduje **edit oprávnění i pro čtení** přes MCP — nejde o to, že bychom chtěli zdroj měnit, sdílení „kdokoli s odkazem může zobrazit" tuhle bránu neotevře. Odblokuje to buď pozvánka s právem „can edit" pro `dallheimal@gmail.com`, nebo — bez jakékoli změny oprávnění — **export obrazovek do PNG/PDF a commit do repa**. |
 | Průběžné konzultace, písemné dotazy na nejasnosti | — | procesní; nejasnosti evidovat v PR/issues |
 
 ## A. Hardware / prostředí
@@ -77,8 +77,8 @@ vývoj běží na GitHubu — vedeno jako D-002.
 | C8 | Předatelnost externímu subjektu | 🔜 | plyne z C7 + IaC |
 | C9 | Bezvýpadkové aktualizace (rolling restarts) | 🏗️ | |
 | C10 | Git; kompletní repo součástí díla; **GitLab** pro řízení i hosting | ⚠️ | dnes GitHub — rozhodnout mirror vs přesun |
-| C11 | Automatizované testy pokrývající většinu funkcí; GitLab CI/CD; IaC (Ansible) | 🔜 | Harness hotový: **79 testů** (Vitest + Testing Library), `pnpm test:all`. CI pipeline (E11-T2) a Ansible zatím ne. |
-| C12 | Akceptace: odezva UI ≤ 1,5 s při max. zátěži; 30denní beta | 🔜 | k6 budget v Phase 4 přesně na 1,5 s; beta = provozní milník |
+| C11 | Automatizované testy pokrývající většinu funkcí; GitLab CI/CD; IaC (Ansible) | ⚠️🏗️ | **150 testů** (Vitest + Testing Library), `pnpm test:all`. CI pipeline hotová (E11-T2), na GitLab přeložená, ale nespuštěná — D-002. Ansible (E10-T3) má kostru a webovou vrstvu, ověřenou lintem v profilu `production`, ne ostrým během; zbytek E10-T3b. Pokrytí „většiny funkcí" se zatím neměří (E11-T6). |
+| C12 | Akceptace: odezva UI ≤ 1,5 s při max. zátěži; 30denní beta | ⚠️ | Budget je zapsaný jako k6 threshold (E11-T4, `perf/k6/`), takže překročení shodí pipeline. Baseline bez backendu p(95) 92 ms — podlaha, ne verdikt. Akceptační měření je E11-T4b a čeká na backend (E9-T3) a na **D-007**: smlouva neuvádí, kolik je „maximální zátěž" ani na jakém percentilu se 1,5 s posuzuje. Beta = provozní milník. |
 | C13 | Migrace dat ze swingerslife.cz (vč. neregistrovaných přihlášek na akce) | 🏗️ | před betou; potřebuje přístup k DB legacy webu |
 
 ## Technologie uvedené v zadání vs. naše volby

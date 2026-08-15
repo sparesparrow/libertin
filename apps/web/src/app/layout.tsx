@@ -22,9 +22,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   // Decided on the server, before a byte of HTML exists. When consent is
-  // missing we render the gate *instead of* `children`, not on top of it — an
-  // element React never renders is never serialised, so the page content does
-  // not reach the browser at all (docs/privacy-review.md, P3).
+  // missing we render the gate *instead of* `children`, not on top of it, so
+  // nothing gated is ever displayed (docs/privacy-review.md, P3).
+  //
+  // This is the second of two layers, and on its own it is not sufficient: not
+  // rendering `children` keeps the page off the screen, but Next still seeded
+  // the requested segment into the RSC payload, so the tree stayed readable in
+  // view-source. `src/middleware.ts` is the layer that actually prevents that,
+  // by diverting the request before routing (E14-T5b). The check here is what
+  // holds if the middleware ever stops running.
   const consented = hasAgeConsent();
 
   return (

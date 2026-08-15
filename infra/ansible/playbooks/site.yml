@@ -1,0 +1,55 @@
+# Libertin — full deployment from source text (C11.2).
+#
+# Run:
+#   cd infra/ansible
+#   ansible-galaxy collection install -r requirements.yml
+#   ansible-playbook -i inventories/example/hosts.yml playbooks/site.yml --check
+#   ansible-playbook -i inventories/example/hosts.yml playbooks/site.yml
+#
+# What this deploys today is the web tier. The services it does not deploy are
+# listed at the bottom of this file with the decision each one waits on — the
+# same honest extension-point approach as docker-compose.yml, so nobody reads
+# "site.yml ran green" as "the whole system is up".
+---
+- name: Baseline and hardening for every host
+  hosts: all
+  gather_facts: true
+  roles:
+    - role: common
+      tags: [common]
+    - role: hardening
+      tags: [hardening, security]
+
+- name: Container runtime
+  hosts: web
+  gather_facts: true
+  roles:
+    - role: docker
+      tags: [docker]
+
+- name: Web tier
+  hosts: web
+  gather_facts: true
+  roles:
+    - role: libertin_web
+      tags: [web]
+
+# ---------------------------------------------------------------------------
+# NOT DEPLOYED YET. Each waits on a decision or an earlier task; none is
+# guessed at, because a wrong guess here becomes someone's production host.
+#
+#   api        backend API                     blocked on D-003      E9-T3
+#   database   PostgreSQL + at-rest encryption blocked on D-003      E9-T2/T6
+#   cache      Redis                                                 E9-T5
+#   storage    S3-compatible object storage                          E9-T4
+#   mail       SMTP with valid certificates                          E5-T2
+#   proxy      reverse proxy / LB, TLS         needed before public  E10-T4
+#   backup     off-host backup agent                                 E10-T5
+#
+# Rules for whoever adds one:
+#   * stateful services never publish a port to the host;
+#   * every role is idempotent and re-runnable — verify with --check;
+#   * credentials come from Vault or a secret store, never from group_vars;
+#   * every volume gets a backup + retention note in docs/ansible.md before it
+#     holds real data.
+# ---------------------------------------------------------------------------

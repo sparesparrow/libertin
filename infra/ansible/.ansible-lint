@@ -1,0 +1,40 @@
+# ansible-lint configuration.
+#
+# Run from infra/ansible:
+#   ansible-lint
+---
+exclude_paths:
+  # Vendored Galaxy collections — third-party code we do not own and must not
+  # be judged on. Installed by `ansible-galaxy collection install -r
+  # requirements.yml -p collections` and gitignored.
+  - collections/
+  - .facts/
+
+# `production` is the strictest profile ansible-lint ships. Chosen deliberately:
+# these playbooks will be handed to an external operator (C8), and the rules
+# this profile adds over `safety` — fully-qualified module names, explicit file
+# modes, no `latest` package pins — are exactly the ones that make someone
+# else's run reproduce ours.
+profile: production
+
+skip_list:
+  # var-naming[no-role-prefix] wants every role default prefixed with its own
+  # role name: `common_timezone`, `docker_log_max_size`, `hardening_ssh_port`,
+  # `libertin_web_deploy_dir`. We use a single project-wide `libertin_` prefix
+  # instead, and this is a considered deviation rather than an oversight.
+  #
+  # The rule exists to prevent variable collisions between roles. A project
+  # prefix serves that purpose at least as well — `libertin_docker_log_max_size`
+  # is markedly less likely to collide with a community Docker role than
+  # `docker_log_max_size` would be.
+  #
+  # More importantly, the per-role scheme would misname the variables that are
+  # deliberately shared. `libertin_timezone` is read by both `common` (to set
+  # the clock) and `libertin_web` (to render TZ into the container environment);
+  # under the rule it would have to be duplicated under two names, or one role
+  # would reach into another's namespace. `libertin_deploy_dir` is where the
+  # whole stack lives, not something web-specific, so `libertin_web_deploy_dir`
+  # would be actively wrong once the API and database roles land.
+  #
+  # Revisit if a role is ever extracted for reuse outside this project.
+  - var-naming[no-role-prefix]

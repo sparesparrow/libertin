@@ -15,6 +15,7 @@ stages:
   - type-check
   - test
   - build
+  - perf
 
 variables:
   CI: 'true'
@@ -93,3 +94,36 @@ build:
   # No artifacts are exported on purpose: nothing downstream consumes the build
   # output yet, and build output is not something we want lying around in job
   # storage. Add artifacts when a deploy stage actually needs them.
+
+# C12.1 acceptance harness. `when: manual` for the same reason the GitHub job is
+# workflow_dispatch: a shared runner's timings swing too much to gate merges on,
+# and a flaky perf gate teaches people to re-run until green. Point it at a
+# representative host. Rationale and budget: perf/k6/README.md.
+perf:
+  stage: perf
+  <<: *libertin_rules
+  when: manual
+  allow_failure: false
+  cache:
+    <<: *pnpm_cache
+    policy: pull
+  variables:
+    K6_VERSION: '0.54.0'
+  script:
+    - apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
+    - pnpm install --frozen-lockfile --prefer-offline
+    - pnpm --filter @libertin/web build
+    - >-
+      curl -sSL "https://github.com/grafana/k6/releases/download/v${K6_VERSION}/k6-v${K6_VERSION}-linux-amd64.tar.gz"
+      | tar xz --strip-components=1 -C /usr/local/bin "k6-v${K6_VERSION}-linux-amd64/k6"
+    - k6 version
+    # Production build, not `next dev` — dev-mode numbers are meaningless.
+    - pnpm --filter @libertin/web start &
+    - for _ in $(seq 1 30); do curl -sf -o /dev/null http://127.0.0.1:3000/ && break; sleep 1; done
+    # k6 exits 99 when a threshold is crossed, which fails this job.
+    - k6 run perf/k6/web-browse.js
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - perf/k6/.results/

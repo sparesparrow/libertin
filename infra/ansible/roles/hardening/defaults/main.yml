@@ -1,0 +1,6 @@
+---
+libertin_ssh_port: 22
+# Permissive default so a first run does not lock anyone out. Narrow this to the
+# operator's VPN before production — see docs/ansible.md.
+libertin_ssh_allowed_cidrs:
+  - 0.0.0.0/0

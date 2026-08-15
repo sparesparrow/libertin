@@ -1,0 +1,8 @@
+---
+libertin_deploy_dir: /opt/libertin
+libertin_deploy_user: libertin
+libertin_web_image: libertin/web
+libertin_web_tag: local
+libertin_web_port: 3000
+libertin_web_site_url: https://libertin.cz
+libertin_timezone: Europe/Prague
