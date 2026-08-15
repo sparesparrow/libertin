@@ -470,9 +470,9 @@ potřebují native renderer.
 `localStorage` v `beforeEach`. Komponenty se tedy testují proti skutečným
 překladům; chybějící klíč spadne jako test, ne jako `common.error` v UI.
 
-Stav: **7 testových souborů, 54 testů** (`AgeGate`, `Avatar`, `Button`, `Hero`,
-`Input`, `LoginForm`, `SiteFooter`). Bez testů jsou `Card`, `CategoryCard` a
-**celá native větev** (§11.6).
+Stav: **8 testových souborů, 77 testů** (`AgeGate`, `Avatar`, `Button`, `Hero`,
+`Input`, `LoginForm`, `SiteFooter`, `ThemeToggle`). Bez testů jsou `Card`,
+`CategoryCard` a **celá native větev** (§11.6).
 
 ## 8. Webová aplikace (`apps/web`)
 
@@ -551,22 +551,21 @@ Prostředí: Node v22.22.2, pnpm 10.33.0, turbo 2.10.4.
 $ pnpm exec turbo run type-check --force
    • Packages in scope: @libertin/api, @libertin/i18n, @libertin/mobile, @libertin/theme, @libertin/ui, @libertin/web
    • Running type-check in 6 packages
-@libertin/ui:type-check: > tsc --noEmit
+@libertin/api:type-check:    > tsc --noEmit
+@libertin/i18n:type-check:   > tsc --noEmit
 @libertin/mobile:type-check: > tsc --noEmit
-@libertin/web:type-check: > tsc --noEmit
+@libertin/theme:type-check:  > tsc --noEmit
+@libertin/ui:type-check:     > tsc --noEmit
+@libertin/web:type-check:    > tsc --noEmit
 
- Tasks:    3 successful, 3 total
-Cached:    0 cached, 3 total
-  Time:    3.87s
+ Tasks:    6 successful, 6 total
 ```
 
-**Čtěte pozorně: „3 tasks", ne 6.** Skript `type-check` mají jen
-`@libertin/web`, `@libertin/mobile` a `@libertin/ui`. `@libertin/api`,
-`@libertin/i18n` a `@libertin/theme` **žádnou typovou kontrolu nespouštějí** —
-jejich typy se ověří jen nepřímo, když je přeloží konzument. Tvrzení
-„`pnpm type-check` je zelené ve všech šesti workspace" (v `CLAUDE.md`) je tedy
-nepřesné (§12.6). `--force` je použité proto, aby výstup nebyl přehraný z
-Turborepo cache.
+**Dnes 6 z 6.** Dřívější verze tohoto dokumentu tu správně upozorňovala, že
+běží jen 3 tasky — `@libertin/api`, `@libertin/i18n` a `@libertin/theme` skript
+`type-check` neměly a jejich typy se ověřovaly jen nepřímo přes konzumenta.
+To už neplatí, skript mají všechny balíčky. `--force` je použité proto, aby
+výstup nebyl přehraný z Turborepo cache.
 
 ### 10.2 Testy
 
@@ -589,8 +588,9 @@ $ pnpm test
  Tasks:    2 successful, 2 total
 ```
 
-Celkem **79 testů ve 2 balíčcích**. `apps/web`, `apps/mobile`, `packages/api` a
-`packages/theme` nemají skript `test` — netestují se vůbec (§11.6).
+Celkem **150 testů ve 4 balíčcích**: `packages/ui` 77, `apps/web` 34
+(middleware age gate, E14-T5b), `packages/i18n` 25, `packages/theme` 14.
+Bez testů zůstávají `apps/mobile` a `packages/api` (§11.6).
 
 ### 10.3 Graf závislostí a absence codegenu
 
@@ -682,19 +682,28 @@ vracejí 404 (§12.7).
 
 ## 11.4 Infrastruktura a provoz — částečně
 
-Postavené je: `apps/web/Dockerfile`, `docker-compose.yml` se službou `web` a
-`docs/deployment.md`. **Neexistuje**: propojení ostatních kontejnerů (E10-T2,
-`blocked` na D-003), Ansible IaC (E10-T3, C11.2), HA / load balancer / rolling
+Postavené je: `apps/web/Dockerfile`, `docker-compose.yml` se službou `web`,
+`docs/deployment.md` a **Ansible kostra** `infra/ansible/` s rolemi `common`,
+`hardening`, `docker` a `libertin_web` (E10-T3, C11.2) — ověřená `--syntax-check`
+a `ansible-lint` v profilu `production`, ale **nespuštěná proti reálnému hostu**,
+takže idempotence není doložená; viz `docs/ansible.md`.
+**Neexistuje**: propojení ostatních kontejnerů (E10-T2, `blocked` na D-003),
+Ansible role pro zbývající služby (E10-T3b), HA / load balancer / rolling
 restarty (E10-T4), zálohy a verzování (E10-T5, B5), CDN distribuce (E10-T6),
 TLS terminace, mailserver (A4), secret management. `docker-compose.yml`
-extension pointy záměrně nehádá — každá služba přijde s vlastním taskem.
+i `site.yml` extension pointy záměrně nehádají — každá služba přijde s vlastním
+taskem.
 
-## 11.5 CI/CD a contract-check — neexistuje
+## 11.5 CI/CD a contract-check — částečně
 
-V repozitáři **není žádná CI konfigurace** (`.gitlab-ci.yml` ani workflow).
-Plánováno: pipeline contract → lint → test → build (E11-T2), automatizovaný
-contract-check proti živému API (E11-T3), k6 zátěžové testy s budgetem
-≤ 1,5 s (E11-T4, **C12.1**), Playwright e2e (E11-T5), měření pokrytí (E11-T6).
+Pipeline `install → type-check → test → build` existuje jako
+`.github/workflows/ci.yml` i jako překlad `.gitlab-ci.yml` (E11-T2); GitLab
+varianta zatím **neběžela na runneru** (D-002). Přibyl manuální job pro
+výkonnostní bránu (E11-T4, `perf/k6/`), který má budget ≤ 1,5 s zapsaný jako
+k6 threshold (**C12.1**).
+Zbývá: automatizovaný contract-check proti živému API (E11-T3), akceptační
+měření proti backendu (E11-T4b, čeká na D-007), Playwright e2e (E11-T5), měření
+pokrytí (E11-T6).
 
 Sem patří i **generování klienta ze snapshotu**: `CLAUDE.md` ho popisuje,
 `packages/api` ho nemá (§6.2). Dokud codegen a contract-check neexistují, je
@@ -748,10 +757,10 @@ nálezy, ne jako opravy.
 5. **Natvrdo česká chybová zpráva** v `apps/mobile/src/AuthFlow.tsx`
    (`'Přihlášení se nezdařilo. Zkontrolujte údaje.'`) obchází i18n a rozbíjí
    B13. *Vlastník: frontend-mobile.*
-6. **`CLAUDE.md`: „`pnpm type-check` je zelené ve všech šesti workspace"** — ve
-   skutečnosti běží ve třech (§10.1). `packages/{api,i18n,theme}` skript
-   `type-check` nemají. Doplnit skript, nebo formulaci upravit. *Vlastník:
-   architect.*
+6. ~~**`CLAUDE.md`: „`pnpm type-check` je zelené ve všech šesti workspace"** — ve
+   skutečnosti běží ve třech.~~ **Vyřešeno**: `packages/{api,i18n,theme}` skript
+   `type-check` mezitím dostaly, `turbo run type-check` hlásí 6/6 (§10.1).
+   Tvrzení v `CLAUDE.md` je tedy dnes pravdivé.
 7. **Mrtvé odkazy v patičce** — `/o-nas`, `/kontakt`, `/soukromi`, `/podminky`
    vedou na 404. U `/soukromi` a `/podminky` je to navíc právní problém pro
    adult platformu. Souvisí s E14-T3. *Vlastník: frontend-web.*
@@ -796,8 +805,8 @@ done):
 
 ```bash
 pnpm install
-pnpm type-check                        # dnes běží ve 3 z 6 workspace, §10.1
-pnpm test                              # 79 testů, §10.2
+pnpm type-check                        # 6 z 6 workspace, §10.1
+pnpm test                              # 150 testů, §10.2
 pnpm --filter=@libertin/web build      # next build
 pnpm storybook                         # http://localhost:6006
 pnpm --filter=@libertin/web msw:init   # jednorázově, generuje mockServiceWorker.js

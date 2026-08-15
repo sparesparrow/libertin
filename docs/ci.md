@@ -149,7 +149,7 @@ pokrytí, které neexistuje.
 | Chybí | Proč / kde to je |
 |---|---|
 | **E2E testy hlavních toků** (Playwright) | **E11-T5**, `blocked_by: E11-T2`. Až budou, přidají se jako pátý stupeň za `build`. |
-| **Výkonnostní brána ≤ 1,5 s** (k6, C12.1) | **E11-T4**, `blocked_by: E9-T3`. Tvrdá akceptační podmínka smlouvy, dnes ji **nic neměří**. |
+| **Výkonnostní brána ≤ 1,5 s** (k6, C12.1) | **E11-T4 hotovo** — harness v `perf/k6/`, budget je zapsaný jako k6 threshold (k6 končí kódem 99 při překročení). V obou pipeline je jako **manuální** job: časy sdíleného runneru kolísají o stovky ms, a flaky výkonnostní brána naučí tým jen mačkat re-run. Vlastní akceptační měření proti backendu je E11-T4b, čeká na D-007. Viz [perf/k6/README.md](../perf/k6/README.md). |
 | **Contract drift proti živému API** | **E11-T3**. `packages/api` je ručně psaný proti `contracts/openapi.snapshot.yaml`, žádný codegen. Shodu dnes drží jen disciplína — CI ji nekontroluje. |
 | **Lint jako samostatná brána** | `pnpm lint` má dnes obsah jen pro `apps/web` (`next lint`) a ten se stejně pouští uvnitř `next build`. Samostatný stupeň se přidá, až bude lint nakonfigurovaný napříč balíčky. |
 | **Build mobilní aplikace** (Expo) | `apps/mobile` má jen `type-check` — ten v CI běží. EAS build je věc E10. |
