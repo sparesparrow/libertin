@@ -139,14 +139,30 @@ nikdy se nevracející. Pozor na detail: na `/login` odkaz ve formuláři píše
 kopie téhož řetězce, na jedné stránce, které si odporují. Přesně takhle vypadá
 problém, který se vrací: oprava se aplikovala na jednu kopii.
 
-### 5. Lorem ipsum na homepage
+### 5. Heslo `123456789` projde registrací
+
+Pravidlo je „alespoň 8 znaků" a nic víc — žádná kontrola složitosti, žádné
+porovnání se seznamem uniklých hesel. Ověřeno prakticky: účet s heslem
+`123456789` se založí i přihlásí. Je to dlouhodobě nejčastější heslo na
+internetu a v každém slovníku pro útok hrubou silou je na prvních místech.
+
+U běžné služby je to nepříjemnost. Tady ne: kompromitace účtu na téhle
+platformě nestojí uživatele heslo, ale odhalení — přesně to riziko, kvůli
+kterému je diskrétnost podle `CLAUDE.md` produktový požadavek. Minimem je
+odmítnout hesla ze seznamu úniků (HIBP k-anonymity API stačí, neposílá se
+při něm celé heslo) a nepouštět čistě číselné řetězce.
+
+Souvisí to i s **B4.2** ze smlouvy: 2FA má smysl jako druhá vrstva nad
+prvním faktorem, který za něco stojí.
+
+### 6. Lorem ipsum na homepage
 
 Všechny čtyři karty komunit — Naturisté, Swingeři, BDSM, Šibari — stále
 vykreslují *„Lorem ipsum dolor sit amet, consectetuer adipiscing elit…“*. Je to
 první věc, kterou návštěvník čte o tom, k čemu platforma je, na stránce, která
 má přesvědčovat.
 
-### 6. Výkon — rozpočet C12.1 překračují VŠECHNY moduly
+### 7. Výkon — rozpočet C12.1 překračují VŠECHNY moduly
 
 První běh viděl jen `/wall`, protože zbytek byl za loginem. Zevnitř je obraz
 jiný: **přes rozpočet 1,5 s je každý z devíti modulů**, opakovaně.
@@ -171,7 +187,7 @@ nemá pod špičkou z čeho ubírat: už teď je nad limitem, když je na ní je
 TTFB je všude v desítkách milisekund. Celá cena je tedy klientský render —
 problém bundlu a hydratace, ne hostingu ani databáze.
 
-### 7. Přístupnost (axe, jen serious + critical)
+### 8. Přístupnost (axe, jen serious + critical)
 
 Po přihlášení má **každý** modul aspoň jeden vážný přestupek.
 
@@ -196,7 +212,7 @@ dosáhla AA. Nasazený klient tuhle paletu nepoužívá.
 přes šedesát bez alternativního textu. Pro čtečku obrazovky je ta stránka
 prázdná.
 
-### 8. `/profile/<neznámé-id>` nemá stav „nenalezeno“
+### 9. `/profile/<neznámé-id>` nemá stav „nenalezeno“
 
 Jakékoli id vykreslí stránku. `/profile/settings`, `/profile/wallet`
 i `/profile/does-not-exist-cypress` se všechny vyřeší přes segment `[id]`, takže
