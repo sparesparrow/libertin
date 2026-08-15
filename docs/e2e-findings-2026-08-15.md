@@ -5,8 +5,9 @@ nasazení modulů.
 
 - **Cíl:** `https://libertine-omega.vercel.app`
 - **Sada:** Cypress 15.20.1, Electron headless, 1280×800
-- **Výsledek:** 148 testů — 43 prošlo, 13 selhalo, 92 pending
-- **Zaznamenaných nálezů:** 30
+- **Výsledek:** 155 testů — 111 prošlo, 43 selhalo, 1 pending
+- **Zaznamenaných nálezů:** 87
+- **Přihlášeno:** ano — moduly jsou poprvé změřené zevnitř, ne přes login zeď
 
 ## Čtěte nejdřív: cíl není tento repozitář
 
@@ -24,20 +25,27 @@ z tohoto repozitáře už dnes a beze změny poběží proti modulům, až sem p
 **Otevřená otázka na objednatele:** které nasazení má e2e hlídat a kde ten kód
 žije? Vedeno jako **D-009**.
 
-## Těch 92 pending testů
+## Jak jsme se dostali za login
 
-Není to flake ani chyba harnessu. Sedm z devíti modulů přesměruje anonymního
-návštěvníka na `/login` **až po hydrataci** — což je neviditelné pro cokoli, co
-čte jen serverovou odpověď. Proto se to neukázalo dřív, než sada řídila
-skutečný prohlížeč. Bez seedovaného členského účtu nemohou ty testy o modulu
-tvrdit vůbec nic, takže se přeskakují, ne „propouštějí“.
+Sedm z devíti modulů přesměruje anonymního návštěvníka na `/login` **až po
+hydrataci** — což je neviditelné pro cokoli, co čte jen serverovou odpověď.
+První běh proto 92 testů přeskočil, ne „propustil“.
 
-Zelený běh, který devětkrát otestoval přihlašovací stránku, by hlásil pokrytí,
-které neexistuje. Počet pending je to poctivé číslo.
+Odblokovala to registrace, kterou sada teď umí a zároveň testuje
+(`platform/registration.cy.ts`). Zjištěno během, ne čtením kódu:
 
-Odblokování vyžaduje jednorázový testovací účet (**D-009**). Sami jsme si ho
-nezaložili: zakládat účty na nasazení, které nevlastníme, je rozhodnutí
-objednatele.
+1. **Registrace projde.** Telefon je nepovinný, takže není potřeba vymýšlet
+   žádný osobní údaj. E-mail je na `example.com`, který RFC 2606 rezervuje
+   právě proto, aby nikomu nepatřil.
+2. **Přistane se na `/verify-email`**: „Pro další postup ověřte svůj email!“
+3. **Jenže neověřená session se dostane úplně všude.** Ověřeno na osmi
+   routách — žádná nepřesměruje, přihlášení tímtéž účtem funguje taky.
+
+Bod 3 je nález sám o sobě: buď ta věta slibuje víc, než systém vymáhá, nebo
+brána chybí. Rozhodnutí je na objednateli.
+
+Zakládání účtu je za přepínačem `CYPRESS_ALLOW_SIGNUP=1` a `retries: 0` —
+sada, která při každém běhu CI založí účet, by zaplevelila tabulku členů.
 
 | Modul | Routa | Anonymní přístup |
 |---|---|---|
@@ -79,7 +87,15 @@ U tohohle produktu to není kosmetika. `CLAUDE.md` to říká přímo: členům 
 reálná újma z odhalení. „Jméno bylo v HTML, ale CSS ho schovalo“ není obhajoba,
 kterou by kdokoli chtěl přednášet.
 
-Spec: `platform/rsc-leak.cy.ts`.
+A po přihlášení se ukázalo, že to není jen o payloadu: axe hlásí na `/wall`
+`aria-hidden-focus` na prvku `.blur-[6px]` — tedy na tom rozmazání, kterým
+hostovský pohled překrývá cizí příspěvky. Rozmazaný obsah je v DOM, je
+`aria-hidden`, a přesto obsahuje zaměřitelné prvky. Prakticky: host se do
+„skrytého“ obsahu **dostane tabulátorem**, a čtečka obrazovky ho přečte.
+Rozmazání je tedy dekorace, ne brána — což je stejný závěr jako u payloadu,
+jen viditelný pouhým Tabem.
+
+Spec: `platform/rsc-leak.cy.ts`, `platform/a11y.cy.ts`.
 
 ### 2. Žádné bezpečnostní hlavičky
 
@@ -114,8 +130,8 @@ skutečného uživatele.
 
 | Vykresleno | Má být | Kde |
 |---|---|---|
-| `Zapomenute heslo` | `Zapomenuté heslo` | patička na celém webu |
-| `Obnovit svůj učet` | `Obnovit svůj účet` | patička na celém webu |
+| `Zapomenute heslo` | `Zapomenuté heslo` | patička — potvrzeno na všech 9 modulech |
+| `Obnovit svůj učet` | `Obnovit svůj účet` | patička — potvrzeno na všech 9 modulech |
 
 Tohle jsou přesně ty překlepy, které `CLAUDE.md` jmenuje jako jednou opravené a
 nikdy se nevracející. Pozor na detail: na `/login` odkaz ve formuláři píše
@@ -130,35 +146,55 @@ vykreslují *„Lorem ipsum dolor sit amet, consectetuer adipiscing elit…“*.
 první věc, kterou návštěvník čte o tom, k čemu platforma je, na stránce, která
 má přesvědčovat.
 
-### 6. Výkon — `/wall` překračuje rozpočet C12.1
+### 6. Výkon — rozpočet C12.1 překračují VŠECHNY moduly
 
-| Routa | TTFB | Načtení |
-|---|---|---|
-| `/` | ~24 ms | 1 346 – 1 600 ms |
-| `/wall` | 20 – 45 ms | **1 774 – 2 532 ms** |
+První běh viděl jen `/wall`, protože zbytek byl za loginem. Zevnitř je obraz
+jiný: **přes rozpočet 1,5 s je každý z devíti modulů**, opakovaně.
+
+| Modul | Routa | Načtení (nejhorší / nejlepší z měření) | TTFB |
+|---|---|---|---|
+| Média | `/media` | 2 979 / 2 245 ms | 26–31 ms |
+| Kredit | `/profile/credit` | 2 592 / 1 986 ms | 19–32 ms |
+| Zeď | `/wall` | 2 540 / 1 548 ms | 22–177 ms |
+| Profily | `/people` | 2 458 / 1 599 ms | 25–47 ms |
+| Bog | `/messages` | 2 135 / 1 907 ms | 19–87 ms |
+| Chat | `/chat` | 1 854 / 1 608 ms | 30–129 ms |
+| Marketplace | `/marketplace` | 1 790 / 1 595 ms | 21–49 ms |
+| Trefa | `/trefa` | 1 771 ms | 48 ms |
 
 Číst jako měření *jednoho uživatele* z jednoho stroje bez souběhu. Nedokazuje
-to splnění smlouvy — akceptační měření pod zátěží zůstává na k6 harnessu
-(E11-T4b, blokováno D-007). Dokazuje to ale, že stránka je přes rozpočet už
-když na ní nikdo není, a `/wall` je — při každém pokusu.
+to nesplnění smlouvy formálně — akceptační měření pod zátěží zůstává na k6
+harnessu (E11-T4b, blokováno D-007). Dokazuje to ale, že žádná z těch stránek
+nemá pod špičkou z čeho ubírat: už teď je nad limitem, když je na ní jeden
+člověk.
 
-TTFB je konzistentně malinký, takže celá cena je klientský render, ne server.
-To je na tom čísle to užitečné: je to problém bundlu a hydratace, ne hostingu.
+TTFB je všude v desítkách milisekund. Celá cena je tedy klientský render —
+problém bundlu a hydratace, ne hostingu ani databáze.
 
 ### 7. Přístupnost (axe, jen serious + critical)
 
+Po přihlášení má **každý** modul aspoň jeden vážný přestupek.
+
 | Pravidlo | Závažnost | Kde |
 |---|---|---|
-| `color-contrast` | serious | 40 uzlů na `/`, 110 uzlů na `/wall` |
-| `scrollable-region-focusable` | serious | 2 horizontální karusely na `/` |
+| `button-name` | **critical** | 7 modulů — nepopsané tlačítko `.w-10` v globálním shellu |
+| `color-contrast` | serious | všech 9 modulů, 2–105 uzlů (nejhůř `/wall`) |
+| `img-alt` | — | `/media`: **65–71 obrázků bez `alt`** |
+| `aria-allowed-attr` | **critical** | `/trefa`, `a[aria-label="Rychlé nastavení"]` |
+| `aria-hidden-focus` | serious | `/wall`, `.blur-[6px]` — viz nález 1 |
+| `scrollable-region-focusable` | serious | `/`, 2 horizontální karusely |
 
-Kontrast v tomhle objemu je rozhodnutí o paletě, ne 150 jednotlivých chyb —
-většina zásahů je `text-ink-faint` na světlých plochách. Stojí za zmínku, že
-tenhle repozitář si stejný problém už jednou vyřešil: `CLAUDE.md` má zapsáno, že
-malinová na bílé musí být `#C40A3C` místo brandové `#F20B49`, aby dosáhla AA.
-Nasazený klient tuhle paletu nepoužívá.
+Dobrá zpráva v tom je poměr práce k výsledku. `button-name` je **jedno**
+tlačítko ve sdíleném shellu, které se propisuje do sedmi modulů — jedna
+oprava, sedm zelených. Kontrast je rozhodnutí o paletě, ne 400 jednotlivých
+chyb; většina zásahů je `text-ink-faint` a `.text-primary` na světlé ploše.
+Tenhle repozitář si přitom stejný problém už jednou vyřešil: `CLAUDE.md` má
+zapsáno, že malinová na bílé musí být `#C40A3C` místo brandové `#F20B49`, aby
+dosáhla AA. Nasazený klient tuhle paletu nepoužívá.
 
-Karusely nejde klávesnicí ani zaměřit, ani posunout.
+`/media` je zvláštní případ: modul, jehož celý obsah jsou obrázky, jich má
+přes šedesát bez alternativního textu. Pro čtečku obrazovky je ta stránka
+prázdná.
 
 ### 8. `/profile/<neznámé-id>` nemá stav „nenalezeno“
 
@@ -171,18 +207,24 @@ nejde odlišit skutečný profil od překlepu — a pod `/profile/` už nepůjde
 
 ## Co prošlo
 
-Stojí za zaznamenání, protože seznam jinak ovládají selhání:
+Stojí za zaznamenání, protože seznam nálezů jinak vypadá hůř, než na tom
+projekt je. Zevnitř, s přihlášeným účtem, prošlo **111 ze 155 testů**:
 
-- Všech 12 modulových rout se vyřeší a vykreslí vlastní obsah, ne jen shell.
-- Každý interní odkaz v globálním shellu někam vede — žádné mrtvé odkazy.
-- Žádné chyby v konzoli ani nezachycené výjimky na `/` a `/wall`.
-- Nenačítají se žádné trackery třetích stran (Google Analytics, Meta, Hotjar,
-  Segment, Mixpanel, Clarity — nic z toho).
+- Všech devět modulů se načte, vykreslí vlastní obsah a má vlastní `h1`.
+- **Žádné chyby v konzoli ani nezachycené výjimky — na žádném z devíti
+  modulů.** To je u rozpracované aplikace nesamozřejmé a je to ta nejlepší
+  zpráva z celého běhu.
+- Marketplace i kredit vykreslují kompletní ovládání: objednávky, „Nový
+  inzerát“, filtry, členské úrovně i s cenami.
+- Chat a bog mají všechny záložky a explicitní prázdné stavy — ne spinner,
+  který se točí donekonečna.
+- Každý interní odkaz v globálním shellu (30 odkazů po přihlášení) někam
+  vede — žádná mrtvá routa.
+- Nenačítají se žádné trackery třetích stran (Google Analytics, Meta,
+  Hotjar, Segment, Mixpanel, Clarity — nic).
 - Na platební stránce nejsou žádné řetězce tvaru čísla karty.
-- Homepage vykresluje hero, intro, sekci akcí s kartami, vstup na přihlášení
-  a jazykový přepínač podle B13 (cs i en přítomné).
-- Hostovský pohled na `/wall` říká přímo, že návštěvník je host, a vysvětluje,
-  co registrace odemkne.
+- Registrace: 6 ze 7 testů zeleně, sedmý je samotné zakládání účtu za
+  přepínačem.
 
 ## Lokální sada (`apps/web` v tomto repozitáři)
 
