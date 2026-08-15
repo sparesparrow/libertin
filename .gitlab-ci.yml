@@ -115,6 +115,10 @@ e2e:
     - apt-get update && apt-get install -y --no-install-recommends
       libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xauth xvfb libasound2 libgbm1 ca-certificates curl
     - pnpm install --frozen-lockfile --prefer-offline
+    # Not redundant with the install above: the pnpm store cache makes pnpm skip
+    # cypress's postinstall, while the binary lives in CYPRESS_CACHE_FOLDER,
+    # which that cache does not cover. `cypress install` is idempotent.
+    - pnpm --filter @libertin/e2e cy:install
     - pnpm --filter @libertin/e2e cy:verify
     - pnpm --filter @libertin/web build
     - pnpm --filter @libertin/e2e e2e:local:ci
@@ -155,6 +159,7 @@ e2e-modules:
     - apt-get update && apt-get install -y --no-install-recommends
       libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xauth xvfb libasound2 libgbm1 ca-certificates curl
     - pnpm install --frozen-lockfile --prefer-offline
+    - pnpm --filter @libertin/e2e cy:install
     - pnpm --filter @libertin/e2e e2e:modules
     - pnpm --filter @libertin/e2e e2e:platform
   cache:
