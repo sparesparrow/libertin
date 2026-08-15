@@ -149,9 +149,55 @@ Cypress.Commands.add('login', (): void => {
       cy.get('input[aria-label="Heslo"]').type(password, { log: false });
       cy.get('button[type="submit"]').click();
 
-      // The sign-in either leaves /login or reports a reason. Anything else is
-      // a hang, and failing here beats every module spec failing downstream.
-      cy.location('pathname', { timeout: 20_000 }).should('not.equal', '/login');
+      // Three outcomes have to stay distinguishable, because each needs a
+      // different person to act:
+      //
+      //   no credentials      -> specs skip (handled in openModule)
+      //   credentials refused -> whoever owns the account fixes it
+      //   login hangs         -> whoever owns the client fixes it
+      //
+      // This polls rather than looking once. A single check straight after the
+      // click always reads "not refused", because the error message has not
+      // rendered yet — so a refusal fell through to the same opaque
+      // "expected /login to not equal /login" timeout as a hang, and the run
+      // said nothing about which had happened. Polling waits for whichever
+      // outcome actually arrives.
+      const deadline = Date.now() + 25_000;
+
+      const settle = (): void => {
+        cy.location('pathname', { log: false }).then((pathname) => {
+          if (pathname !== '/login') return;
+
+          cy.get('body', { log: false }).then(($body) => {
+            const clone = $body.clone();
+            clone.find('script, style').remove();
+            const text = clone.text();
+
+            const refusal = /(Nesprávn[^.]*\.|Neplatn[^.]*\.|Chybn[^.]*\.)/i.exec(text)?.[1];
+            if (refusal !== undefined) {
+              throw new Error(
+                `Přihlášení účtem "${username}" odmítnuto: ${refusal.trim()} ` +
+                  '— ověř CYPRESS_TEST_USERNAME / CYPRESS_TEST_PASSWORD, a hlavně to, ' +
+                  'jestli účet existuje na CYPRESS_BASE_URL: preview nasazení má ' +
+                  'vlastní databázi a účet z jiného prostředí v ní není.',
+              );
+            }
+
+            if (Date.now() > deadline) {
+              throw new Error(
+                `Přihlášení účtem "${username}" nedoběhlo do 25 s a stránka ` +
+                  'zůstala na /login bez chybové hlášky — to není odmítnutý účet, ' +
+                  'ale zaseknutý přihlašovací tok na straně klienta.',
+              );
+            }
+
+            cy.wait(500, { log: false });
+            settle();
+          });
+        });
+      };
+
+      settle();
     },
     {
       cacheAcrossSpecs: true,
