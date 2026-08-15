@@ -1,0 +1,20 @@
+---
+- name: Restart sshd
+  # `reloaded` rather than `restarted`: it applies the new config without
+  # dropping the connection this play is running over.
+  ansible.builtin.service:
+    name: ssh
+    state: reloaded
+  become: true
+
+- name: Reload nftables
+  ansible.builtin.service:
+    name: nftables
+    state: reloaded
+  become: true
+
+- name: Restart fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    state: restarted
+  become: true

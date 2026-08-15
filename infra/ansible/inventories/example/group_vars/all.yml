@@ -1,0 +1,34 @@
+# Variables shared by every host. Overridable per group or per host.
+#
+# NOTHING SECRET BELONGS HERE. This file is committed. Secrets come from
+# Ansible Vault or an external secret store — see docs/ansible.md.
+---
+# --- locale / time -----------------------------------------------------------
+libertin_timezone: Europe/Prague
+
+# --- SSH hardening -----------------------------------------------------------
+# Change this if the host listens elsewhere; the firewall rule follows it.
+libertin_ssh_port: 22
+# Networks allowed to reach SSH at all. Default is "anywhere", which is the
+# permissive choice — narrow it to the operator's VPN before production.
+libertin_ssh_allowed_cidrs:
+  - 0.0.0.0/0
+
+# --- web tier ----------------------------------------------------------------
+libertin_web_image: libertin/web
+libertin_web_tag: local
+# Port the container publishes on the host. Bound to loopback by the compose
+# file until the TLS-terminating proxy exists (E10-T4) — without it, member
+# traffic would cross the public interface as plaintext HTTP.
+libertin_web_port: 3000
+libertin_web_site_url: https://libertin.cz
+
+# Where the deployment lives on the target host.
+libertin_deploy_dir: /opt/libertin
+libertin_deploy_user: libertin
+
+# --- container runtime -------------------------------------------------------
+# Request logs identify members. Keep them local, rotated and small; never
+# forward them to a third-party log service (C2).
+libertin_docker_log_max_size: 10m
+libertin_docker_log_max_file: 5

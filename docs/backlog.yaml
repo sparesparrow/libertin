@@ -485,8 +485,36 @@ epics:
         title: Ansible IaC — nasazení celého systému ze zdrojového textu
         scope: infra
         role: devops
-        status: todo
-        blocked_by: [E10-T2, D-004]
+        status: review
+        note: >
+          Kostra v infra/ansible/ a role pro to, co dnes reálně existuje:
+          common (čas, časová zóna, bezpečnostní aktualizace), hardening (SSH,
+          nftables, fail2ban, sysctl), docker (Engine + Compose plugin,
+          daemon.json) a libertin_web (Compose stack webu). Dokumentace
+          docs/ansible.md.
+          Ověřeno reálným během nástrojů: --syntax-check prošel, ansible-lint
+          v profilu production hlásí 0 chyb a 0 varování na 23 souborech,
+          šablony se renderují se StrictUndefined bez nedefinované proměnné.
+          NEOVĚŘENO a schválně to říkáme rovnou: playbook neběžel proti
+          skutečnému hostu — v prostředí není cílový stroj ani běžící Docker
+          daemon. Chybí tedy důkaz idempotence (druhý běh changed=0) i toho, že
+          služby nastartují. Stejný status jako .gitlab-ci.yml: zkontrolováno,
+          neodzkoušeno. Proto review, ne done.
+          Prefix proměnných se vědomě odchyluje od var-naming[no-role-prefix];
+          zdůvodnění v .ansible-lint i v docs/ansible.md.
+          Zbytek služeb je E10-T3b.
+      - id: E10-T3b
+        title: Ansible role pro zbývající služby + ostrý běh proti hostu
+        scope: infra
+        role: devops
+        status: blocked
+        blocked_by: [D-003, D-004, E10-T2]
+        note: >
+          Skupiny api, database, cache, storage, mail, proxy a backup jsou
+          v inventáři i v site.yml deklarované, ale nenasazované — tvar je vidět,
+          nic se nehádá. Backend a databáze čekají na D-003, provisioning
+          samotných strojů na D-004. Součástí je i první ostrý běh na testovacím
+          stroji a doplnění jeho výstupu do docs/ansible.md.
       - id: E10-T4
         title: HA a škálování — load balancer, multi-node DB, rolling restarty
         scope: infra

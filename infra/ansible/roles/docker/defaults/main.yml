@@ -1,0 +1,18 @@
+---
+libertin_docker_log_max_size: 10m
+libertin_docker_log_max_file: 5
+
+# Daemon-wide defaults. Per-container settings in docker-compose.yml still win;
+# this is the floor for anything started outside Compose.
+libertin_docker_daemon_config:
+  # Request logs identify members (discretion is a feature). Cap and rotate them
+  # locally; never forward to a third-party log service (C2).
+  log-driver: json-file
+  log-opts:
+    max-size: "{{ libertin_docker_log_max_size }}"
+    max-file: "{{ libertin_docker_log_max_file | string }}"
+  # Containers must not silently gain privileges.
+  no-new-privileges: true
+  # Live-restore keeps containers running across a daemon restart, which is what
+  # makes an engine upgrade something other than an outage (C9).
+  live-restore: true

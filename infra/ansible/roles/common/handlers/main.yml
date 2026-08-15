@@ -1,0 +1,9 @@
+---
+- name: Restart cron
+  # A timezone change leaves cron computing schedules against the old offset
+  # until it is restarted — backups and retention jobs would silently run an
+  # hour off (E10-T5).
+  ansible.builtin.service:
+    name: cron
+    state: restarted
+  become: true

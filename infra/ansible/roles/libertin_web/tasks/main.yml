@@ -1,0 +1,81 @@
+# Deploy the web tier as a Compose stack.
+#
+# Ships the repository's own docker-compose.yml rather than a second, drifting
+# copy: the topology, hardening and network layout are decided in that file and
+# this role's job is to place it, give it an environment and bring it up.
+---
+- name: Create the deploy group
+  ansible.builtin.group:
+    name: "{{ libertin_deploy_user }}"
+    system: true
+    state: present
+  become: true
+
+- name: Create the deploy user
+  ansible.builtin.user:
+    name: "{{ libertin_deploy_user }}"
+    group: "{{ libertin_deploy_user }}"
+    # In the `docker` group by necessity: that is equivalent to root on this
+    # host, so this account exists only to run the stack and carries no
+    # interactive shell.
+    groups: docker
+    append: true
+    system: true
+    shell: /usr/sbin/nologin
+    home: "{{ libertin_deploy_dir }}"
+    create_home: false
+    state: present
+  become: true
+
+- name: Create the deploy directory
+  ansible.builtin.file:
+    path: "{{ libertin_deploy_dir }}"
+    state: directory
+    owner: "{{ libertin_deploy_user }}"
+    group: "{{ libertin_deploy_user }}"
+    mode: "0750"
+  become: true
+
+- name: Install the Compose file
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../../docker-compose.yml"
+    dest: "{{ libertin_deploy_dir }}/docker-compose.yml"
+    owner: "{{ libertin_deploy_user }}"
+    group: "{{ libertin_deploy_user }}"
+    mode: "0640"
+  become: true
+  notify: Restart the libertin stack
+
+- name: Render the environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ libertin_deploy_dir }}/.env"
+    owner: "{{ libertin_deploy_user }}"
+    group: "{{ libertin_deploy_user }}"
+    # 0640, not 0644: this file holds deployment configuration and will hold
+    # credentials once the backend exists (D-003).
+    mode: "0640"
+  become: true
+  notify: Restart the libertin stack
+
+- name: Start the stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ libertin_deploy_dir }}"
+    state: present
+    # start-first, so a deploy replaces the container without a gap in service
+    # once there is more than one replica behind the proxy (C9, E10-T4).
+    pull: missing
+  become: true
+  register: libertin_web_compose
+
+- name: Wait for the web container to answer
+  ansible.builtin.uri:
+    # robots.txt is static, ungated and cheap — it proves the server is serving
+    # without depending on the age gate or on any backend.
+    url: "http://127.0.0.1:{{ libertin_web_port }}/robots.txt"
+    status_code: 200
+  register: libertin_web_health
+  until: libertin_web_health.status == 200
+  retries: 30
+  delay: 2
+  changed_when: false

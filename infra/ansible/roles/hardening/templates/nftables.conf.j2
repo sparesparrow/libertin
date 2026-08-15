@@ -1,0 +1,45 @@
+#!/usr/sbin/nft -f
+# Managed by Ansible (infra/ansible/roles/hardening). Edits are overwritten.
+#
+# Default-deny inbound. Everything the platform serves to the public arrives
+# through the reverse proxy (E10-T4); until that exists the web container binds
+# to loopback only, so nothing here needs to open 80/443 yet.
+
+flush ruleset
+
+table inet filter {
+  chain input {
+    type filter hook input priority filter; policy drop;
+
+    # Established flows and loopback first — cheapest match, and dropping
+    # loopback breaks the container healthchecks.
+    ct state established,related accept
+    ct state invalid drop
+    iif lo accept
+
+    # ICMP: needed for path-MTU discovery. Rate-limited so it cannot be used
+    # to flood the host.
+    ip protocol icmp icmp type { echo-request, destination-unreachable, time-exceeded } limit rate 10/second accept
+    ip6 nexthdr icmpv6 icmpv6 type { echo-request, destination-unreachable, time-exceeded, packet-too-big, nd-neighbor-solicit, nd-neighbor-advert, nd-router-advert } limit rate 10/second accept
+
+    # SSH, restricted to the operator networks from group_vars.
+{% for cidr in libertin_ssh_allowed_cidrs %}
+    ip saddr {{ cidr }} tcp dport {{ libertin_ssh_port }} ct state new limit rate 10/minute accept
+{% endfor %}
+
+    # Public HTTP/HTTPS is deliberately NOT opened here. It belongs with the
+    # reverse proxy (E10-T4), which terminates TLS; opening it now would expose
+    # the app over plaintext HTTP, and browsers ignore HSTS sent over http://.
+  }
+
+  chain forward {
+    # Docker manages its own forwarding rules in the ip filter table; this
+    # inet-family chain must not shadow them, so it accepts and leaves
+    # container isolation to the bridge networks declared in docker-compose.yml.
+    type filter hook forward priority filter; policy accept;
+  }
+
+  chain output {
+    type filter hook output priority filter; policy accept;
+  }
+}
