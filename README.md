@@ -41,6 +41,20 @@ backend credentials needed. Never call `fetch` directly; always go through
 | `packages/api` | Typed client + MSW mocks, locked to the OpenAPI snapshot |
 | `contracts/` | Frozen API contract — run `/contract-check` to detect drift |
 
+## Releases
+
+A `vX.Y.Z` tag packs the four shared packages, attaches the tarballs to a
+GitHub Release, and pushes the web container image to GHCR. Pushing to an npm
+registry is opt-in and still waiting on an owner decision (D-008).
+
+```bash
+pnpm -r --filter './packages/*' exec npm version 0.1.0 --no-git-tag-version
+git commit -am "chore: release 0.1.0" && git tag v0.1.0
+git push origin main --tags
+```
+
+Full process, tag scheme and caveats: [docs/publishing.md](docs/publishing.md).
+
 ## Conventions (enforced)
 
 - All user-facing strings via i18n keys — no hardcoded copy, no PII.

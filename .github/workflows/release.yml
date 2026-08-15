@@ -1,0 +1,313 @@
+# Libertin release — turns a version tag into publishable artifacts for the
+# four shared packages (@libertin/api, @libertin/i18n, @libertin/theme,
+# @libertin/ui).
+#
+# What this does on `git push origin vX.Y.Z`:
+#   1. verify  — the tag and every publishable manifest agree on the version,
+#                and the workspace still type-checks, tests and builds
+#   2. pack    — one .tgz per package, with the tarball contents asserted
+#   3. npm     — push to the registry, but only when NPM_TOKEN is configured
+#   4. release — attach the tarballs to the GitHub Release
+#
+# Steps 1, 2 and 4 need no secrets and work today. Step 3 is deliberately
+# optional: which registry these packages belong in is an open owner decision
+# (docs/backlog.yaml, D-008), so a tag without NPM_TOKEN still produces a
+# complete, downloadable release instead of failing.
+#
+# Full process, including how to cut a release: docs/publishing.md
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      publish_npm:
+        description: 'Push to the npm registry (requires the NPM_TOKEN secret). Off = rehearsal, packs only.'
+        type: boolean
+        default: false
+
+# Never cancel a release mid-flight: a cancelled run can leave some packages
+# published and others not. This is the one pipeline where a queued second run
+# is better than a half-applied first one.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  CI: 'true'
+  NEXT_TELEMETRY_DISABLED: '1'
+  TURBO_TELEMETRY_DISABLED: '1'
+  DO_NOT_TRACK: '1'
+  # The packages a release may publish. Everything else in the workspace must
+  # be private — the verify job enforces exactly this set.
+  PUBLISHABLE: '@libertin/api @libertin/i18n @libertin/theme @libertin/ui'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Stage 1 — verify.
+  #
+  # This job re-runs the CI gate on purpose. ci.yml triggers on `push:
+  # branches:`, and a tag push matches no branch, so tagging a commit does NOT
+  # run CI. Without this, a release could ship code that never passed a build.
+  # ---------------------------------------------------------------------------
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # A tag is the source of truth for the version; a manual run is a
+      # rehearsal and takes whatever the manifests currently say.
+      - name: resolve the version under release
+        id: version
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = 'push' ]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="$(node -p "require('./packages/theme/package.json').version")"
+            echo "::notice::Rehearsal run — no tag, using the manifest version $version."
+          fi
+          # Reject a tag that is not a plain semver, e.g. `v1.2` or `vlatest`:
+          # npm would take it, and the release would carry a version nobody can
+          # depend on with a range.
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::'$version' is not a semver version (expected tag vX.Y.Z or vX.Y.Z-rc.N)."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # 1.2.3-rc.1 marks the GitHub Release as a pre-release.
+          case "$version" in
+            *-*) echo "prerelease=true"  >> "$GITHUB_OUTPUT" ;;
+            *)   echo "prerelease=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      # Guards the release against the two mistakes that are invisible until
+      # something is already on a registry: a manifest left at the old version,
+      # and a workspace package that became publishable by accident.
+      - name: manifests must agree with the tag
+        run: |
+          set -euo pipefail
+          want='${{ steps.version.outputs.version }}'
+          status=0
+          for name in $PUBLISHABLE; do
+            dir="packages/${name#@libertin/}"
+            have="$(node -p "require('./$dir/package.json').version")"
+            if [ "$have" != "$want" ]; then
+              echo "::error file=$dir/package.json::$name is $have but the release is $want."
+              status=1
+            fi
+          done
+          if [ "$status" -ne 0 ]; then
+            echo "::notice::Bump every package first: pnpm -r --filter './packages/*' exec npm version $want --no-git-tag-version"
+          fi
+          exit "$status"
+
+      - name: only the four shared packages may be published
+        run: |
+          set -euo pipefail
+          # `pnpm publish -r` publishes every workspace package that is not
+          # private. apps/web and apps/mobile carry "private": true so they can
+          # never reach a registry; this asserts that is still true, and that a
+          # newly added package has made a deliberate choice.
+          actual="$(pnpm -r list --depth -1 --json \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+                console.log(JSON.parse(s).filter(p=>p.private!==true&&p.name).map(p=>p.name).sort().join(" "));
+              })')"
+          expected="$(printf '%s' "$PUBLISHABLE" | tr " " "\n" | sort | tr "\n" " " | sed "s/ $//")"
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::Publishable set changed."
+            echo "  expected: $expected"
+            echo "  actual:   $actual"
+            echo "Add \"private\": true to anything that must not be published, or update PUBLISHABLE in this workflow."
+            exit 1
+          fi
+          echo "Publishable set is unchanged: $actual"
+
+      - run: pnpm type-check
+      - run: pnpm test:all
+      - run: pnpm build
+
+  # ---------------------------------------------------------------------------
+  # Stage 2 — pack. Produces the exact tarballs a registry would receive, so
+  # what gets attached to the release is what would get published.
+  # ---------------------------------------------------------------------------
+  pack:
+    name: pack
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: pnpm pack
+        run: |
+          set -euo pipefail
+          mkdir -p .pack
+          for name in $PUBLISHABLE; do
+            ( cd "packages/${name#@libertin/}" && pnpm pack --pack-destination ../../.pack )
+          done
+          ls -l .pack
+
+      # The packages ship TypeScript source (see docs/publishing.md), so the
+      # `files` field is the only thing standing between a release and shipping
+      # test files, stories or the Vitest type shim — none of which resolve for
+      # a consumer, because their dependencies are devDependencies here.
+      - name: no test or story files may ship
+        run: |
+          set -euo pipefail
+          status=0
+          for tgz in .pack/*.tgz; do
+            leaked="$(tar tzf "$tgz" | grep -E '\.(test|stories)\.[jt]sx?$|vitest' || true)"
+            if [ -n "$leaked" ]; then
+              echo "::error::$tgz ships files that must not be published:"
+              printf '%s\n' "$leaked"
+              status=1
+            fi
+          done
+          exit "$status"
+
+      # pnpm rewrites "workspace:*" to the real version when it packs. If that
+      # ever stopped working, the published packages would depend on a
+      # specifier no registry can resolve — worth asserting rather than assuming.
+      - name: 'no workspace: specifier may survive packing'
+        run: |
+          set -euo pipefail
+          status=0
+          for tgz in .pack/*.tgz; do
+            manifest="$(tar xzf "$tgz" package/package.json -O)"
+            if printf '%s' "$manifest" | grep -q '"workspace:'; then
+              echo "::error::$tgz still contains a workspace: dependency specifier."
+              status=1
+            fi
+          done
+          exit "$status"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-tarballs
+          path: .pack/*.tgz
+          if-no-files-found: error
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Stage 3 — npm registry. Optional by design; see the header and D-008.
+  # ---------------------------------------------------------------------------
+  publish-npm:
+    name: publish to npm
+    needs: [verify, pack]
+    if: github.event_name == 'push' || inputs.publish_npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: is a registry token configured?
+        id: token
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "${NPM_TOKEN:-}" ]; then
+            echo 'present=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'present=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      # A manual run that explicitly asked to publish must fail loudly. A tag
+      # push must not: the release itself is still valid, the tarballs are
+      # attached, and nobody has yet decided which registry these belong in.
+      - name: no token
+        if: steps.token.outputs.present == 'false'
+        run: |
+          if [ '${{ github.event_name }}' = 'workflow_dispatch' ]; then
+            echo '::error::publish_npm was requested but the NPM_TOKEN secret is not configured.'
+            exit 1
+          fi
+          echo '::notice::NPM_TOKEN is not configured — skipping the registry publish. The tarballs are attached to the GitHub Release.'
+
+      # Written to the runner's home, never to the repository's .npmrc, so the
+      # token cannot end up in a diff. The registry itself comes from each
+      # package's publishConfig, so pointing the packages at a different
+      # registry is a manifest change and needs no edit here.
+      - name: authenticate
+        if: steps.token.outputs.present == 'true'
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
+
+      # Recursive publish resolves the dependency order itself (theme and i18n
+      # before ui) and skips any version already on the registry, so a re-run
+      # after a partial failure finishes the job instead of erroring on the
+      # packages that made it. --no-git-checks: the runner is on a detached tag.
+      - name: pnpm publish
+        if: steps.token.outputs.present == 'true'
+        run: pnpm publish -r --filter './packages/*' --no-git-checks
+
+  # ---------------------------------------------------------------------------
+  # Stage 4 — GitHub Release. The artifact of record for handover (C8): a
+  # tagged, downloadable set of tarballs that does not depend on a registry
+  # account existing.
+  # ---------------------------------------------------------------------------
+  github-release:
+    name: github release
+    needs: [verify, pack]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm-tarballs
+          path: .pack
+
+      - name: create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          PRERELEASE: ${{ needs.verify.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          flags=()
+          [ "$PRERELEASE" = 'true' ] && flags+=(--prerelease)
+          # Re-running a release must not fail on "already exists".
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" .pack/*.tgz --clobber
+          else
+            gh release create "$TAG" .pack/*.tgz \
+              --title "$TAG" \
+              --generate-notes \
+              --verify-tag \
+              "${flags[@]}"
+          fi
