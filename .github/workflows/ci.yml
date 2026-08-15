@@ -160,6 +160,15 @@ jobs:
           path: ~/.cache/Cypress
           key: cypress-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: cypress-${{ runner.os }}-
+      - name: install the Cypress binary
+        # `pnpm install` cannot be relied on for this. The pnpm store cache
+        # restored by setup-node makes pnpm treat cypress as already built, so
+        # it skips the postinstall that downloads the binary — but the binary
+        # lives in ~/.cache/Cypress, which that cache does not cover. On a cold
+        # Cypress cache the result is a store that says "installed" and a disk
+        # with no browser, which is what failed the first run of this job.
+        # `cypress install` is idempotent: a no-op when the binary is present.
+        run: pnpm --filter @libertin/e2e cy:install
       - name: cypress verify
         run: pnpm --filter @libertin/e2e cy:verify
       - name: build the app under test
@@ -202,6 +211,15 @@ jobs:
           path: ~/.cache/Cypress
           key: cypress-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: cypress-${{ runner.os }}-
+      - name: install the Cypress binary
+        # `pnpm install` cannot be relied on for this. The pnpm store cache
+        # restored by setup-node makes pnpm treat cypress as already built, so
+        # it skips the postinstall that downloads the binary — but the binary
+        # lives in ~/.cache/Cypress, which that cache does not cover. On a cold
+        # Cypress cache the result is a store that says "installed" and a disk
+        # with no browser, which is what failed the first run of this job.
+        # `cypress install` is idempotent: a no-op when the binary is present.
+        run: pnpm --filter @libertin/e2e cy:install
       - name: run the module + platform suites
         env:
           CYPRESS_BASE_URL: ${{ vars.E2E_BASE_URL }}

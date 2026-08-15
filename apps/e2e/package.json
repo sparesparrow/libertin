@@ -5,6 +5,7 @@
   "description": "Cypress end-to-end suite for the Libertin web client (E11-T5).",
   "scripts": {
     "cy:open": "cypress open --e2e",
+    "cy:install": "cypress install",
     "cy:verify": "cypress verify",
     "cy:info": "cypress info",
     "e2e": "cypress run",
