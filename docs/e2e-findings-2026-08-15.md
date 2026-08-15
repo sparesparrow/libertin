@@ -290,3 +290,56 @@ Remove-Item Env:\CYPRESS_BASE_URL
 
 Reporty přistanou v `apps/e2e/reports/findings.{txt,json}`, screenshoty
 v `apps/e2e/screenshots/`. CI obojí archivuje jako artefakty.
+
+
+---
+
+
+Devět modulů, o které jde, žije v Next.js aplikaci, která **není v
+`sparesparrow/libertin`** — na žádné větvi. `apps/web` v tomto repozitáři dnes
+obsluhuje `/`, `/gate` a `/login`; nasazení obsluhuje `/wall`, `/messages`,
+`/trefa`, `/chat`, `/marketplace`, `/media`, `/people`, `/profile/*`. Jiná
+kódová základna, jiný název značky („Libertine“ vs „Libertin“), jiné konvence
+komponent (Tailwind utility třídy vs design tokens tohoto repozitáře).
+
+Sada je proto psaná proti *libovolnému* nasazení: jediný přepínač je
+`CYPRESS_BASE_URL` a žádný spec nemá zadrátovaný host. Běží proti klientovi
+z tohoto repozitáře už dnes a beze změny poběží proti modulům, až sem přistanou.
+
+**Otevřená otázka na objednatele:** které nasazení má e2e hlídat a kde ten kód
+žije? Vedeno jako **D-009**.
+
+## Těch 92 pending testů
+
+Není to flake ani chyba harnessu. Sedm z devíti modulů přesměruje anonymního
+návštěvníka na `/login` **až po hydrataci** — což je neviditelné pro cokoli, co
+čte jen serverovou odpověď. Proto se to neukázalo dřív, než sada řídila
+skutečný prohlížeč. Bez seedovaného členského účtu nemohou ty testy o modulu
+tvrdit vůbec nic, takže se přeskakují, ne „propouštějí“.
+
+Zelený běh, který devětkrát otestoval přihlašovací stránku, by hlásil pokrytí,
+které neexistuje. Počet pending je to poctivé číslo.
+
+Odblokování vyžaduje jednorázový testovací účet (**D-009**). Sami jsme si ho
+nezaložili: zakládat účty na nasazení, které nevlastníme, je rozhodnutí
+objednatele.
+
+| Modul | Routa | Anonymní přístup |
+|---|---|---|
+| Homepage | `/` | veřejné |
+| Zeď | `/wall` | veřejné — hostovský pohled |
+| Bog | `/messages` | přesměruje na `/login` |
+| Profily | `/people`, `/profile`, `/profile/[id]` | přesměruje na `/login` |
+| Trefa | `/trefa` | přesměruje na `/login` |
+| Chat | `/chat`, `/chat/[id]` | přesměruje na `/login` |
+| Marketplace | `/marketplace`, `/marketplace/[id]` | přesměruje na `/login` |
+| Média | `/media` | přesměruje na `/login` |
+| Kredit | `/profile/credit` | přesměruje na `/login` |
+
+Routy, které **neexistují**, přestože jsou to ty nejpřirozenější odhady:
+`/zed`, `/bog`, `/profily`, `/kredit`, `/credit`, `/feed`, `/dashboard`,
+`/events`, `/about`. Ověřeno navigací, ne stavovým kódem — viz poznámka
+o 404 níže.
+
+---
+
