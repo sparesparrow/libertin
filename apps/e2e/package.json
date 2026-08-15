@@ -1,0 +1,25 @@
+{
+  "name": "@libertin/e2e",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Cypress end-to-end suite for the Libertin web client (E11-T5).",
+  "scripts": {
+    "cy:open": "cypress open --e2e",
+    "cy:verify": "cypress verify",
+    "cy:info": "cypress info",
+    "e2e": "cypress run",
+    "e2e:modules": "cypress run --spec \"cypress/e2e/modules/**/*.cy.ts\"",
+    "e2e:platform": "cypress run --spec \"cypress/e2e/platform/**/*.cy.ts\"",
+    "e2e:local": "cypress run --spec \"cypress/e2e/local/**/*.cy.ts\"",
+    "e2e:local:ci": "start-server-and-test \"pnpm --filter @libertin/web start\" http://localhost:3000/gate \"pnpm e2e:local\"",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "axe-core": "^4.10.2",
+    "cypress": "^15.20.1",
+    "cypress-axe": "^1.6.0",
+    "start-server-and-test": "^2.0.9",
+    "typescript": "*"
+  }
+}

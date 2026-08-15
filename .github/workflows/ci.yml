@@ -133,7 +133,94 @@ jobs:
         # Contacts no registry and needs no token; it packs and reports.
         run: pnpm publish -r --filter './packages/*' --dry-run --no-git-checks
 
-  # Stage 6 — performance (C12.1). Manual only, on purpose.
+  # Stage 6 — end-to-end against this repo's own client (backlog E11-T5).
+  #
+  # Gates merges, because it is deterministic: it builds apps/web, serves the
+  # production build and drives it with stubbed network calls. No deployment,
+  # no credentials, no third party. The module suite is the opposite and lives
+  # in its own manual job below.
+  e2e:
+    name: e2e (apps/web)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The Cypress binary is ~250 MB and lives outside node_modules, so the
+      # pnpm cache does not cover it.
+      - name: cache the Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: cypress-${{ runner.os }}-
+      - name: cypress verify
+        run: pnpm --filter @libertin/e2e cy:verify
+      - name: build the app under test
+        run: pnpm --filter @libertin/web build
+      - name: run the local suite
+        run: pnpm --filter @libertin/e2e e2e:local:ci
+      - name: archive failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-local-artifacts
+          path: |
+            apps/e2e/screenshots/
+            apps/e2e/reports/
+          if-no-files-found: ignore
+
+  # Stage 7 — end-to-end against a deployed client. Manual, on purpose.
+  #
+  # Two reasons it cannot gate merges. It targets a deployment this pipeline
+  # does not produce, so a red run may be reporting on someone else's push; and
+  # seven of the nine modules sit behind a login, so it needs a test account
+  # that only exists as a secret. Without that account those specs skip rather
+  # than pass — see apps/e2e/README.md.
+  e2e-modules:
+    name: e2e (modules, deployed)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: cache the Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: cypress-${{ runner.os }}-
+      - name: run the module + platform suites
+        env:
+          CYPRESS_BASE_URL: ${{ vars.E2E_BASE_URL }}
+          CYPRESS_TEST_USERNAME: ${{ secrets.E2E_TEST_USERNAME }}
+          CYPRESS_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        run: |
+          pnpm --filter @libertin/e2e e2e:modules
+          pnpm --filter @libertin/e2e e2e:platform
+      - name: archive findings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-module-findings
+          path: |
+            apps/e2e/reports/
+            apps/e2e/screenshots/
+          if-no-files-found: warn
+
+  # Stage 8 — performance (C12.1). Manual only, on purpose.
   #
   # Shared runners are noisy neighbours: the same commit can swing by hundreds
   # of milliseconds between runs. Gating merges on that yields flaky red builds

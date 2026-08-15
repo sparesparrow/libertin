@@ -153,7 +153,7 @@ pokrytí, které neexistuje.
 
 | Chybí | Proč / kde to je |
 |---|---|
-| **E2E testy hlavních toků** (Playwright) | **E11-T5**, `blocked_by: E11-T2`. Až budou, přidají se jako pátý stupeň za `build`. |
+| ~~**E2E testy hlavních toků**~~ | **E11-T5 hotovo** — Cypress harness v `apps/e2e`. V pipeline jsou dva joby: `e2e` (lokální sada proti `apps/web`, deterministická, **gatuje merge**) a **manuální** `e2e-modules` proti nasazenému klientovi. Modulový job je manuální ze dvou důvodů: míří na nasazení, které tahle pipeline nevyrábí (červený běh může reportovat cizí push), a sedm z devíti modulů je za loginem, takže potřebuje testovací účet z maskovaných proměnných (**D-009**). Bez účtu se ty testy přeskočí, ne "propustí". Viz [apps/e2e/README.md](../apps/e2e/README.md) a [e2e-findings-2026-08-15.md](e2e-findings-2026-08-15.md). |
 | **Výkonnostní brána ≤ 1,5 s** (k6, C12.1) | **E11-T4 hotovo** — harness v `perf/k6/`, budget je zapsaný jako k6 threshold (k6 končí kódem 99 při překročení). V obou pipeline je jako **manuální** job: časy sdíleného runneru kolísají o stovky ms, a flaky výkonnostní brána naučí tým jen mačkat re-run. Vlastní akceptační měření proti backendu je E11-T4b, čeká na D-007. Viz [perf/k6/README.md](../perf/k6/README.md). |
 | **Contract drift proti živému API** | **E11-T3**. `packages/api` je ručně psaný proti `contracts/openapi.snapshot.yaml`, žádný codegen. Shodu dnes drží jen disciplína — CI ji nekontroluje. |
 | **Lint jako samostatná brána** | `pnpm lint` má dnes obsah jen pro `apps/web` (`next lint`) a ten se stejně pouští uvnitř `next build`. Samostatný stupeň se přidá, až bude lint nakonfigurovaný napříč balíčky. |

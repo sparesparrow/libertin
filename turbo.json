@@ -19,6 +19,11 @@
     "storybook": {
       "persistent": true,
       "cache": false
+    },
+    "e2e": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputs": []
     }
   }
 }
