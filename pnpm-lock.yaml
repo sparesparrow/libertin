@@ -109,6 +109,9 @@ importers:
       typescript:
         specifier: '*'
         version: 5.9.3
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/node@22.20.1)(jsdom@25.0.1)(lightningcss@1.27.0)(msw@2.15.0(@types/node@22.20.1)(typescript@5.9.3))(terser@5.48.0)
 
   packages/api:
     dependencies:

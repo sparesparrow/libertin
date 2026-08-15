@@ -8,6 +8,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:all": "vitest run",
+    "perf": "k6 run perf/k6/web-browse.js",
     "storybook": "pnpm --filter=@libertin/ui storybook",
     "type-check": "turbo run type-check"
   },

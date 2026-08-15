@@ -95,3 +95,51 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: pnpm build
         run: pnpm build
+
+  # Stage 5 — performance (C12.1). Manual only, on purpose.
+  #
+  # Shared runners are noisy neighbours: the same commit can swing by hundreds
+  # of milliseconds between runs. Gating merges on that yields flaky red builds
+  # and trains everyone to re-run until green, which is worse than no gate. Run
+  # this against a representative host instead. Rationale: perf/k6/README.md.
+  perf:
+    name: perf (C12.1)
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: build the app under test
+        run: pnpm --filter @libertin/web build
+      - name: install k6
+        run: |
+          curl -sSL https://github.com/grafana/k6/releases/download/v0.54.0/k6-v0.54.0-linux-amd64.tar.gz \
+            | tar xz --strip-components=1 -C /usr/local/bin k6-v0.54.0-linux-amd64/k6
+          k6 version
+      - name: start the app
+        run: |
+          pnpm --filter @libertin/web start &
+          # Production build, not `next dev` — dev-mode numbers are meaningless.
+          for _ in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:3000/ && exit 0
+            sleep 1
+          done
+          echo "app did not come up" >&2
+          exit 1
+      - name: k6 run
+        # Exits 99 when a threshold is crossed, which fails this step.
+        run: k6 run perf/k6/web-browse.js
+      - name: archive results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-results
+          path: perf/k6/.results/
+          if-no-files-found: warn

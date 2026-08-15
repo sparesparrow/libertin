@@ -30,9 +30,28 @@ decisions:
       Účet má na souboru pouze seat "View" (starter tier); Figma MCP vyžaduje
       editor access. Bez něj nelze provést design-parity, extrahovat design
       tokens ani zjistit skutečný počet obrazovek = neznámý rozsah díla.
+    verified: >
+      2026-08-15, znovu ověřeno na odkazu s node-id 3786-159470. Všechny tři
+      čtecí nástroje Figma MCP vrací tutéž chybu "Looks like you don't have edit
+      access to this file": get_metadata, get_screenshot i get_variable_defs.
+      whoami potvrzuje handle "spare", e-mail dallheimal@gmail.com, jediný plán
+      "Vojtěch Špaček's team", seat View, tier starter. Veřejné načtení URL bez
+      přihlášení vrací jen SPA shell, žádný náhled ani og:image.
+      Podstatné a snadno zaměnitelné: Figma hlídá edit oprávnění i u ČTENÍ přes
+      MCP. Nejde tedy o to, že bychom chtěli zdrojový soubor měnit — needitujeme
+      ho — ale o to, že bez edit seatu API odmítne soubor i jen přečíst.
+      Sdílení "kdokoli s odkazem může zobrazit" tuhle bránu neotevře.
     unblock_options:
-      - Editor invite pro dallheimal@gmail.com na soubor BF3X0FKBKEbt5uTcrO4jkk
-      - Export všech mockupů (PNG/PDF) do repa
+      - >
+        Pozvat dallheimal@gmail.com na soubor BF3X0FKBKEbt5uTcrO4jkk s právem
+        "can edit" (u Organization/Enterprise plánu stačí Dev seat). Zdroj
+        needitujeme; právo je potřeba jen proto, aby API dovolilo čtení.
+      - >
+        Bez jakékoli změny oprávnění: export všech obrazovek z Figmy do PNG/PDF
+        a commit do repa (např. docs/design/). Odpovídá to i přání objednatele,
+        že podklady dodává on — a odblokuje to inventuru obrazovek (E1-T1)
+        i design-parity (E1-T3). Extrakce Figma variables (E1-T2) tím ale
+        odblokovaná není: z obrázků se nedají vyčíst hodnoty tokenů.
   - id: D-002
     title: GitLab vs GitHub pro hosting a CI/CD
     req: [C10, C11]
@@ -66,6 +85,22 @@ decisions:
       security doporučuje ne (nejdřív TOTP nebo passkey) kvůli SIM swapu;
       doslovné čtení B4.2 lze ale vyložit tak, že SMS samotná stačí. Obě
       varianty i návrh fallbacku jsou v ADR 0001 §15. Blokuje E2-T4.
+
+  - id: D-007
+    title: Jak se měří C12.1 — co je "špičkové zatížení" a na jakém percentilu?
+    req: [C12.1]
+    status: blocked
+    blocker: >
+      Harness (E11-T4) je hotový, ale dvě čísla v něm jsou zástupná a obě
+      rozhodují o tom, co projde akceptací:
+      (1) Špička. Smlouva žádné číslo neuvádí. Kolik souběžných členů má systém
+      unést ve špičce? Dokud to nevíme, není proti čemu měřit.
+      (2) Percentil. Doslovné čtení "odezva do 1,5 s" je p(100), tedy každá
+      odpověď bez výjimky. Standardní inženýrské čtení je p(95), což harness
+      používá jako výchozí. p(100) přes reálnou síť spadne na jediné pauze GC
+      nebo retransmisi TCP — testuje pak spíš síť než systém.
+      Do vyřešení platí, že zelený běh dokazuje funkční harness, ne splněnou
+      smlouvu. Blokuje E11-T4b.
 
   - id: D-005
     title: AI-asistovaná moderace obsahu — mimo smlouvu, navrženo
@@ -532,8 +567,31 @@ epics:
         title: k6 zátěžové testy s budgetem ≤ 1,5 s
         scope: qa
         role: qa
-        status: todo
-        blocked_by: [E9-T3]
+        status: done
+        note: >
+          Harness v perf/k6/, budget C12.1 zapsaný jako k6 threshold (k6 končí
+          kódem 99 při překročení, takže CI padá bez další logiky). Měří se tři
+          routy odděleně (gate, landing, login), aby rychlá brána nezakryla
+          pomalou stránku v agregátu. Součástí jsou obsahové kontroly: rychlá
+          odpověď, která zadržuje stránku, se nesmí počítat jako průchod —
+          zároveň tím pod zátěží znovu ověřujeme záruku E14-T5b.
+          Baseline na tomto kontejneru (4 vCPU, 20 VU, loopback, bez backendu):
+          p(95) 92 ms na všech třech routách, 16 051 kontrol bez chyby.
+          Čti jako podlahu, ne verdikt — chybí backend, síť i dohodnutá špička.
+          Ověřeno i selhání: proti budgetu 1 ms harness hlásí FAIL a exit 99.
+          Vlastní akceptační měření je E11-T4b.
+      - id: E11-T4b
+        title: Akceptační měření C12.1 proti reálnému backendu
+        scope: qa
+        role: qa
+        status: blocked
+        blocked_by: [E9-T3, D-007]
+        note: >
+          Zelený běh E11-T4 dokazuje, že harness funguje, ne že smlouva je
+          splněna. K tomu je potřeba backend s databází (dnes se stránky
+          renderují ze statických slovníků), reprezentativní host přes síť
+          a hlavně čísla z D-006 — kolik je "špičkové zatížení" a na jakém
+          percentilu se budget posuzuje.
       - id: E11-T5
         title: E2E testy hlavních toků (Playwright)
         scope: qa
@@ -617,27 +675,33 @@ epics:
         title: Age gate serverovou cestou (cookie) + focus trap
         scope: client-web
         role: frontend-web
-        status: review
+        status: done
         note: >
-          Rozhodnutí o souhlasu je na serveru a modální kontrakt je reálný.
-          Zbytek řeší E14-T5b — Next streamuje RSC seed potomka i když se layout
-          rozhodne ho nevykreslit.
-        note: >
-          Z privacy review P3: aria-modal je dnes tvrzení, které implementace
-          nedodržuje, a obsah se posílá do HTML ještě před rozhodnutím brány.
+          Z privacy review P3: aria-modal bylo tvrzení, které implementace
+          nedodržovala, a obsah se posílal do HTML ještě před rozhodnutím brány.
+          Rozhodnutí o souhlasu je nyní na serveru a modální kontrakt je reálný.
+          Zbytkový únik RSC seedu uzavřen v E14-T5b, čímž review končí.
 
       - id: E14-T5b
         title: Zastavit požadavek před routingem (middleware) — RSC seed uniká i za bránou
         scope: client-web
         role: frontend-web
-        status: todo
+        status: done
         blocked_by: [E14-T5]
         note: >
-          Změřeno, ne odhadnuto: vykreslené markup nepotvrzené odpovědi je jen
-          brána, ale Next 14 stále streamuje seed data potomka ve skriptech
-          self.__next_f.push(...), takže obsah stránky je ve zdroji odpovědi.
-          Je to strukturální — seed vzniká dřív, než se layout rozhodne. Řešením
-          je apps/web/middleware.ts, který nepotvrzený požadavek přesměruje.
+          Změřeno, ne odhadnuto. Před opravou obsahovala nepotvrzená odpověď
+          GET / stopy stromu landing page — categories-heading, /o-nas,
+          /soukromi, /podminky, /kontakt — ve skriptech self.__next_f.push(...),
+          přestože se vykreslila jen brána. Strukturální: seed potomka vzniká
+          dřív, než se layout rozhodne, takže žádná změna v layoutu to nezavře.
+          Řešení: apps/web/src/middleware.ts přepisuje (rewrite, ne redirect)
+          nepotvrzený požadavek na prázdnou routu /gate ještě před routingem.
+          Ověřeno na next build + next start: všech pět markerů 0 výskytů,
+          brána se stále vykresluje, tělo odpovědi 12 906 → 6 204 B, souhlasný
+          provoz beze změny, robots.txt i sitemap.xml zůstávají dostupné.
+          34 nových testů (apps/web přidán do vitest projects).
+          Kontrola v layoutu zůstává jako druhá vrstva, kdyby middleware
+          v nasazení vypadl.
 
       - id: E14-T8
         title: Odchod z webu bez stopy v historii (P4)

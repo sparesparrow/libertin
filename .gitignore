@@ -10,3 +10,9 @@ coverage/
 storybook-static/
 .DS_Store
 *.tsbuildinfo
+
+# k6 run output. The harness and its budget are source; individual run results
+# are measurements of one machine on one day and must never be mistaken for the
+# contracted acceptance evidence. CI archives them as build artefacts instead.
+perf/k6/.results/*
+!perf/k6/.results/.gitkeep
