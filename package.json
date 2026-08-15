@@ -8,6 +8,10 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:all": "vitest run",
+    "e2e": "turbo run build --filter=@libertin/web && pnpm --filter @libertin/e2e e2e:local:ci",
+    "e2e:modules": "pnpm --filter @libertin/e2e e2e:modules",
+    "e2e:platform": "pnpm --filter @libertin/e2e e2e:platform",
+    "e2e:open": "pnpm --filter @libertin/e2e cy:open",
     "perf": "k6 run perf/k6/web-browse.js",
     "storybook": "pnpm --filter=@libertin/ui storybook",
     "type-check": "turbo run type-check"
@@ -20,5 +24,10 @@
   "engines": {
     "node": ">=20",
     "pnpm": ">=9"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "cypress"
+    ]
   }
 }

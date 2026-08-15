@@ -102,6 +102,29 @@ decisions:
       Do vyřešení platí, že zelený běh dokazuje funkční harness, ne splněnou
       smlouvu. Blokuje E11-T4b.
 
+  - id: D-008
+    title: Testovací účet a cílové nasazení pro modulové e2e
+    req: [C12, C11]
+    status: blocked
+    blocker: >
+      Cypress harness (E11-T5) je hotový a ověřený, ale 92 modulových testů se
+      přeskakuje, protože sedm z devíti modulů po hydrataci přesměruje anonymního
+      návštěvníka na /login. Potřebujeme dvě věci od objednatele:
+
+      (1) Testovací účet. Jednorázový členský účet BEZ reálných osobních údajů —
+      jde o adult platformu, testovací účet patřící skutečnému člověku je
+      incident čekající na svou příležitost. Předat jako CYPRESS_TEST_USERNAME /
+      CYPRESS_TEST_PASSWORD do maskovaných proměnných CI, ne do repozitáře.
+      Registraci jsme záměrně neprováděli sami: zakládat účty na cizím nasazení
+      bez pokynu není naše rozhodnutí.
+
+      (2) Kanonické URL nasazení. Suite dnes běžela proti
+      libertine-omega.vercel.app, což je preview a NENÍ kód tohoto repozitáře
+      (viz poznámka u E11-T5). Které nasazení je to, které má e2e hlídat?
+    note: >
+      Bez (1) je harness funkční, ale pokrytí modulů je nulové a report to
+      poctivě přiznává. Bez (2) může červený běh reportovat cizí push.
+
   - id: D-005
     title: AI-asistovaná moderace obsahu — mimo smlouvu, navrženo
     req: [C2]
@@ -621,11 +644,47 @@ epics:
           a hlavně čísla z D-006 — kolik je "špičkové zatížení" a na jakém
           percentilu se budget posuzuje.
       - id: E11-T5
-        title: E2E testy hlavních toků (Playwright)
+        title: E2E testy hlavních toků (Cypress)
         scope: qa
         role: qa
-        status: todo
+        status: done
         blocked_by: [E11-T2]
+        note: >
+          Harness v apps/e2e (@libertin/e2e), Cypress 15.20.1. Nástroj změněn
+          z Playwrightu na Cypress na pokyn objednatele; volba nemá vliv na
+          akceptaci, mění se jen runner.
+
+          Suite je psaná proti LIBOVOLNÉMU nasazení klienta — jediný přepínač
+          je CYPRESS_BASE_URL, žádný spec nemá zadrátovaný host. Důvod: modulová
+          práce (zeď, bog, profily, trefa, chat, marketplace, media, kredit)
+          dnes žije na odděleném nasazení, které NENÍ v tomto repozitáři, zatímco
+          apps/web tu drží landing + auth vrstvu.
+
+          Ověřeno reálným během:
+          - lokální sada proti apps/web (next build + next start): 22/22 zelené.
+            Kryje age gate včetně záruky E14-T5b, login proti stubu, a všech pět
+            bezpečnostních hlaviček z next.config.mjs.
+          - modulová + platformní sada proti nasazení libertine-omega.vercel.app:
+            148 testů, 43 prošlo, 13 selhalo, 92 pending. Report: 30 nálezů.
+
+          92 pending není flake ani chyba harnessu: sedm z devíti modulů po
+          hydrataci přesměruje anonymního návštěvníka na /login, takže bez
+          seedovaného testovacího účtu nelze o modulu tvrdit nic. Testy se proto
+          přeskakují, ne "propouštějí" — zelený běh, který devětkrát otestoval
+          přihlašovací stránku, by hlásil pokrytí, které neexistuje. Odblokuje
+          to CYPRESS_TEST_USERNAME / CYPRESS_TEST_PASSWORD (viz D-008).
+
+          CI: job `e2e` (lokální sada, gatuje merge, deterministický) a manuální
+          `e2e-modules` v .github/workflows/ci.yml i .gitlab-ci.yml.
+      - id: E11-T5b
+        title: Odblokovat modulové e2e testovacím účtem
+        scope: qa
+        role: qa
+        status: blocked
+        blocked_by: [D-008]
+        note: >
+          92 přeskočených testů čeká pouze na účet. Harness je hotový a ověřený,
+          chybí jen přihlašovací údaje k nasazení, proti kterému běží.
       - id: E11-T6
         title: Pokrytí "většiny funkcí systému" — měření a report
         scope: qa

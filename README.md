@@ -22,6 +22,12 @@ pnpm --filter=@libertin/mobile start    # then i / a for simulator
 
 # Type check everything
 pnpm type-check
+
+# End-to-end (Cypress) — builds apps/web, serves it, drives it
+pnpm e2e
+
+# End-to-end against a deployed client
+CYPRESS_BASE_URL=https://example.com pnpm e2e:modules
 ```
 
 Everything boots offline against MSW mocks derived from
@@ -35,6 +41,7 @@ backend credentials needed. Never call `fetch` directly; always go through
 |---|---|
 | `apps/web` | Next.js 14 (app router) — landing, login, security headers |
 | `apps/mobile` | Expo / React Native — auth flow (login → verify → onboarding → feed) |
+| `apps/e2e` | Cypress end-to-end suite; runs against any deployment via `CYPRESS_BASE_URL` |
 | `packages/ui` | Shared components, web + native variants, Storybook |
 | `packages/theme` | Design tokens (`tokens.css` for web, `native.ts` for RN) |
 | `packages/i18n` | i18next setup + `locales.json` (cs/en, source of truth for all copy) |

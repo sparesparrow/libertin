@@ -25,3 +25,11 @@ infra/ansible/.facts/
 # themselves sensitive. Only inventories/example/ is committed.
 infra/ansible/inventories/*
 !infra/ansible/inventories/example/
+
+# Cypress run output. Same reasoning as the k6 results above: the suite is
+# source, a run's screenshots and findings are measurements of one target on
+# one day. CI archives them as build artefacts.
+apps/e2e/screenshots/
+apps/e2e/videos/
+apps/e2e/downloads/
+apps/e2e/reports/

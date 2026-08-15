@@ -15,6 +15,7 @@ stages:
   - type-check
   - test
   - build
+  - e2e
   - perf
 
 variables:
@@ -94,6 +95,80 @@ build:
   # No artifacts are exported on purpose: nothing downstream consumes the build
   # output yet, and build output is not something we want lying around in job
   # storage. Add artifacts when a deploy stage actually needs them.
+
+# End-to-end against this repo's own client (backlog E11-T5).
+#
+# Gates merges, because it is deterministic: it builds apps/web, serves the
+# production build and drives it with stubbed network calls. No deployment, no
+# credentials, no third party.
+#
+# `node:22-bookworm-slim` carries none of the libraries Electron needs, so they
+# are installed here. The alternative is the `cypress/browsers` image, which is
+# a heavier pull and would diverge from the image every other job uses.
+e2e:
+  stage: e2e
+  <<: *libertin_rules
+  variables:
+    # Outside node_modules, so the pnpm cache does not cover the ~250 MB binary.
+    CYPRESS_CACHE_FOLDER: '$CI_PROJECT_DIR/.cypress-cache'
+  script:
+    - apt-get update && apt-get install -y --no-install-recommends
+      libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xauth xvfb libasound2 libgbm1 ca-certificates curl
+    - pnpm install --frozen-lockfile --prefer-offline
+    - pnpm --filter @libertin/e2e cy:verify
+    - pnpm --filter @libertin/web build
+    - pnpm --filter @libertin/e2e e2e:local:ci
+  cache:
+    - <<: *pnpm_cache
+      policy: pull
+    - key: cypress-$CI_JOB_IMAGE
+      paths:
+        - .cypress-cache
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - apps/e2e/screenshots/
+      - apps/e2e/reports/
+
+# End-to-end against a deployed client. Manual, on purpose.
+#
+# It targets a deployment this pipeline does not produce, so a red run may be
+# reporting on someone else's push; and seven of the nine modules sit behind a
+# login, so it needs a test account that only exists as a masked variable.
+# Without that account those specs skip rather than pass.
+#
+# Required CI/CD variables: E2E_BASE_URL, and E2E_TEST_USERNAME /
+# E2E_TEST_PASSWORD as masked+protected. The account behind them must be a
+# throwaway test member with no real personal data.
+e2e-modules:
+  stage: e2e
+  <<: *libertin_rules
+  when: manual
+  allow_failure: true
+  variables:
+    CYPRESS_CACHE_FOLDER: '$CI_PROJECT_DIR/.cypress-cache'
+    CYPRESS_BASE_URL: '$E2E_BASE_URL'
+    CYPRESS_TEST_USERNAME: '$E2E_TEST_USERNAME'
+    CYPRESS_TEST_PASSWORD: '$E2E_TEST_PASSWORD'
+  script:
+    - apt-get update && apt-get install -y --no-install-recommends
+      libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xauth xvfb libasound2 libgbm1 ca-certificates curl
+    - pnpm install --frozen-lockfile --prefer-offline
+    - pnpm --filter @libertin/e2e e2e:modules
+    - pnpm --filter @libertin/e2e e2e:platform
+  cache:
+    - <<: *pnpm_cache
+      policy: pull
+    - key: cypress-$CI_JOB_IMAGE
+      paths:
+        - .cypress-cache
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - apps/e2e/reports/
+      - apps/e2e/screenshots/
 
 # C12.1 acceptance harness. `when: manual` for the same reason the GitHub job is
 # workflow_dispatch: a shared runner's timings swing too much to gate merges on,
