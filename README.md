@@ -2,32 +2,41 @@
 
 Modernized client layer for the `swingerslife.cz` → **Libertin** rebrand.
 Next.js 14 web + Expo mobile, pnpm + Turborepo monorepo. See [CLAUDE.md](CLAUDE.md)
-for the working agreement and [docs/live-audit.md](docs/live-audit.md) for the
-audit of the legacy site this project replaces.
+for the working agreement and [docs/setup.md](docs/setup.md) for complete local
+development setup instructions.
 
 ## Quickstart
 
+**Automated setup** (recommended):
+
+```bash
+git clone https://github.com/sparesparrow/libertin.git
+cd libertin
+./setup.sh
+```
+
+**Manual setup:**
+
 ```bash
 pnpm install
+pnpm type-check
 
 # Storybook — all UI components + screens (web & native via react-native-web)
 pnpm storybook                          # → http://localhost:6006
 
-# Web (Next.js) — needs the MSW worker file once:
-pnpm --filter=@libertin/web msw:init    # generates apps/web/public/mockServiceWorker.js
+# Web (Next.js)
 pnpm --filter=@libertin/web dev         # → http://localhost:3000
 
 # Mobile (Expo)
 pnpm --filter=@libertin/mobile start    # then i / a for simulator
-
-# Type check everything
-pnpm type-check
 ```
 
 Everything boots offline against MSW mocks derived from
 [`contracts/openapi.snapshot.yaml`](contracts/openapi.snapshot.yaml) — no
 backend credentials needed. Never call `fetch` directly; always go through
 `@libertin/api`.
+
+**→ Full setup guide:** [docs/setup.md](docs/setup.md)
 
 ## Workspace layout
 
