@@ -1,11 +1,28 @@
 {
   "name": "@libertin/theme",
   "version": "0.0.1",
+  "description": "Libertin design tokens — web (tokens.css) and native (native.ts).",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sparesparrow/libertin.git",
+    "directory": "packages/theme"
+  },
   "main": "./index.ts",
+  "types": "./index.ts",
   "exports": {
     ".": "./index.ts",
     "./native": "./native.ts",
     "./tokens.css": "./tokens.css"
+  },
+  "files": [
+    "index.ts",
+    "native.ts",
+    "theme.ts",
+    "tokens.css"
+  ],
+  "publishConfig": {
+    "access": "restricted"
   },
   "devDependencies": {
     "typescript": "*"

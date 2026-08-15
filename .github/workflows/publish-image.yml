@@ -1,0 +1,147 @@
+# Libertin container image — builds apps/web and publishes it to GHCR.
+#
+# Contract traceability
+#   C3/C4  each component ships as a container image, wired by Docker Compose
+#   C8     handover: the external operator pulls a tagged, immutable image
+#          instead of rebuilding from source
+#
+# Unlike the npm side of the release (release.yml), this needs no configured
+# secret — GITHUB_TOKEN can write to ghcr.io/<owner>/<repo>/web — so it is the
+# publishing path that works today.
+#
+# Consuming the result (docker-compose.yml already reads both variables):
+#   WEB_IMAGE=ghcr.io/sparesparrow/libertin/web WEB_TAG=v0.1.0 docker compose up -d
+#
+# See docs/publishing.md for the tag scheme and the NEXT_PUBLIC_SITE_URL caveat.
+name: Publish image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  # Build-only validation. The Dockerfile is not exercised by ci.yml, so
+  # without this a broken image build is only discovered at release time. The
+  # paths filter keeps it off documentation-only pull requests.
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
+      - '.github/workflows/publish-image.yml'
+  workflow_dispatch:
+    inputs:
+      site_url:
+        description: 'NEXT_PUBLIC_SITE_URL baked into the bundle — the image is only valid for this host.'
+        type: string
+        default: 'https://libertin.cz'
+      platforms:
+        description: 'Target platforms. arm64 builds under emulation and is slow.'
+        type: choice
+        default: 'linux/amd64'
+        options:
+          - 'linux/amd64'
+          - 'linux/amd64,linux/arm64'
+
+concurrency:
+  group: image-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    name: web image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # Required to push to GHCR. Pull requests from forks get a read-only
+      # token, which is why they only build.
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # A pull request proves the build still works; it must never publish.
+      - name: decide whether this run publishes
+        id: mode
+        run: |
+          if [ '${{ github.event_name }}' = 'pull_request' ]; then
+            echo 'push=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'push=true' >> "$GITHUB_OUTPUT"
+          fi
+          # GHCR rejects an uppercase path; repository owners may contain any case.
+          echo "image=ghcr.io/$(printf '%s' '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/web" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: log in to ghcr.io
+        if: steps.mode.outputs.push == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tag scheme:
+      #   v1.2.3        -> 1.2.3, 1.2, latest   (releases)
+      #   push to main  -> edge                 (moving, never for production)
+      #   any build     -> sha-<full sha>       (immutable, what Compose should pin)
+      - name: image tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.mode.outputs.image }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=edge,branch=main
+            type=sha,format=long
+          labels: |
+            org.opencontainers.image.title=Libertin web
+            org.opencontainers.image.description=Libertin front-end (Next.js), apps/web
+            org.opencontainers.image.licenses=UNLICENSED
+
+      # Context is the repository root because the pnpm workspace needs the
+      # root lockfile — the same invariant the Dockerfile header documents. No
+      # pnpm install runs in this job, so the build context stays free of
+      # node_modules even though the root has no .dockerignore.
+      - name: build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: ${{ steps.mode.outputs.push == 'true' }}
+          platforms: ${{ inputs.platforms || 'linux/amd64' }}
+          # NEXT_PUBLIC_* is inlined into the client bundle at build time, so
+          # this value is baked in and the image is environment-specific.
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=${{ inputs.site_url || 'https://libertin.cz' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Attestations travel with the image: an operator taking handover can
+          # ask what went into it without trusting this pipeline's word for it.
+          provenance: mode=max
+          sbom: true
+
+      - name: summary
+        run: |
+          {
+            echo '### Web image'
+            echo
+            if [ '${{ steps.mode.outputs.push }}' = 'true' ]; then
+              echo 'Pushed:'
+              echo '```'
+              printf '%s\n' '${{ steps.meta.outputs.tags }}'
+              echo '```'
+            else
+              echo 'Build-only validation (pull request) — nothing was pushed.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

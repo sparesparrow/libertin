@@ -1,6 +1,7 @@
 {
   "name": "@libertin/mobile",
   "version": "0.0.1",
+  "private": true,
   "main": "index.js",
   "scripts": {
     "start": "expo start",
