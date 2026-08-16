@@ -14,7 +14,10 @@ import { hasCredentials } from '../../support/auth';
  * Opt-in — `CYPRESS_CAPTURE_EVIDENCE=1` — because it writes images nobody
  * needs on an ordinary verification run.
  *
- * Output: `screenshots/<host>/evidence.cy.ts/<nn-finding-name>.png`
+ * Output: `screenshots/<host>/evidence/evidence.cy.ts/<nn-finding-name>.png`.
+ * The curated set is then copied into `docs/e2e-evidence/` and committed —
+ * a report whose evidence lives only in a gitignored run folder is a report
+ * nobody can check six months from now. See `pnpm evidence:publish`.
  */
 
 function evidenceEnabled(): boolean {
@@ -118,7 +121,7 @@ describe('Důkazy k nálezům', { retries: 0 }, () => {
     cy.wait(4000);
     // Captured before dismissing: the modal is both the typo and an overlay
     // that blocks the page a member just navigated to.
-    cy.screenshot('07b-modal-nenamé-site', { capture: 'viewport' });
+    cy.screenshot('07b-modal-nezname-site-preklep', { capture: 'viewport' });
   });
 
   it('08 — neznámé id profilu (nález 9)', function () {

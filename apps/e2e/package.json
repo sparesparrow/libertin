@@ -14,7 +14,8 @@
     "e2e:local": "cypress run --spec \"cypress/e2e/local/**/*.cy.ts\"",
     "e2e:local:ci": "start-server-and-test \"pnpm --filter @libertin/web start\" http://localhost:3000/gate \"pnpm e2e:local\"",
     "type-check": "tsc --noEmit",
-    "evidence": "cypress run --spec \"cypress/e2e/evidence/**/*.cy.ts\""
+    "evidence": "cypress run --spec \"cypress/e2e/evidence/**/*.cy.ts\"",
+    "evidence:publish": "node scripts/publish-evidence.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

@@ -28,6 +28,8 @@ z tohoto repozitáře už dnes a beze změny poběží proti modulům, až sem p
 **Otevřená otázka na objednatele:** které nasazení má e2e hlídat a kde ten kód
 žije? Vedeno jako **D-009**.
 
+<a id="za-loginem"></a>
+
 ## Jak jsme se dostali za login
 
 Sedm z devíti modulů přesměruje anonymního návštěvníka na `/login` **až po
@@ -54,7 +56,9 @@ brána chybí. Rozhodnutí je na objednateli.
 3. Do adresního řádku napiš `/wall`, `/messages`, `/marketplace`,
    `/profile/credit`. Všechno se otevře, nic tě nevrátí na ověření.
 
-Důkaz: `screenshots/09-verify-email-nevymahano.png`
+**Důkaz**
+
+![Ověření e-mailu se nevymáhá](e2e-evidence/09-verify-email-nevymahano.png)
 
 Zakládání účtu je za přepínačem `CYPRESS_ALLOW_SIGNUP=1` a `retries: 0` —
 sada, která při každém běhu CI založí účet, by zaplevelila tabulku členů.
@@ -79,6 +83,8 @@ o 404 níže.
 ---
 
 ## Nálezy, od nejzávažnějšího
+
+<a id="nalez-1"></a>
 
 ### 1. Členský obsah cestuje v anonymní odpovědi (`/wall`)
 
@@ -126,9 +132,20 @@ Spec: `platform/rsc-leak.cy.ts`, `platform/a11y.cy.ts`.
    příspěvků** — jsou to normální odkazy a tlačítka. Ve vývojářských
    nástrojích jim odeber `filter: blur(...)` a text je čitelný.
 
-Důkaz: `screenshots/01-wall-hostovsky-pohled.png`,
-`screenshots/02-wall-rozmazani-je-jen-css.png` (červeně orámovaný blok je
-kompletní příspěvek cizího člena v DOM).
+**Důkaz**
+
+Hostovský panel, jak ho vidí nepřihlášený návštěvník:
+
+![Hostovský pohled na zeď](e2e-evidence/01-wall-hostovsky-pohled.png)
+
+A totéž s červeným rámečkem kolem rozmazaného bloku — uvnitř je kompletní
+příspěvek cizího člena: avatar, jméno, text, komentáře. Všechno v DOM, jen
+pod `filter: blur()`. Panel nad ním přitom slibuje, že jména uvidíte *až po
+registraci*:
+
+![Rozmazání je jen CSS](e2e-evidence/02-wall-rozmazani-je-jen-css.png)
+
+<a id="nalez-2"></a>
 
 ### 2. Žádné bezpečnostní hlavičky
 
@@ -160,6 +177,8 @@ curl -sI http://localhost:3000/ | grep -iE 'referrer|x-content-type|x-frame'
 V prohlížeči: `F12` → záložka Network → obnov stránku → klikni na první
 požadavek (dokument) → Response Headers.
 
+<a id="nalez-3"></a>
+
 ### 3. Cookie lišta — chybí odmítnutí na jedno kliknutí
 
 Lišta nabízí `Souhlas`, `Povolit vše`, `Upravit`, `Detaily`, `Více o cookies`.
@@ -184,7 +203,11 @@ skutečného uživatele.
 4. Odmítnutí vyžaduje `Upravit` → odkliknout kategorie → uložit. Souhlas je
    jedno kliknutí, odmítnutí čtyři.
 
-Důkaz: `screenshots/03-cookie-lista-bez-odmitnuti.png`
+**Důkaz**
+
+![Cookie lišta bez odmítnutí](e2e-evidence/03-cookie-lista-bez-odmitnuti.png)
+
+<a id="nalez-4"></a>
 
 ### 4. Čeština
 
@@ -216,8 +239,15 @@ kterou člen právě přešel, stejně jako cookie lišta.
    curl -s https://libertine-omega.vercel.app/ | grep -o 'Zapomenute heslo'
    ```
 
-Důkaz: `screenshots/04-paticka-zapomenute-ucet.png`,
-`screenshots/07b-modal-nenamé-site.png`
+**Důkaz**
+
+![Patička s překlepy](e2e-evidence/04-paticka-zapomenute-ucet.png)
+
+Modál po přihlášení — překlep „nenámé" a zároveň překryv stránky:
+
+![Modál nenámé sítě](e2e-evidence/07b-modal-nezname-site-preklep.png)
+
+<a id="nalez-5"></a>
 
 ### 5. Heslo `123456789` projde registrací
 
@@ -242,7 +272,11 @@ prvním faktorem, který za něco stojí.
    souhlas s podmínkami.
 3. Formulář nic nenamítne a účet vznikne. Tímtéž heslem se pak i přihlásíš.
 
-Důkaz: `screenshots/05-registrace-slabe-heslo.png`
+**Důkaz** — heslo je odmaskované, aby šlo přečíst, co formulář přijal:
+
+![Registrace přijme 123456789](e2e-evidence/05-registrace-slabe-heslo.png)
+
+<a id="nalez-6"></a>
 
 ### 6. Lorem ipsum na homepage
 
@@ -259,7 +293,11 @@ reklamy` / `Podnadpis` / `Tlačítko`.
 1. `https://libertine-omega.vercel.app/` → sjeď k dlaždicím komunit.
 2. `curl -s https://libertine-omega.vercel.app/ | grep -c "Lorem ipsum"`
 
-Důkaz: `screenshots/06-homepage-lorem-ipsum.png`
+**Důkaz**
+
+![Lorem ipsum na homepage](e2e-evidence/06-homepage-lorem-ipsum.png)
+
+<a id="nalez-7"></a>
 
 ### 7. Výkon — rozpočet C12.1 překračují VŠECHNY moduly
 
@@ -299,6 +337,8 @@ problém bundlu a hydratace, ne hostingu ani databáze.
    nezapočítal studený start serverless funkce.
 
 Sadou: `pnpm e2e:platform` a v reportu hledej `perf-budget`.
+
+<a id="nalez-8"></a>
 
 ### 8. Přístupnost (axe, jen serious + critical)
 
@@ -342,8 +382,12 @@ prázdná.
 - **Karusely na homepage**: klikni do stránky, pak jen `Tab` a šipky —
   vodorovnými karusely se projet nedá.
 
-Důkaz: `screenshots/07-media-obrazky-bez-alt.png` (červeně orámované jsou
-obrázky bez `alt`).
+**Důkaz** — červeně orámované jsou obrázky, které čtečka obrazovky neumí
+pojmenovat:
+
+![Média bez alt textů](e2e-evidence/07-media-obrazky-bez-alt.png)
+
+<a id="nalez-9"></a>
 
 ### 9. `/profile/<neznámé-id>` nemá stav „nenalezeno“
 
@@ -360,7 +404,9 @@ nejde odlišit skutečný profil od překlepu — a pod `/profile/` už nepůjde
 4. Zkus i `/profile/settings` — chová se stejně, takže tuhle cestu už nelze
    použít pro nastavení.
 
-Důkaz: `screenshots/08-profil-nezname-id.png`
+**Důkaz**
+
+![Neznámé id profilu](e2e-evidence/08-profil-nezname-id.png)
 
 ---
 
@@ -433,18 +479,24 @@ je vytvoří na projité cestě, pojmenuje podle nálezu a v několika případe
 dokreslí, co je vidět jen v DOM — červený rámeček kolem rozmazaného příspěvku
 nebo kolem obrázků bez `alt`.
 
+Obrázky jsou verzované v [`docs/e2e-evidence/`](e2e-evidence/) — ne v běhových
+složkách. Ty jsou gitignorované záměrně (screenshot z jednoho běhu jednoho dne
+je měření, ne zdroj), jenže report tvrdí něco o systému, který nemáme pod
+kontrolou. Tvrzení, jehož důkaz leží v ignorované složce na kontejneru, který
+už neexistuje, si za půl roku nikdo neověří.
+
 | Soubor | Nález |
 |---|---|
-| `01-wall-hostovsky-pohled.png` | 1 — hostovský panel na `/wall` |
-| `02-wall-rozmazani-je-jen-css.png` | 1 — celý cizí příspěvek v DOM pod rozmazáním |
-| `03-cookie-lista-bez-odmitnuti.png` | 3 — lišta bez odmítnutí, překrývá formulář |
-| `04-paticka-zapomenute-ucet.png` | 4 — `Zapomenute heslo`, `Obnovit svůj učet` |
-| `05-registrace-slabe-heslo.png` | 5 — `123456789` projde |
-| `06-homepage-lorem-ipsum.png` | 6 — Lorem ipsum v dlaždicích komunit |
-| `07-media-obrazky-bez-alt.png` | 8 — obrázky bez `alt`, orámované |
-| `07b-modal-nenamé-site.png` | 4 — překlep „nenámé" + překryv stránky |
-| `08-profil-nezname-id.png` | 9 — neznámé id vykreslí profil |
-| `09-verify-email-nevymahano.png` | ověření e-mailu se nevymáhá |
+| [`01-wall-hostovsky-pohled.png`](e2e-evidence/01-wall-hostovsky-pohled.png) | [1](#nalez-1) — hostovský panel na `/wall` |
+| [`02-wall-rozmazani-je-jen-css.png`](e2e-evidence/02-wall-rozmazani-je-jen-css.png) | [1](#nalez-1) — celý cizí příspěvek v DOM pod rozmazáním |
+| [`03-cookie-lista-bez-odmitnuti.png`](e2e-evidence/03-cookie-lista-bez-odmitnuti.png) | [3](#nalez-3) — lišta bez odmítnutí, překrývá formulář |
+| [`04-paticka-zapomenute-ucet.png`](e2e-evidence/04-paticka-zapomenute-ucet.png) | [4](#nalez-4) — `Zapomenute heslo`, `Obnovit svůj učet` |
+| [`05-registrace-slabe-heslo.png`](e2e-evidence/05-registrace-slabe-heslo.png) | [5](#nalez-5) — `123456789` projde |
+| [`06-homepage-lorem-ipsum.png`](e2e-evidence/06-homepage-lorem-ipsum.png) | [6](#nalez-6) — Lorem ipsum v dlaždicích komunit |
+| [`07-media-obrazky-bez-alt.png`](e2e-evidence/07-media-obrazky-bez-alt.png) | [8](#nalez-8) — obrázky bez `alt`, orámované |
+| [`07b-modal-nezname-site-preklep.png`](e2e-evidence/07b-modal-nezname-site-preklep.png) | [4](#nalez-4) — překlep „nenámé" + překryv stránky |
+| [`08-profil-nezname-id.png`](e2e-evidence/08-profil-nezname-id.png) | [9](#nalez-9) — neznámé id vykreslí profil |
+| [`09-verify-email-nevymahano.png`](e2e-evidence/09-verify-email-nevymahano.png) | [ověření se nevymáhá](#za-loginem) |
 
 Vlastní pořízení:
 
@@ -461,6 +513,15 @@ $env:CYPRESS_CAPTURE_EVIDENCE = "1"
 $env:CYPRESS_TEST_USERNAME = "..."; $env:CYPRESS_TEST_PASSWORD = "..."
 pnpm --filter @libertin/e2e evidence
 ```
+
+Pak je promítni do `docs/e2e-evidence/`, aby seděly s reportem:
+
+```bash
+pnpm --filter @libertin/e2e evidence:publish
+```
+
+Přepisuje celou složku, ne slučuje — starý obrázek, který by tam po předchozím
+focení zůstal, by report citoval, jako by byl aktuální.
 
 Screenshoty selhání z běžného běhu jsou vedle nich a mají jiný účel: ukazují,
 na čem test spadl, ne co je špatně.
