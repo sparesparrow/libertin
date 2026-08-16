@@ -120,6 +120,25 @@ Cypress.Commands.add('dismissCookieBanner', (): void => {
 });
 
 /**
+ * Close the "unknown network" modal.
+ *
+ * It appears after signing in and, like the cookie banner, is rendered over
+ * the page and swallows pointer events — so anything a member wants to do on
+ * their first page after login is blocked until they deal with it. Same class
+ * of obstacle, so it gets the same treatment.
+ */
+Cypress.Commands.add('dismissNetworkModal', (): void => {
+  cy.get('body', { log: false }).then(($body) => {
+    const hasModal = $body.text().includes('Přihlašuješ se z');
+    if (!hasModal) return;
+    const $go = $body.find('button').filter((_, el) => (el.textContent ?? '').trim() === 'Přejít do účtu');
+    if ($go.length > 0) {
+      cy.wrap($go.first(), { log: false }).click({ force: true });
+    }
+  });
+});
+
+/**
  * Sign in and keep the session across specs.
  *
  * `cy.session` caches by the credential key, so the form is driven once per run
@@ -301,6 +320,7 @@ declare global {
     interface Chainable {
       visitModule(path: string, options?: VisitModuleOptions): Chainable<void>;
       seedCookieConsent(): Chainable<void>;
+      dismissNetworkModal(): Chainable<void>;
       dismissCookieBanner(): Chainable<void>;
       login(): Chainable<void>;
       settle(module: string, route: string, timeout?: number): Chainable<void>;

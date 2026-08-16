@@ -40,6 +40,19 @@ function targetSlug(url: string): string {
 const TARGET = targetSlug(BASE_URL);
 
 /**
+ * Evidence and failure screenshots live in sibling folders, not one shared one.
+ *
+ * Splitting by host was necessary but not sufficient: both the evidence run and
+ * the verification run point at the *same* host, so the evidence run trashed
+ * the failure screenshots exactly as the local run had trashed them before.
+ * The axis that matters is which kind of run produced the image, because the
+ * two answer different questions — "what is wrong" versus "where did the test
+ * blow up" — and neither should be able to delete the other.
+ */
+const CAPTURING_EVIDENCE = process.env.CYPRESS_CAPTURE_EVIDENCE === '1';
+const ARTIFACT_KIND = CAPTURING_EVIDENCE ? 'evidence' : 'failures';
+
+/**
  * C12.1 — contracted acceptance limit for a UI response is 1,5 s. Kept as an
  * env value so a run can tighten it, never so a run can quietly loosen it in
  * CI: the pipeline pins it to the contract number.
@@ -60,8 +73,8 @@ export default defineConfig({
     specPattern: 'cypress/e2e/**/*.cy.ts',
     supportFile: 'cypress/support/e2e.ts',
     fixturesFolder: 'cypress/fixtures',
-    screenshotsFolder: `screenshots/${TARGET}`,
-    videosFolder: `videos/${TARGET}`,
+    screenshotsFolder: `screenshots/${TARGET}/${ARTIFACT_KIND}`,
+    videosFolder: `videos/${TARGET}/${ARTIFACT_KIND}`,
     downloadsFolder: 'downloads',
 
     video: false,

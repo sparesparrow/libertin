@@ -47,6 +47,15 @@ Odblokovala to registrace, kterou sada teď umí a zároveň testuje
 Bod 3 je nález sám o sobě: buď ta věta slibuje víc, než systém vymáhá, nebo
 brána chybí. Rozhodnutí je na objednateli.
 
+**Jak si to ověřit ručně**
+
+1. Zaregistruj si nový účet (e-mail nemusí existovat).
+2. Přistaneš na `/verify-email` s textem „Pro další postup ověřte svůj email!".
+3. Do adresního řádku napiš `/wall`, `/messages`, `/marketplace`,
+   `/profile/credit`. Všechno se otevře, nic tě nevrátí na ověření.
+
+Důkaz: `screenshots/09-verify-email-nevymahano.png`
+
 Zakládání účtu je za přepínačem `CYPRESS_ALLOW_SIGNUP=1` a `retries: 0` —
 sada, která při každém běhu CI založí účet, by zaplevelila tabulku členů.
 
@@ -100,6 +109,27 @@ jen viditelný pouhým Tabem.
 
 Spec: `platform/rsc-leak.cy.ts`, `platform/a11y.cy.ts`.
 
+**Jak si to ověřit ručně**
+
+1. Otevři anonymní okno prohlížeče (žádná session).
+2. Jdi na `https://libertine-omega.vercel.app/wall`.
+3. Uvidíš panel „Prohlížíte si zeď jako host" a pod ním rozmazané příspěvky.
+4. Zobraz zdroj stránky: `Ctrl+U` (Cmd+Opt+U na macOS). Hledej `Ctrl+F`
+   řetězec `Vytvořit příběh`, `Od přátel` nebo `Co sleduji`. Jsou tam —
+   v odpovědi, kterou dostal nepřihlášený návštěvník.
+5. Totéž z terminálu:
+   ```bash
+   curl -s https://libertine-omega.vercel.app/wall | grep -c "Vytvořit příběh"
+   ```
+   Vrátí `1`, ne `0`.
+6. Zpět na stránce zmáčkni opakovaně `Tab`. Fokus vjede **do rozmazaných
+   příspěvků** — jsou to normální odkazy a tlačítka. Ve vývojářských
+   nástrojích jim odeber `filter: blur(...)` a text je čitelný.
+
+Důkaz: `screenshots/01-wall-hostovsky-pohled.png`,
+`screenshots/02-wall-rozmazani-je-jen-css.png` (červeně orámovaný blok je
+kompletní příspěvek cizího člena v DOM).
+
 ### 2. Žádné bezpečnostní hlavičky
 
 `Referrer-Policy`, `X-Content-Type-Options` ani `X-Frame-Options` (či CSP
@@ -113,6 +143,22 @@ nemá.
 
 Totéž našel `docs/live-audit.md` na legacy platformě. Neslo se to dál, místo aby
 se to opravilo.
+
+**Jak si to ověřit ručně**
+
+```bash
+curl -sI https://libertine-omega.vercel.app/ | grep -iE 'referrer|x-content-type|x-frame|content-security'
+```
+
+Nevypíše nic. Pro srovnání klient z tohohle repozitáře:
+
+```bash
+pnpm --filter @libertin/web build && pnpm --filter @libertin/web start
+curl -sI http://localhost:3000/ | grep -iE 'referrer|x-content-type|x-frame'
+```
+
+V prohlížeči: `F12` → záložka Network → obnov stránku → klikni na první
+požadavek (dokument) → Response Headers.
 
 ### 3. Cookie lišta — chybí odmítnutí na jedno kliknutí
 
@@ -129,6 +175,17 @@ do přihlašovacího formuláře**, dokud ji nevyřeší. Každý spec v téhle 
 kliknutí protlačit silou, což je docela dobrý odhad toho, jak to působí na
 skutečného uživatele.
 
+**Jak si to ověřit ručně**
+
+1. Anonymní okno → `https://libertine-omega.vercel.app/login`.
+2. Lišta naskočí přes obsah. Přečti si tlačítka: `Souhlas`, `Detaily`,
+   `Více o cookies`, `Upravit`, `Povolit vše`. Žádné „Odmítnout vše".
+3. Zkus kliknout do pole pro heslo **bez** zavření lišty — nejde.
+4. Odmítnutí vyžaduje `Upravit` → odkliknout kategorie → uložit. Souhlas je
+   jedno kliknutí, odmítnutí čtyři.
+
+Důkaz: `screenshots/03-cookie-lista-bez-odmitnuti.png`
+
 ### 4. Čeština
 
 | Vykresleno | Má být | Kde |
@@ -141,6 +198,26 @@ nikdy se nevracející. Pozor na detail: na `/login` odkaz ve formuláři píše
 `Zapomenuté heslo` správně, zatímco patička hned pod ním píše `Zapomenute`. Dvě
 kopie téhož řetězce, na jedné stránce, které si odporují. Přesně takhle vypadá
 problém, který se vrací: oprava se aplikovala na jednu kopii.
+
+Třetí překlep je v modálu, který naskočí po přihlášení: **„Přihlašuješ se
+z nenámé sítě!"** — správně `neznámé`. Ten modál navíc překrývá stránku, na
+kterou člen právě přešel, stejně jako cookie lišta.
+
+**Jak si to ověřit ručně**
+
+1. Jdi na kteroukoli stránku, sjeď na konec: `Zapomenute heslo`,
+   `Obnovit svůj učet`.
+2. Na `/login` porovnej odkaz ve formuláři (`Zapomenuté heslo`, správně)
+   s patičkou pod ním (`Zapomenute heslo`, špatně) — obojí je na jedné
+   obrazovce.
+3. Přihlas se a počkej na modál „Přihlašuješ se z nenámé sítě!".
+4. Z terminálu:
+   ```bash
+   curl -s https://libertine-omega.vercel.app/ | grep -o 'Zapomenute heslo'
+   ```
+
+Důkaz: `screenshots/04-paticka-zapomenute-ucet.png`,
+`screenshots/07b-modal-nenamé-site.png`
 
 ### 5. Heslo `123456789` projde registrací
 
@@ -158,12 +235,31 @@ při něm celé heslo) a nepouštět čistě číselné řetězce.
 Souvisí to i s **B4.2** ze smlouvy: 2FA má smysl jako druhá vrstva nad
 prvním faktorem, který za něco stojí.
 
+**Jak si to ověřit ručně**
+
+1. `https://libertine-omega.vercel.app/register`.
+2. Vyplň přezdívku, e-mail, jako heslo dvakrát `123456789`, pohlaví, zájem,
+   souhlas s podmínkami.
+3. Formulář nic nenamítne a účet vznikne. Tímtéž heslem se pak i přihlásíš.
+
+Důkaz: `screenshots/05-registrace-slabe-heslo.png`
+
 ### 6. Lorem ipsum na homepage
 
 Všechny čtyři karty komunit — Naturisté, Swingeři, BDSM, Šibari — stále
 vykreslují *„Lorem ipsum dolor sit amet, consectetuer adipiscing elit…“*. Je to
 první věc, kterou návštěvník čte o tom, k čemu platforma je, na stránce, která
 má přesvědčovat.
+
+Stejný problém na `/media`: reklamní pozice vykreslují `Hlavní nadpis
+reklamy` / `Podnadpis` / `Tlačítko`.
+
+**Jak si to ověřit ručně**
+
+1. `https://libertine-omega.vercel.app/` → sjeď k dlaždicím komunit.
+2. `curl -s https://libertine-omega.vercel.app/ | grep -c "Lorem ipsum"`
+
+Důkaz: `screenshots/06-homepage-lorem-ipsum.png`
 
 ### 7. Výkon — rozpočet C12.1 překračují VŠECHNY moduly
 
@@ -189,6 +285,20 @@ nemá pod špičkou z čeho ubírat: už teď je nad limitem, když je na ní je
 
 TTFB je všude v desítkách milisekund. Celá cena je tedy klientský render —
 problém bundlu a hydratace, ne hostingu ani databáze.
+
+**Jak si to ověřit ručně**
+
+1. `F12` → záložka **Network** → zaškrtni **Disable cache**.
+2. Načti `/media` a přečti `Load` dole ve stavovém řádku panelu.
+3. Nebo v **Console** na načtené stránce:
+   ```js
+   const t = performance.getEntriesByType('navigation')[0];
+   console.log('ttfb', Math.round(t.responseStart), 'load', Math.round(t.loadEventEnd));
+   ```
+4. Opakuj na `/wall`, `/profile/credit`, `/people`. Měř až podruhé, aby se
+   nezapočítal studený start serverless funkce.
+
+Sadou: `pnpm e2e:platform` a v reportu hledej `perf-budget`.
 
 ### 8. Přístupnost (axe, jen serious + critical)
 
@@ -217,12 +327,40 @@ dosáhla AA. Nasazený klient tuhle paletu nepoužívá.
 přes šedesát bez alternativního textu. Pro čtečku obrazovky je ta stránka
 prázdná.
 
+**Jak si to ověřit ručně**
+
+- **Bez nástrojů**, nepopsané tlačítko: na kterékoli přihlášené stránce mačkej
+  `Tab`. Na jednom z tlačítek v horní liště čtečka ani stavový řádek neřeknou
+  nic — nemá přístupné jméno.
+- **Obrázky bez alt** na `/media`, v konzoli:
+  ```js
+  console.log([...document.images].filter(i => !i.alt).length, 'z', document.images.length);
+  ```
+- **Kontrast a zbytek**: nainstaluj rozšíření **axe DevTools** (zdarma),
+  `F12` → záložka axe DevTools → *Scan all of my page*. Filtruj na
+  `serious` + `critical`.
+- **Karusely na homepage**: klikni do stránky, pak jen `Tab` a šipky —
+  vodorovnými karusely se projet nedá.
+
+Důkaz: `screenshots/07-media-obrazky-bez-alt.png` (červeně orámované jsou
+obrázky bez `alt`).
+
 ### 9. `/profile/<neznámé-id>` nemá stav „nenalezeno“
 
 Jakékoli id vykreslí stránku. `/profile/settings`, `/profile/wallet`
 i `/profile/does-not-exist-cypress` se všechny vyřeší přes segment `[id]`, takže
 nejde odlišit skutečný profil od překlepu — a pod `/profile/` už nepůjde přidat
 žádnou routu, aniž by kolidovala se členem, jehož id se trefí.
+
+**Jak si to ověřit ručně**
+
+1. Přihlaš se.
+2. Otevři `https://libertine-omega.vercel.app/profile/tento-profil-neexistuje`.
+3. Stránka se vykreslí. Žádné „profil nenalezen", žádná 404.
+4. Zkus i `/profile/settings` — chová se stejně, takže tuhle cestu už nelze
+   použít pro nastavení.
+
+Důkaz: `screenshots/08-profil-nezname-id.png`
 
 ---
 
@@ -284,6 +422,48 @@ RSC payload do `<script>` tagů uvnitř `<body>`. Tvrzení psát přes
 `cy.visibleText()`, který nejdřív odstraní script/style — jinak kontrola textu
 projde na obsahu, který žádný uživatel nevidí. Jediná záměrná výjimka je leak
 spec z nálezu 1, kde je payload právě tím předmětem zkoumání.
+
+---
+
+## Důkazy
+
+Screenshoty v přiloženém balíčku (`screenshots/`) jsou pořízené záměrně, ne
+jako vedlejší produkt spadlého testu. Spec `cypress/e2e/evidence/evidence.cy.ts`
+je vytvoří na projité cestě, pojmenuje podle nálezu a v několika případech
+dokreslí, co je vidět jen v DOM — červený rámeček kolem rozmazaného příspěvku
+nebo kolem obrázků bez `alt`.
+
+| Soubor | Nález |
+|---|---|
+| `01-wall-hostovsky-pohled.png` | 1 — hostovský panel na `/wall` |
+| `02-wall-rozmazani-je-jen-css.png` | 1 — celý cizí příspěvek v DOM pod rozmazáním |
+| `03-cookie-lista-bez-odmitnuti.png` | 3 — lišta bez odmítnutí, překrývá formulář |
+| `04-paticka-zapomenute-ucet.png` | 4 — `Zapomenute heslo`, `Obnovit svůj učet` |
+| `05-registrace-slabe-heslo.png` | 5 — `123456789` projde |
+| `06-homepage-lorem-ipsum.png` | 6 — Lorem ipsum v dlaždicích komunit |
+| `07-media-obrazky-bez-alt.png` | 8 — obrázky bez `alt`, orámované |
+| `07b-modal-nenamé-site.png` | 4 — překlep „nenámé" + překryv stránky |
+| `08-profil-nezname-id.png` | 9 — neznámé id vykreslí profil |
+| `09-verify-email-nevymahano.png` | ověření e-mailu se nevymáhá |
+
+Vlastní pořízení:
+
+```bash
+CYPRESS_BASE_URL=https://libertine-omega.vercel.app \
+CYPRESS_CAPTURE_EVIDENCE=1 \
+CYPRESS_TEST_USERNAME=... CYPRESS_TEST_PASSWORD=... \
+  pnpm --filter @libertin/e2e evidence
+```
+
+```powershell
+$env:CYPRESS_BASE_URL = "https://libertine-omega.vercel.app"
+$env:CYPRESS_CAPTURE_EVIDENCE = "1"
+$env:CYPRESS_TEST_USERNAME = "..."; $env:CYPRESS_TEST_PASSWORD = "..."
+pnpm --filter @libertin/e2e evidence
+```
+
+Screenshoty selhání z běžného běhu jsou vedle nich a mají jiný účel: ukazují,
+na čem test spadl, ne co je špatně.
 
 ## Reprodukce
 
