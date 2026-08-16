@@ -5,9 +5,12 @@ nasazení modulů.
 
 - **Cíl:** `https://libertine-omega.vercel.app`
 - **Sada:** Cypress 15.20.1, Electron headless, 1280×800
-- **Výsledek:** 155 testů — 111 prošlo, 43 selhalo, 1 pending
-- **Zaznamenaných nálezů:** 87
-- **Přihlášeno:** ano — moduly jsou poprvé změřené zevnitř, ne přes login zeď
+- **Výsledek:** 177 testů — 135 prošlo, 41 selhalo, 1 pending
+  - nasazení (moduly + platforma), přihlášeno: 155 testů, 113 prošlo
+  - lokálně (`apps/web`): 22 testů, 22 prošlo
+- **Zaznamenaných nálezů:** 78
+- **Přihlášeno:** ano, účtem dodaným objednatelem — moduly jsou změřené
+  zevnitř, ne přes login zeď
 
 ## Čtěte nejdřív: cíl není tento repozitář
 
@@ -188,6 +191,8 @@ TTFB je všude v desítkách milisekund. Celá cena je tedy klientský render �
 problém bundlu a hydratace, ne hostingu ani databáze.
 
 ### 8. Přístupnost (axe, jen serious + critical)
+
+Po přihlášení má **každý** modul aspoň jeden vážný přestupek.
 
 Po přihlášení má **každý** modul aspoň jeden vážný přestupek.
 
