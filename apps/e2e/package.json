@@ -13,7 +13,8 @@
     "e2e:platform": "cypress run --spec \"cypress/e2e/platform/**/*.cy.ts\"",
     "e2e:local": "cypress run --spec \"cypress/e2e/local/**/*.cy.ts\"",
     "e2e:local:ci": "start-server-and-test \"pnpm --filter @libertin/web start\" http://localhost:3000/gate \"pnpm e2e:local\"",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "evidence": "cypress run --spec \"cypress/e2e/evidence/**/*.cy.ts\""
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

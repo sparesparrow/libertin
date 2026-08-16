@@ -135,4 +135,6 @@ export const CZECH_TYPO_BLOCKLIST: readonly { wrong: string; right: string }[] =
   { wrong: 'svůj učet', right: 'svůj účet' },
   { wrong: 'Mate ', right: 'Máte ' },
   { wrong: 'svoji heslo', right: 'své heslo' },
+  // Found in the "unknown network" modal that appears after signing in.
+  { wrong: 'nenámé', right: 'neznámé' },
 ];

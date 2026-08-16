@@ -17,14 +17,31 @@
  * account that belongs to a person is a privacy incident waiting to happen.
  */
 
+/**
+ * Read a credential from the Cypress environment.
+ *
+ * Coerces rather than type-guarding on `string`, and that is not defensive
+ * padding — it is a bug this suite actually hit. Cypress parses `CYPRESS_*`
+ * values, so an all-digit password like `123456789` arrives as the **number**
+ * 123456789, not a string. A `typeof value === 'string'` check silently
+ * rejected it, `hasCredentials()` returned false, and every authenticated spec
+ * reported *pending* — a run that looked like "no credentials configured" when
+ * the credentials were right there. Numeric passwords are perfectly legal, so
+ * the reader has to accept one.
+ */
+function credential(name: string): string | undefined {
+  const value: unknown = Cypress.env(name);
+  if (value === undefined || value === null) return undefined;
+  const text = String(value);
+  return text.length > 0 ? text : undefined;
+}
+
 export function testUsername(): string | undefined {
-  const value = Cypress.env('TEST_USERNAME');
-  return typeof value === 'string' && value.length > 0 ? value : undefined;
+  return credential('TEST_USERNAME');
 }
 
 export function testPassword(): string | undefined {
-  const value = Cypress.env('TEST_PASSWORD');
-  return typeof value === 'string' && value.length > 0 ? value : undefined;
+  return credential('TEST_PASSWORD');
 }
 
 export function hasCredentials(): boolean {

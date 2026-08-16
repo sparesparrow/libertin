@@ -18,6 +18,40 @@ import { defineConfig } from 'cypress';
 
 const DEFAULT_BASE_URL = 'http://localhost:3000';
 
+const BASE_URL = process.env.CYPRESS_BASE_URL ?? DEFAULT_BASE_URL;
+
+/**
+ * Artifacts are kept per target host.
+ *
+ * Cypress empties its output folders at the start of every run, so with one
+ * shared folder the second suite silently destroys the first one's evidence:
+ * running `e2e:local` after `e2e:modules` left the deployed run's failure
+ * screenshots gone, with nothing to say they had ever existed. The two suites
+ * point at different hosts, so the host is the natural separator.
+ */
+function targetSlug(url: string): string {
+  try {
+    return new URL(url).host.replace(/[^a-zA-Z0-9.-]/g, '_');
+  } catch {
+    return 'unknown-target';
+  }
+}
+
+const TARGET = targetSlug(BASE_URL);
+
+/**
+ * Evidence and failure screenshots live in sibling folders, not one shared one.
+ *
+ * Splitting by host was necessary but not sufficient: both the evidence run and
+ * the verification run point at the *same* host, so the evidence run trashed
+ * the failure screenshots exactly as the local run had trashed them before.
+ * The axis that matters is which kind of run produced the image, because the
+ * two answer different questions — "what is wrong" versus "where did the test
+ * blow up" — and neither should be able to delete the other.
+ */
+const CAPTURING_EVIDENCE = process.env.CYPRESS_CAPTURE_EVIDENCE === '1';
+const ARTIFACT_KIND = CAPTURING_EVIDENCE ? 'evidence' : 'failures';
+
 /**
  * C12.1 — contracted acceptance limit for a UI response is 1,5 s. Kept as an
  * env value so a run can tighten it, never so a run can quietly loosen it in
@@ -35,12 +69,12 @@ interface Finding {
 
 export default defineConfig({
   e2e: {
-    baseUrl: process.env.CYPRESS_BASE_URL ?? DEFAULT_BASE_URL,
+    baseUrl: BASE_URL,
     specPattern: 'cypress/e2e/**/*.cy.ts',
     supportFile: 'cypress/support/e2e.ts',
     fixturesFolder: 'cypress/fixtures',
-    screenshotsFolder: 'screenshots',
-    videosFolder: 'videos',
+    screenshotsFolder: `screenshots/${TARGET}/${ARTIFACT_KIND}`,
+    videosFolder: `videos/${TARGET}/${ARTIFACT_KIND}`,
     downloadsFolder: 'downloads',
 
     video: false,
@@ -107,10 +141,11 @@ export default defineConfig({
         // eslint-disable-next-line no-console
         console.log(report);
 
-        mkdirSync('reports', { recursive: true });
-        writeFileSync('reports/findings.txt', `${report}\n`, 'utf8');
+        const reportDir = `reports/${TARGET}`;
+        mkdirSync(reportDir, { recursive: true });
+        writeFileSync(`${reportDir}/findings.txt`, `${report}\n`, 'utf8');
         writeFileSync(
-          'reports/findings.json',
+          `${reportDir}/findings.json`,
           `${JSON.stringify([...findings.values()], null, 2)}\n`,
           'utf8',
         );
