@@ -32,7 +32,8 @@
         "password": "Heslo",
         "submit": "Přihlásit se",
         "forgotPassword": "Zapomenuté heslo?",
-        "noAccount": "Nemáte účet? Zaregistrujte se"
+        "noAccount": "Nemáte účet? Zaregistrujte se",
+        "error": "Přihlášení se nezdařilo. Zkontrolujte údaje."
       },
       "register": {
         "title": "Registrace",
@@ -86,7 +87,8 @@
     "feed": {
       "title": "Nástěnka",
       "empty": "Zatím zde nic není. Sledujte více členů.",
-      "loadMore": "Načíst další"
+      "loadMore": "Načíst další",
+      "anonymousAuthor": "Anonym"
     },
     "messages": {
       "title": "Zprávy",
@@ -146,7 +148,8 @@
         "password": "Password",
         "submit": "Sign in",
         "forgotPassword": "Forgot password?",
-        "noAccount": "No account? Sign up"
+        "noAccount": "No account? Sign up",
+        "error": "Sign-in failed. Please check your details."
       },
       "register": {
         "title": "Create account",
@@ -200,7 +203,8 @@
     "feed": {
       "title": "Feed",
       "empty": "Nothing here yet. Follow more members.",
-      "loadMore": "Load more"
+      "loadMore": "Load more",
+      "anonymousAuthor": "Anonymous"
     },
     "messages": {
       "title": "Messages",

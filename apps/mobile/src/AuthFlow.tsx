@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createClient } from '@libertin/api/client';
 import {
   FeedScreen,
@@ -16,6 +17,7 @@ const client = createClient(API_BASE);
 type Step = 'login' | 'verify' | 'success' | 'onboarding' | 'feed';
 
 export function AuthFlow() {
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>('login');
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
@@ -32,11 +34,11 @@ export function AuthFlow() {
       setToken(res.token);
       setStep(res.user.verified ? 'success' : 'verify');
     } catch {
-      setError('Přihlášení se nezdařilo. Zkontrolujte údaje.');
+      setError(t('auth.login.error'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const handleVerified = useCallback(async () => {
     setLoading(true);
@@ -55,7 +57,7 @@ export function AuthFlow() {
       setFeed(
         res.items.map((item) => ({
           id: item.id,
-          author: item.author?.displayName ?? 'Anonym',
+          author: item.author?.displayName ?? t('feed.anonymousAuthor'),
           content: item.content ?? null,
         })),
       );
@@ -63,7 +65,7 @@ export function AuthFlow() {
       setLoading(false);
       setStep('feed');
     }
-  }, [token]);
+  }, [token, t]);
 
   switch (step) {
     case 'login':
