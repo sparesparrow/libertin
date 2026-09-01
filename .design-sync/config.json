@@ -1,0 +1,28 @@
+{
+  "shape": "storybook",
+  "pkg": "@libertin/ui",
+  "globalName": "LibertinUI",
+  "entry": "packages/ui/src/index.ts",
+  "storybookStatic": ".design-sync/sb-reference",
+  "storybookConfigDir": "packages/ui/.storybook-ds",
+  "buildCmd": "pnpm install --frozen-lockfile",
+  "overrides": {
+    "AgeGate": {
+      "cardMode": "single",
+      "primaryStory": "Default"
+    },
+    "CategoryCard": {
+      "cardMode": "column"
+    }
+  },
+  "extraEntries": [
+    "../../.design-sync/libertin-root.tsx"
+  ],
+  "provider": {
+    "component": "LibertinRoot",
+    "props": {
+      "locale": "cs"
+    }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}
