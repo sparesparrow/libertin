@@ -100,6 +100,14 @@ export const MODULES = {
     marker: 'Členství',
     requiresAuth: true,
   },
+  settings: {
+    id: 'settings',
+    label: 'Nastavení profilu',
+    path: '/settings/osobni',
+    also: ['/settings/ucet', '/settings/o-mne', '/settings/hledam'],
+    marker: 'Nastavení profilu',
+    requiresAuth: true,
+  },
 } as const satisfies Record<string, ModuleRoute>;
 
 export type ModuleId = keyof typeof MODULES;
@@ -137,4 +145,6 @@ export const CZECH_TYPO_BLOCKLIST: readonly { wrong: string; right: string }[] =
   { wrong: 'svoji heslo', right: 'své heslo' },
   // Found in the "unknown network" modal that appears after signing in.
   { wrong: 'nenámé', right: 'neznámé' },
+  // Poll copy in the member sidebar.
+  { wrong: 'se vám libí', right: 'se vám líbí' },
 ];
