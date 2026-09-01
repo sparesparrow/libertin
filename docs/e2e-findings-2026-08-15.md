@@ -1,7 +1,11 @@
-# Nálezy e2e — nasazený klient, 15. 8. 2026
+# Nálezy e2e — nasazený klient
 
-První běh Cypress sady (`apps/e2e`, backlog E11-T5) proti rozpracovanému
-nasazení modulů.
+Cypress sada (`apps/e2e`, backlog E11-T5) proti rozpracovanému nasazení modulů.
+
+> **Aktuální stav je [druhý běh, 16. 8. 2026](#druhy-beh)** — 57 nálezů místo 78.
+> Bezpečnostní hlavičky, české překlepy i Lorem ipsum jsou opravené. Zbytek
+> dokumentu popisuje nálezy tak, jak byly zachyceny v prvním běhu 15. 8.;
+> u každého je v sekci druhého běhu uvedeno, jestli trvá.
 
 - **Cíl:** `https://libertine-omega.vercel.app`
 - **Sada:** Cypress 15.20.1, Electron headless, 1280×800
@@ -468,6 +472,68 @@ RSC payload do `<script>` tagů uvnitř `<body>`. Tvrzení psát přes
 `cy.visibleText()`, který nejdřív odstraní script/style — jinak kontrola textu
 projde na obsahu, který žádný uživatel nevidí. Jediná záměrná výjimka je leak
 spec z nálezu 1, kde je payload právě tím předmětem zkoumání.
+
+---
+
+<a id="druhy-beh"></a>
+
+## Druhý běh — 16. 8. 2026, po úpravách nasazení
+
+Nasazení se mezitím změnilo. Sada projela znovu proti stejné URL, stejným
+účtem. **57 nálezů oproti 78** a značka je nově „Libertin", ne „Libertine".
+
+### Opraveno
+
+| # | Nález | Jak to vypadá teď |
+|---|---|---|
+| [2](#nalez-2) | Bezpečnostní hlavičky | **Všech pět nastaveno**, navíc `content-security-policy: frame-ancestors 'none'`. `referrer-policy: same-origin` — přesně ta hodnota, kterou používá `apps/web`. |
+| [4](#nalez-4) | Čeština | `Zapomenute heslo` i `svůj učet` pryč. Spec `czech-copy` **12/12**, dřív 2/12. |
+| [6](#nalez-6) | Lorem ipsum | Nahrazen skutečnými popisy komunit. |
+| — | Zdvojené popisky v navigaci | „Kolekce Kolekce", „Komunikace Komunikace" — pryč. |
+| — | `aria-hidden-focus` na rozmazání | Zmizel s rozmazáním. |
+
+### Neopraveno
+
+| # | Nález | Stav |
+|---|---|---|
+| [1](#nalez-1) | Členský obsah v anonymní odpovědi | **Trvá.** `Vytvořit příběh`, `Od přátel`, `Co sleduji` jsou pořád v těle odpovědi pro nepřihlášeného. |
+| [3](#nalez-3) | Cookie lišta | Trvá — pořád `Souhlas` / `Povolit vše` / `Upravit`, odmítnutí na jedno kliknutí není. |
+| [7](#nalez-7) | Výkon C12.1 | 16 překročení místo 19. `/media` 2 796 ms, `/chat` 2 381 ms. TTFB pořád v desítkách ms. |
+| [8](#nalez-8) | Přístupnost | `button-name` pořád na 7 modulech, kontrast 12 uzlů (dřív 14). `img-alt` ale spadl z 3 na 1. |
+| [9](#nalez-9) | Neznámé id profilu | Trvá. |
+
+### Nové
+
+- **Zeď se přihlášenému členovi nenačte.** Zůstane na „Načítám…" i po 8
+  sekundách, takže kompozitor ani filtry se nevykreslí. Anonymní návštěvník
+  přitom zeď vidí. Regrese.
+- **Bog, Profily a Trefa nemají žádný `h1`** — ne špatný, ale nula.
+- **Trefa nevykresluje patičku** a v jednom běhu ani globální navigaci.
+- **Zmizel jazykový přepínač.** Patička dřív nabízela English … Česky, teď
+  nekončí ničím takovým. Proti **B13** (plná dodávka CS+EN) je to krok zpět.
+
+### Poznámka k nálezu 1 — proč to zvenčí vypadalo opravené
+
+Z `curl` to působilo jako oprava: v odpovědi nejsou jména členů ani `blur`.
+Jenže zeď je teď prázdná („Zatím žádné příběhy"), takže tam žádná jména být
+nemůžou — a hostovská brána se nově vykresluje až na klientovi. Struktura
+členské zdi v anonymní odpovědi zůstala.
+
+Je to přesně ta past, kterou tenhle dokument popisuje o pár odstavců výš:
+**bez dat za bránou vypadá únik a oprava zvenčí stejně.** Rozhodl až běh
+v prohlížeči. Nález 1 bude uzavřený teprve tehdy, až za bránou budou reálná
+data a odpověď je nebude obsahovat.
+
+### Dvě věci, které tenhle běh odhalil na samotné sadě
+
+- **Zastaralé očekávání navigace.** Sada čekala `Události` v hlavní navigaci;
+  ta byla nahrazena Trefa / Marketplace / Skupinový chat. Devět selhání, která
+  neříkala nic o aplikaci. Očekávání upraveno na to, co je strukturální —
+  `Domů` a `Zeď`. Po opravě `shell` **32/37** místo 24/37.
+- **Nula `h1` se hlásila mlčky.** `cy.get('h1')` při nulové shodě vyhodí
+  výjimku, takže se `.then` nikdy neprovede a nález se nezapíše — běh ohlásil
+  holý timeout a ztratil jediné číslo, které ho vysvětluje. Dotaz teď jde přes
+  `body`, takže nula je reportovatelná.
 
 ---
 
