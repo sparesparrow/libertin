@@ -1,0 +1,182 @@
+[
+  {
+    "module": "bog",
+    "route": "/messages",
+    "kind": "redirect",
+    "detail": "redirected to /login"
+  },
+  {
+    "module": "profiles",
+    "route": "/people",
+    "kind": "redirect",
+    "detail": "redirected to /login"
+  },
+  {
+    "module": "profiles",
+    "route": "/profile",
+    "kind": "redirect",
+    "detail": "redirected to /login"
+  },
+  {
+    "module": "profiles",
+    "route": "/profile/favorites",
+    "kind": "redirect",
+    "detail": "redirected to /login"
+  },
+  {
+    "module": "profiles",
+    "route": "/profile/friends",
+    "kind": "redirect",
+    "detail": "redirected to /login"
+  },
+  {
+    "module": "trefa",
+    "route": "/trefa",
+    "kind": "redirect",
+    "detail": "redirected to /login"
+  },
+  {
+    "module": "chat",
+    "route": "/chat",
+    "kind": "redirect",
+    "detail": "redirected to /login"
+  },
+  {
+    "module": "marketplace",
+    "route": "/marketplace",
+    "kind": "redirect",
+    "detail": "redirected to /login"
+  },
+  {
+    "module": "media",
+    "route": "/media",
+    "kind": "redirect",
+    "detail": "redirected to /login"
+  },
+  {
+    "module": "credit",
+    "route": "/profile/credit",
+    "kind": "redirect",
+    "detail": "redirected to /login"
+  },
+  {
+    "module": "profiles",
+    "route": "/profile/does-not-exist-cypress",
+    "kind": "redirect",
+    "detail": "redirected to /login"
+  },
+  {
+    "module": "profiles",
+    "route": "/profile/[id]",
+    "kind": "missing-empty-state",
+    "detail": "unknown profile id renders without a not-found state"
+  },
+  {
+    "module": "homepage",
+    "route": "/",
+    "kind": "a11y-color-contrast",
+    "detail": "serious: Elements must meet minimum color contrast ratio thresholds — 40 node(s), first: .underline"
+  },
+  {
+    "module": "homepage",
+    "route": "/",
+    "kind": "a11y-scrollable-region-focusable",
+    "detail": "serious: Scrollable region must have keyboard access — 2 node(s), first: .bg-surface-muted.py-12.sm\\:py-20:nth-child(4) > .max-w-7xl.mx-auto.sm\\:px-6 > .relative > .no-scrollbar.gap-\\[30px\\].overflow-x-auto"
+  },
+  {
+    "module": "wall",
+    "route": "/wall",
+    "kind": "a11y-color-contrast",
+    "detail": "serious: Elements must meet minimum color contrast ratio thresholds — 110 node(s), first: div:nth-child(1) > .text-left.py-2\\.5.justify-between > .uppercase.text-\\[15px\\].text-ink-faint"
+  },
+  {
+    "module": "homepage",
+    "route": "/",
+    "kind": "czech-typo",
+    "detail": "\"Zapomenute\" should be \"Zapomenuté\""
+  },
+  {
+    "module": "homepage",
+    "route": "/",
+    "kind": "czech-typo",
+    "detail": "\"svůj učet\" should be \"svůj účet\""
+  },
+  {
+    "module": "wall",
+    "route": "/wall",
+    "kind": "czech-typo",
+    "detail": "\"Zapomenute\" should be \"Zapomenuté\""
+  },
+  {
+    "module": "wall",
+    "route": "/wall",
+    "kind": "czech-typo",
+    "detail": "\"svůj učet\" should be \"svůj účet\""
+  },
+  {
+    "module": "copy",
+    "route": "/",
+    "kind": "placeholder-copy",
+    "detail": "filler text still rendered: Lorem ipsum, dolor sit amet, consectetuer"
+  },
+  {
+    "module": "discretion",
+    "route": "/",
+    "kind": "missing-referrer-policy",
+    "detail": "no Referrer-Policy header — an outbound click tells the destination which page the member came from"
+  },
+  {
+    "module": "discretion",
+    "route": "/",
+    "kind": "missing-security-header",
+    "detail": "X-Content-Type-Options not set"
+  },
+  {
+    "module": "discretion",
+    "route": "/",
+    "kind": "missing-security-header",
+    "detail": "X-Frame-Options (or a CSP frame-ancestors) not set"
+  },
+  {
+    "module": "discretion",
+    "route": "/",
+    "kind": "gdpr-cookie-banner",
+    "detail": "no one-click refusal on the cookie banner; offered: Souhlas, Detaily, Více o cookies, Upravit, Povolit vše"
+  },
+  {
+    "module": "wall",
+    "route": "/wall",
+    "kind": "perf-budget",
+    "detail": "load 2532 ms exceeds the 1500 ms budget (ttfb 45 ms)"
+  },
+  {
+    "module": "wall",
+    "route": "/wall",
+    "kind": "perf-budget",
+    "detail": "load 2295 ms exceeds the 1500 ms budget (ttfb 29 ms)"
+  },
+  {
+    "module": "wall",
+    "route": "/wall",
+    "kind": "perf-budget",
+    "detail": "load 1774 ms exceeds the 1500 ms budget (ttfb 20 ms)"
+  },
+  {
+    "module": "privacy",
+    "route": "/wall",
+    "kind": "anonymous-payload-leak",
+    "detail": "\"Vytvořit příběh\" is in the body served to a signed-out visitor, although the rendered page shows the guest view"
+  },
+  {
+    "module": "privacy",
+    "route": "/wall",
+    "kind": "anonymous-payload-leak",
+    "detail": "\"Od přátel\" is in the body served to a signed-out visitor, although the rendered page shows the guest view"
+  },
+  {
+    "module": "privacy",
+    "route": "/wall",
+    "kind": "anonymous-payload-leak",
+    "detail": "\"Co sleduji\" is in the body served to a signed-out visitor, although the rendered page shows the guest view"
+  }
+]

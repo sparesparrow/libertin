@@ -1,0 +1,1159 @@
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.20.1                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v22.22.2 (/opt/node22/bin/node)                                                │
+  │ Specs:          18 found (modules/00-route-inventory.cy.ts, modules/01-homepage.cy.ts, modules │
+  │                 /02-wall.cy.ts, modules/03-bog.cy.ts, modules/04-profiles.cy.ts, modules/05-tr │
+  │                 efa.cy.ts, modules/06-chat.cy.ts, modules/07-marketplace.cy.ts, modules/08-med │
+  │                 ia.cy.ts, modules/09-cr...)                                                    │
+  │ Searched:       cypress/e2e/modules/**/*.cy.ts, cypress/e2e/platform/**/*.cy.ts                │
+  │ Experiments:    experimentalMemoryManagement=true                                              │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  modules/00-route-inventory.cy.ts                                               (1 of 18)
+
+
+  Inventář rout — každý modul existuje na očekávané cestě
+    ✓ Homepage: / je skutečná routa (2609ms)
+    ✓ Zeď: /wall je skutečná routa (1881ms)
+    ✓ Bog (messenger): /messages je skutečná routa (2883ms)
+    ✓ Profily: /people je skutečná routa (2087ms)
+    ✓ Profily: /profile je skutečná routa (2943ms)
+    ✓ Profily: /profile/favorites je skutečná routa (2604ms)
+    ✓ Profily: /profile/friends je skutečná routa (2553ms)
+    ✓ Trefa: /trefa je skutečná routa (1639ms)
+    ✓ Chat: /chat je skutečná routa (2839ms)
+    ✓ Marketplace: /marketplace je skutečná routa (2800ms)
+    ✓ Média: /media je skutečná routa (2734ms)
+    ✓ Kredit / platební brána: /profile/credit je skutečná routa (3127ms)
+
+
+  12 passing (33s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        12                                                                               │
+  │ Passing:      12                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     32 seconds                                                                       │
+  │ Spec Ran:     modules/00-route-inventory.cy.ts                                                 │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  modules/01-homepage.cy.ts                                                      (2 of 18)
+
+
+  Modul: Homepage (/)
+    ✓ renders the hero as the page heading (2110ms)
+    ✓ renders the platform intro and the events section (1816ms)
+    ✓ lists event cards under the events section (2180ms)
+    ✓ offers a route into the product for a signed-out visitor (1723ms)
+    ✓ exposes the language switcher required by B13 (1572ms)
+
+
+  5 passing (10s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        5                                                                                │
+  │ Passing:      5                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     9 seconds                                                                        │
+  │ Spec Ran:     modules/01-homepage.cy.ts                                                        │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  modules/02-wall.cy.ts                                                          (3 of 18)
+
+
+  Modul: Zeď (/wall)
+    Host (nepřihlášený)
+      ✓ says plainly that the visitor is browsing as a guest (5105ms)
+      ✓ explains what signing up unlocks (3286ms)
+      ✓ has a top-level heading describing the page (2443ms)
+      ✓ does not show member-only composing to a guest (2692ms)
+    Člen (přihlášený)
+      - renders the story rail with a create-story affordance
+      - renders every feed filter
+      - resolves the feed into either posts or an explicit empty state
+
+
+  4 passing (14s)
+  3 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        7                                                                                │
+  │ Passing:      4                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      3                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     14 seconds                                                                       │
+  │ Spec Ran:     modules/02-wall.cy.ts                                                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  modules/03-bog.cy.ts                                                           (4 of 18)
+
+
+  Modul: Bog (messenger) (/messages)
+    - renders the messenger tabs
+    - renders a conversation list with an explicit empty state
+    - prompts the reader to pick a conversation
+    - has a top-level heading describing the page
+    - exposes a message composer once a conversation is open
+
+
+  0 passing (265ms)
+  5 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        5                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      5                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     0 seconds                                                                        │
+  │ Spec Ran:     modules/03-bog.cy.ts                                                             │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  modules/04-profiles.cy.ts                                                      (5 of 18)
+
+
+  Modul: Profily (/people)
+    ✓ Přátelé (/profile/friends) renders its own section (2908ms)
+    ✓ Oblíbení (/profile/favorites) renders its own section (2838ms)
+    ✓ renders a profile detail for a dynamic id (2388ms)
+    Adresář lidí
+      - renders the directory heading
+      - offers a filter control
+      - resolves the directory into profiles or an empty state
+    Vlastní profil
+      ✓ renders the profile page rather than a shell (1928ms)
+
+
+  4 passing (11s)
+  3 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        7                                                                                │
+  │ Passing:      4                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      3                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     10 seconds                                                                       │
+  │ Spec Ran:     modules/04-profiles.cy.ts                                                        │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  modules/05-trefa.cy.ts                                                         (6 of 18)
+
+
+  Modul: Trefa (/trefa)
+    - renders the discovery surface with an explicit state
+    - offers the quick-settings escape hatch from the empty state
+    - has a top-level heading describing the page
+    - renders the global navigation like every other module
+    - exposes the swipe/decision controls
+
+
+  0 passing (266ms)
+  5 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        5                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      5                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     0 seconds                                                                        │
+  │ Spec Ran:     modules/05-trefa.cy.ts                                                           │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  modules/06-chat.cy.ts                                                          (7 of 18)
+
+
+  Modul: Chat (/chat)
+    - renders the chat heading
+    - renders the chat tabs
+    - offers a create-room action
+    - resolves the room list instead of loading forever
+    - routes into an individual room
+
+
+  0 passing (280ms)
+  5 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        5                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      5                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     0 seconds                                                                        │
+  │ Spec Ran:     modules/06-chat.cy.ts                                                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  modules/07-marketplace.cy.ts                                                   (8 of 18)
+
+
+  Modul: Marketplace (/marketplace)
+    - renders the marketplace heading
+    - renders the seller and buyer entry points
+    - renders the listing browse controls
+    - resolves the listing grid instead of loading forever
+    - routes into a listing detail
+
+
+  0 passing (271ms)
+  5 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        5                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      5                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     0 seconds                                                                        │
+  │ Spec Ran:     modules/07-marketplace.cy.ts                                                     │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  modules/08-media.cy.ts                                                         (9 of 18)
+
+
+  Modul: Média (/media)
+    - renders the media heading
+    - renders the media tabs
+    - gives every rendered image an alt attribute
+    - does not present advertising placeholders as real content
+
+
+  0 passing (230ms)
+  4 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        4                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      4                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     0 seconds                                                                        │
+  │ Spec Ran:     modules/08-media.cy.ts                                                           │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  modules/09-credit.cy.ts                                                       (10 of 18)
+
+
+  Modul: Kredit / platební brána (/profile/credit)
+    - renders the payments heading
+    - renders the membership tiers on offer
+    - states a price for every tier it offers
+    - resolves the credit balance instead of loading forever
+    - never sends payment data over a non-TLS origin
+    - completes a checkout against the gateway
+
+
+  0 passing (305ms)
+  6 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        6                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      6                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     0 seconds                                                                        │
+  │ Spec Ran:     modules/09-credit.cy.ts                                                          │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  platform/a11y.cy.ts                                                           (11 of 18)
+
+
+  Přístupnost — axe (serious + critical)
+    (Attempt 1 of 3) Homepage (/) nemá závažné přestupky
+    (Attempt 2 of 3) Homepage (/) nemá závažné přestupky
+    1) Homepage (/) nemá závažné přestupky
+    (Attempt 1 of 3) Zeď (/wall) nemá závažné přestupky
+    (Attempt 2 of 3) Zeď (/wall) nemá závažné přestupky
+    2) Zeď (/wall) nemá závažné přestupky
+    - Bog (messenger) (/messages) nemá závažné přestupky
+    - Profily (/people) nemá závažné přestupky
+    - Trefa (/trefa) nemá závažné přestupky
+    - Chat (/chat) nemá závažné přestupky
+    - Marketplace (/marketplace) nemá závažné přestupky
+    - Média (/media) nemá závažné přestupky
+    - Kredit / platební brána (/profile/credit) nemá závažné přestupky
+
+
+  0 passing (22s)
+  7 pending
+  2 failing
+
+  1) Přístupnost — axe (serious + critical)
+       Homepage (/) nemá závažné přestupky:
+     AssertionError: 2 accessibility violations were detected: expected 2 to equal 0
+      at Context.eval (webpack://@libertin/e2e/../../node_modules/.pnpm/cypress-axe@1.7.0_axe-core@4.12.1_cypress@15.20.1/node_modules/cypress-axe/dist/index.js:102:0)
+      at getRet (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121345:20)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:4288:29)
+      at Context.thenFn (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121356:66)
+      at Context.then (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121607:21)
+      at wrapped (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:146374:19)
+
+  2) Přístupnost — axe (serious + critical)
+       Zeď (/wall) nemá závažné přestupky:
+     AssertionError: 1 accessibility violation was detected: expected 1 to equal 0
+      at Context.eval (webpack://@libertin/e2e/../../node_modules/.pnpm/cypress-axe@1.7.0_axe-core@4.12.1_cypress@15.20.1/node_modules/cypress-axe/dist/index.js:102:0)
+      at getRet (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121345:20)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:4288:29)
+      at Context.thenFn (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121356:66)
+      at Context.then (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121607:21)
+      at wrapped (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:146374:19)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        9                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      2                                                                                │
+  │ Pending:      7                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  6                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     21 seconds                                                                       │
+  │ Spec Ran:     platform/a11y.cy.ts                                                              │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /home/user/libertin/apps/e2e/screenshots/platform/a11y.cy.ts/Přístupnost — axe (     (1280x720)
+     serious + critical) -- Homepage () nemá závažné přestupky (failed).png                         
+  -  /home/user/libertin/apps/e2e/screenshots/platform/a11y.cy.ts/Přístupnost — axe (     (1280x720)
+     serious + critical) -- Homepage () nemá závažné přestupky (failed) (attempt 2).p               
+     ng                                                                                             
+  -  /home/user/libertin/apps/e2e/screenshots/platform/a11y.cy.ts/Přístupnost — axe (     (1280x720)
+     serious + critical) -- Homepage () nemá závažné přestupky (failed) (attempt 3).p               
+     ng                                                                                             
+  -  /home/user/libertin/apps/e2e/screenshots/platform/a11y.cy.ts/Přístupnost — axe (     (1280x720)
+     serious + critical) -- Zeď (wall) nemá závažné přestupky (failed).png                          
+  -  /home/user/libertin/apps/e2e/screenshots/platform/a11y.cy.ts/Přístupnost — axe (     (1280x720)
+     serious + critical) -- Zeď (wall) nemá závažné přestupky (failed) (attempt 2).pn               
+     g                                                                                              
+  -  /home/user/libertin/apps/e2e/screenshots/platform/a11y.cy.ts/Přístupnost — axe (     (1280x720)
+     serious + critical) -- Zeď (wall) nemá závažné přestupky (failed) (attempt 3).pn               
+     g                                                                                              
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  platform/czech-copy.cy.ts                                                     (12 of 18)
+
+
+  Čeština — zakázané řetězce
+    (Attempt 1 of 3) Homepage (/) neobsahuje známé překlepy
+    (Attempt 2 of 3) Homepage (/) neobsahuje známé překlepy
+    1) Homepage (/) neobsahuje známé překlepy
+    (Attempt 1 of 3) Zeď (/wall) neobsahuje známé překlepy
+    (Attempt 2 of 3) Zeď (/wall) neobsahuje známé překlepy
+    2) Zeď (/wall) neobsahuje známé překlepy
+    - Bog (messenger) (/messages) neobsahuje známé překlepy
+    - Profily (/people) neobsahuje známé překlepy
+    - Trefa (/trefa) neobsahuje známé překlepy
+    - Chat (/chat) neobsahuje známé překlepy
+    - Marketplace (/marketplace) neobsahuje známé překlepy
+    - Média (/media) neobsahuje známé překlepy
+    - Kredit / platební brána (/profile/credit) neobsahuje známé překlepy
+    ✓ nikde nezůstal neinterpolovaný placeholder (1551ms)
+    (Attempt 1 of 3) na veřejných stránkách nezůstal filler text
+    (Attempt 2 of 3) na veřejných stránkách nezůstal filler text
+    3) na veřejných stránkách nezůstal filler text
+    ✓ blocklist je neprázdný (ochrana proti prázdnému testu) (19ms)
+
+
+  2 passing (22s)
+  7 pending
+  3 failing
+
+  1) Čeština — zakázané řetězce
+       Homepage (/) neobsahuje známé překlepy:
+
+      forbidden Czech strings on page
+      + expected - actual
+
+      -[ '"Zapomenute" (should be "Zapomenuté")',
+      -  '"svůj učet" (should be "svůj účet")' ]
+      +[]
+      
+      at Context.eval (webpack://@libertin/e2e/./cypress/support/commands.ts:202:14)
+      at getRet (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121345:20)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:4288:29)
+
+  2) Čeština — zakázané řetězce
+       Zeď (/wall) neobsahuje známé překlepy:
+
+      forbidden Czech strings on page
+      + expected - actual
+
+      -[ '"Zapomenute" (should be "Zapomenuté")',
+      -  '"svůj učet" (should be "svůj účet")' ]
+      +[]
+      
+      at Context.eval (webpack://@libertin/e2e/./cypress/support/commands.ts:202:14)
+      at getRet (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121345:20)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:4288:29)
+
+  3) Čeština — zakázané řetězce
+       na veřejných stránkách nezůstal filler text:
+
+      filler text on /
+      + expected - actual
+
+      -[ 'Lorem ipsum', 'dolor sit amet', 'consectetuer' ]
+      +[]
+      
+      at Context.eval (webpack://@libertin/e2e/./cypress/e2e/platform/czech-copy.cy.ts:44:58)
+      at getRet (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121345:20)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:4288:29)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        12                                                                               │
+  │ Passing:      2                                                                                │
+  │ Failing:      3                                                                                │
+  │ Pending:      7                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  9                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     22 seconds                                                                       │
+  │ Spec Ran:     platform/czech-copy.cy.ts                                                        │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /home/user/libertin/apps/e2e/screenshots/platform/czech-copy.cy.ts/Čeština — zak     (1280x720)
+     ázané řetězce -- Homepage () neobsahuje známé překlepy (failed).png                            
+  -  /home/user/libertin/apps/e2e/screenshots/platform/czech-copy.cy.ts/Čeština — zak     (1280x720)
+     ázané řetězce -- Homepage () neobsahuje známé překlepy (failed) (attempt 2).png                
+  -  /home/user/libertin/apps/e2e/screenshots/platform/czech-copy.cy.ts/Čeština — zak     (1280x720)
+     ázané řetězce -- Homepage () neobsahuje známé překlepy (failed) (attempt 3).png                
+  -  /home/user/libertin/apps/e2e/screenshots/platform/czech-copy.cy.ts/Čeština — zak     (1280x720)
+     ázané řetězce -- Zeď (wall) neobsahuje známé překlepy (failed).png                             
+  -  /home/user/libertin/apps/e2e/screenshots/platform/czech-copy.cy.ts/Čeština — zak     (1280x720)
+     ázané řetězce -- Zeď (wall) neobsahuje známé překlepy (failed) (attempt 2).png                 
+  -  /home/user/libertin/apps/e2e/screenshots/platform/czech-copy.cy.ts/Čeština — zak     (1280x720)
+     ázané řetězce -- Zeď (wall) neobsahuje známé překlepy (failed) (attempt 3).png                 
+  -  /home/user/libertin/apps/e2e/screenshots/platform/czech-copy.cy.ts/Čeština — zak     (1280x720)
+     ázané řetězce -- na veřejných stránkách nezůstal filler text (failed).png                      
+  -  /home/user/libertin/apps/e2e/screenshots/platform/czech-copy.cy.ts/Čeština — zak     (1280x720)
+     ázané řetězce -- na veřejných stránkách nezůstal filler text (failed) (attempt 2               
+     ).png                                                                                          
+  -  /home/user/libertin/apps/e2e/screenshots/platform/czech-copy.cy.ts/Čeština — zak     (1280x720)
+     ázané řetězce -- na veřejných stránkách nezůstal filler text (failed) (attempt 3               
+     ).png                                                                                          
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  platform/discretion.cy.ts                                                     (13 of 18)
+
+
+  Diskrétnost — co stránka prozradí o návštěvníkovi
+    (Attempt 1 of 3) nastavuje Referrer-Policy, aby cíl odkazu nepoznal odkud návštěvník přišel
+    (Attempt 2 of 3) nastavuje Referrer-Policy, aby cíl odkazu nepoznal odkud návštěvník přišel
+    1) nastavuje Referrer-Policy, aby cíl odkazu nepoznal odkud návštěvník přišel
+    (Attempt 1 of 3) nastavuje X-Content-Type-Options a X-Frame-Options
+    (Attempt 2 of 3) nastavuje X-Content-Type-Options a X-Frame-Options
+    2) nastavuje X-Content-Type-Options a X-Frame-Options
+    (Attempt 1 of 3) nabízí odmítnutí cookies stejně snadno jako souhlas
+    (Attempt 2 of 3) nabízí odmítnutí cookies stejně snadno jako souhlas
+    3) nabízí odmítnutí cookies stejně snadno jako souhlas
+    (Attempt 1 of 3) cookie lišta nepřekrývá přihlašovací formulář
+    (Attempt 2 of 3) cookie lišta nepřekrývá přihlašovací formulář
+    4) cookie lišta nepřekrývá přihlašovací formulář
+    ✓ nenačítá známé trackery třetích stran (1932ms)
+    (Attempt 1 of 3) neposílá odkazy na cizí weby bez rel="noreferrer"
+    (Attempt 2 of 3) neposílá odkazy na cizí weby bez rel="noreferrer"
+    5) neposílá odkazy na cizí weby bez rel="noreferrer"
+title /                    -> Libertine
+title /wall                -> Libertine
+title /messages            -> Libertine
+title /people              -> Libertine
+title /trefa               -> Libertine
+title /chat                -> Libertine
+title /marketplace         -> Libertine
+title /media               -> Libertine
+title /profile/credit      -> Libertine
+    ✓ neukládá do titulku stránky nic, co prozradí povahu webu ve historii prohlížeče (19392ms)
+    ✓ platební stránka neodhaluje údaje o kartě v DOM (2338ms)
+
+
+  3 passing (2m)
+  5 failing
+
+  1) Diskrétnost — co stránka prozradí o návštěvníkovi
+       nastavuje Referrer-Policy, aby cíl odkazu nepoznal odkud návštěvník přišel:
+
+      Referrer-Policy header
+      + expected - actual
+
+      +[ 'same-origin',
+      +  'no-referrer',
+      +  'strict-origin',
+      +  'strict-origin-when-cross-origin' ]
+      
+      at Context.eval (webpack://@libertin/e2e/./cypress/e2e/platform/discretion.cy.ts:43:53)
+      at getRet (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121345:20)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:4288:29)
+      at Context.thenFn (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121356:66)
+      at Context.then (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121607:21)
+
+  2) Diskrétnost — co stránka prozradí o návštěvníkovi
+       nastavuje X-Content-Type-Options a X-Frame-Options:
+
+      security headers
+      + expected - actual
+
+      -[ 'X-Content-Type-Options',
+      -  'X-Frame-Options (or a CSP frame-ancestors)' ]
+      +[]
+      
+      at Context.eval (webpack://@libertin/e2e/./cypress/e2e/platform/discretion.cy.ts:58:50)
+      at getRet (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121345:20)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:4288:29)
+
+  3) Diskrétnost — co stránka prozradí o návštěvníkovi
+       nabízí odmítnutí cookies stejně snadno jako souhlas:
+     AssertionError: cookie banner offers a one-click refusal: expected false to equal true
+      at Context.eval (webpack://@libertin/e2e/./cypress/e2e/platform/discretion.cy.ts:91:69)
+      at getRet (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121345:20)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:4288:29)
+      at Context.thenFn (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121356:66)
+      at Context.then (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121607:21)
+
+  4) Diskrétnost — co stránka prozradí o návštěvníkovi
+       cookie lišta nepřekrývá přihlašovací formulář:
+     CypressError: Timed out retrying after 8000ms: `cy.click()` failed because this element:
+
+`<input type="password" placeholder="Heslo" aria-label="Heslo" class="min-w-0 flex-1 bg-transparent font-sans text-[15px] text-ink outline-none placeholder:text-ink-faint" value="">`
+
+is being covered by another element:
+
+`<p class="font-sans text-h5 font-bold text-ink sm:text-h3">Cookies</p>`
+
+Fix this problem, or use {force: true} to disable error checking.
+
+https://on.cypress.io/element-cannot-be-interacted-with
+      at ensureIsDescendent (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:113647:68)
+      at ensureDescendents (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:113698:5)
+      at ensureDescendentsAndScroll (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:113704:14)
+      at ensureElIsNotCovered (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:113835:5)
+      at runAllChecks (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:114032:52)
+      at retryActionability (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:114070:16)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:4288:29)
+      at whenStable (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:152215:70)
+      at <unknown> (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:152115:14)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise._settlePromiseFromHandler (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1492:31)
+      at Promise._settlePromise (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1549:18)
+      at Promise._settlePromise0 (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1594:10)
+      at Promise._settlePromises (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1674:18)
+      at Promise._fulfill (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1618:18)
+      at <unknown> (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:5423:46)
+
+  5) Diskrétnost — co stránka prozradí o návštěvníkovi
+       neposílá odkazy na cizí weby bez rel="noreferrer":
+     AssertionError: Timed out retrying after 10000ms: Expected to find element: `a[target="_blank"]`, but never found it.
+      at Context.eval (webpack://@libertin/e2e/./cypress/e2e/platform/discretion.cy.ts:129:7)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        8                                                                                │
+  │ Passing:      3                                                                                │
+  │ Failing:      5                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  15                                                                               │
+  │ Video:        false                                                                            │
+  │ Duration:     1 minute, 36 seconds                                                             │
+  │ Spec Ran:     platform/discretion.cy.ts                                                        │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- nastavuje Referrer-Policy, aby cíl odkaz               
+     u nepoznal odkud návštěvník přišel (failed).png                                                
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- nastavuje Referrer-Policy, aby cíl odkaz               
+     u nepoznal odkud návštěvník přišel (failed) (attempt 2).png                                    
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- nastavuje Referrer-Policy, aby cíl odkaz               
+     u nepoznal odkud návštěvník přišel (failed) (attempt 3).png                                    
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- nastavuje X-Content-Type-Options a X-Fra               
+     me-Options (failed).png                                                                        
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- nastavuje X-Content-Type-Options a X-Fra               
+     me-Options (failed) (attempt 2).png                                                            
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- nastavuje X-Content-Type-Options a X-Fra               
+     me-Options (failed) (attempt 3).png                                                            
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- nabízí odmítnutí cookies stejně snadno j               
+     ako souhlas (failed).png                                                                       
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- nabízí odmítnutí cookies stejně snadno j               
+     ako souhlas (failed) (attempt 2).png                                                           
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- nabízí odmítnutí cookies stejně snadno j               
+     ako souhlas (failed) (attempt 3).png                                                           
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- cookie lišta nepřekrývá přihlašovací for               
+     mulář (failed).png                                                                             
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- cookie lišta nepřekrývá přihlašovací for               
+     mulář (failed) (attempt 2).png                                                                 
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- cookie lišta nepřekrývá přihlašovací for               
+     mulář (failed) (attempt 3).png                                                                 
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- neposílá odkazy na cizí weby bez rel=nor               
+     eferrer (failed).png                                                                           
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- neposílá odkazy na cizí weby bez rel=nor               
+     eferrer (failed) (attempt 2).png                                                               
+  -  /home/user/libertin/apps/e2e/screenshots/platform/discretion.cy.ts/Diskrétnost —     (1280x720)
+      co stránka prozradí o návštěvníkovi -- neposílá odkazy na cizí weby bez rel=nor               
+     eferrer (failed) (attempt 3).png                                                               
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  platform/navigation-links.cy.ts                                               (14 of 18)
+
+
+  Navigace — žádný odkaz nesmí vést na 404
+Checking 29 internal links from /wall
+    ✓ collects and follows every internal link in the shell (89718ms)
+
+
+  1 passing (2m)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      1                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     1 minute, 30 seconds                                                             │
+  │ Spec Ran:     platform/navigation-links.cy.ts                                                  │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  platform/performance.cy.ts                                                    (15 of 18)
+
+
+  Výkon — rozpočet C12.1 (≤ 1,5 s, jeden uživatel)
+    (Attempt 1 of 3) Homepage (/) se načte do 1500 ms
+    (Attempt 2 of 3) Homepage (/) se načte do 1500 ms
+    1) Homepage (/) se načte do 1500 ms
+    (Attempt 1 of 3) Zeď (/wall) se načte do 1500 ms
+    (Attempt 2 of 3) Zeď (/wall) se načte do 1500 ms
+    2) Zeď (/wall) se načte do 1500 ms
+    - Bog (messenger) (/messages) se načte do 1500 ms
+    - Profily (/people) se načte do 1500 ms
+    - Trefa (/trefa) se načte do 1500 ms
+    - Chat (/chat) se načte do 1500 ms
+    - Marketplace (/marketplace) se načte do 1500 ms
+    - Média (/media) se načte do 1500 ms
+    - Kredit / platební brána (/profile/credit) se načte do 1500 ms
+
+
+  0 passing (29s)
+  7 pending
+  2 failing
+
+  1) Výkon — rozpočet C12.1 (≤ 1,5 s, jeden uživatel)
+       Homepage (/) se načte do 1500 ms:
+     CypressError: `cy.then()` failed because you are mixing up async and sync code.
+
+In your callback function you invoked 1 or more cy commands but then returned a synchronous value.
+
+Cypress commands are asynchronous and it doesn't make sense to queue cy commands and yet return a synchronous value.
+
+You likely forgot to properly chain the cy commands using another `cy.then()`.
+
+The value you synchronously returned was: `Object{3}`
+      at getRet (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121347:70)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:4288:29)
+      at Context.thenFn (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121356:66)
+      at Context.then (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121607:21)
+      at wrapped (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:146374:19)
+      at <unknown> (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:152495:15)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise._settlePromiseFromHandler (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1492:31)
+      at Promise._settlePromise (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1549:18)
+      at Promise._settlePromiseCtx (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1586:10)
+      at _drainQueueStep (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:2384:12)
+      at _drainQueue (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:2373:9)
+      at Async._drainQueues (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:2389:5)
+      at Async.drainQueues (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:2259:14)
+
+  2) Výkon — rozpočet C12.1 (≤ 1,5 s, jeden uživatel)
+       Zeď (/wall) se načte do 1500 ms:
+     CypressError: `cy.then()` failed because you are mixing up async and sync code.
+
+In your callback function you invoked 1 or more cy commands but then returned a synchronous value.
+
+Cypress commands are asynchronous and it doesn't make sense to queue cy commands and yet return a synchronous value.
+
+You likely forgot to properly chain the cy commands using another `cy.then()`.
+
+The value you synchronously returned was: `Object{3}`
+      at getRet (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121347:70)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:4288:29)
+      at Context.thenFn (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121356:66)
+      at Context.then (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121607:21)
+      at wrapped (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:146374:19)
+      at <unknown> (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:152495:15)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise._settlePromiseFromHandler (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1492:31)
+      at Promise._settlePromise (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1549:18)
+      at Promise._settlePromiseCtx (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1586:10)
+      at _drainQueueStep (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:2384:12)
+      at _drainQueue (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:2373:9)
+      at Async._drainQueues (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:2389:5)
+      at Async.drainQueues (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:2259:14)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        9                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      2                                                                                │
+  │ Pending:      7                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  6                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     29 seconds                                                                       │
+  │ Spec Ran:     platform/performance.cy.ts                                                       │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /home/user/libertin/apps/e2e/screenshots/platform/performance.cy.ts/Výkon — rozp     (1280x720)
+     očet C12.1 (≤ 1,5 s, jeden uživatel) -- Homepage () se načte do 1500 ms (failed)               
+     .png                                                                                           
+  -  /home/user/libertin/apps/e2e/screenshots/platform/performance.cy.ts/Výkon — rozp     (1280x720)
+     očet C12.1 (≤ 1,5 s, jeden uživatel) -- Homepage () se načte do 1500 ms (failed)               
+      (attempt 2).png                                                                               
+  -  /home/user/libertin/apps/e2e/screenshots/platform/performance.cy.ts/Výkon — rozp     (1280x720)
+     očet C12.1 (≤ 1,5 s, jeden uživatel) -- Homepage () se načte do 1500 ms (failed)               
+      (attempt 3).png                                                                               
+  -  /home/user/libertin/apps/e2e/screenshots/platform/performance.cy.ts/Výkon — rozp     (1280x720)
+     očet C12.1 (≤ 1,5 s, jeden uživatel) -- Zeď (wall) se načte do 1500 ms (failed).               
+     png                                                                                            
+  -  /home/user/libertin/apps/e2e/screenshots/platform/performance.cy.ts/Výkon — rozp     (1280x720)
+     očet C12.1 (≤ 1,5 s, jeden uživatel) -- Zeď (wall) se načte do 1500 ms (failed)                
+     (attempt 2).png                                                                                
+  -  /home/user/libertin/apps/e2e/screenshots/platform/performance.cy.ts/Výkon — rozp     (1280x720)
+     očet C12.1 (≤ 1,5 s, jeden uživatel) -- Zeď (wall) se načte do 1500 ms (failed)                
+     (attempt 3).png                                                                                
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  platform/rsc-leak.cy.ts                                                       (16 of 18)
+
+
+  Únik dat — anonymní odpověď nesmí nést členský obsah
+    (Attempt 1 of 3) /wall (zeď — kompozitor a jména členů)
+    (Attempt 2 of 3) /wall (zeď — kompozitor a jména členů)
+    1) /wall (zeď — kompozitor a jména členů)
+    ✓ /wall skutečně ukazuje hostovi hostovský pohled (3254ms)
+
+
+  1 passing (4s)
+  1 failing
+
+  1) Únik dat — anonymní odpověď nesmí nést členský obsah
+       /wall (zeď — kompozitor a jména členů):
+
+      member-only content in the anonymous /wall response
+      + expected - actual
+
+      -[ 'Vytvořit příběh', 'Od přátel', 'Co sleduji' ]
+      +[]
+      
+      at Context.eval (webpack://@libertin/e2e/./cypress/e2e/platform/rsc-leak.cy.ts:57:95)
+      at getRet (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:121345:20)
+      at tryCatcher (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://libertine-omega.vercel.app/__cypress/runner/cypress_runner.js:4288:29)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        2                                                                                │
+  │ Passing:      1                                                                                │
+  │ Failing:      1                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  3                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     4 seconds                                                                        │
+  │ Spec Ran:     platform/rsc-leak.cy.ts                                                          │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /home/user/libertin/apps/e2e/screenshots/platform/rsc-leak.cy.ts/Únik dat — anon     (1280x720)
+     ymní odpověď nesmí nést členský obsah -- wall (zeď — kompozitor a jména členů) (               
+     failed).png                                                                                    
+  -  /home/user/libertin/apps/e2e/screenshots/platform/rsc-leak.cy.ts/Únik dat — anon     (1280x720)
+     ymní odpověď nesmí nést členský obsah -- wall (zeď — kompozitor a jména členů) (               
+     failed) (attempt 2).png                                                                        
+  -  /home/user/libertin/apps/e2e/screenshots/platform/rsc-leak.cy.ts/Únik dat — anon     (1280x720)
+     ymní odpověď nesmí nést členský obsah -- wall (zeď — kompozitor a jména členů) (               
+     failed) (attempt 3).png                                                                        
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  platform/runtime-errors.cy.ts                                                 (17 of 18)
+
+
+  Běhové chyby — konzole a nezachycené výjimky
+    ✓ Homepage (/) se načte bez chyb v konzoli (2120ms)
+    ✓ Zeď (/wall) se načte bez chyb v konzoli (2352ms)
+    - Bog (messenger) (/messages) se načte bez chyb v konzoli
+    - Profily (/people) se načte bez chyb v konzoli
+    - Trefa (/trefa) se načte bez chyb v konzoli
+    - Chat (/chat) se načte bez chyb v konzoli
+    - Marketplace (/marketplace) se načte bez chyb v konzoli
+    - Média (/media) se načte bez chyb v konzoli
+    - Kredit / platební brána (/profile/credit) se načte bez chyb v konzoli
+
+
+  2 passing (5s)
+  7 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        9                                                                                │
+  │ Passing:      2                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      7                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     5 seconds                                                                        │
+  │ Spec Ran:     platform/runtime-errors.cy.ts                                                    │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  platform/shell.cy.ts                                                          (18 of 18)
+
+
+  Shell — globální navigace a patička
+    Homepage
+      ✓ renders the primary navigation (2446ms)
+      ✓ renders the footer with a support contact (1706ms)
+      ✓ declares the document language (1482ms)
+      ✓ renders exactly one h1 (1652ms)
+    Zeď
+      ✓ renders the primary navigation (2880ms)
+      ✓ renders the footer with a support contact (2218ms)
+      ✓ declares the document language (3210ms)
+      ✓ renders exactly one h1 (2439ms)
+    Bog (messenger)
+      - renders the primary navigation
+      - renders the footer with a support contact
+      - declares the document language
+      - renders exactly one h1
+    Profily
+      - renders the primary navigation
+      - renders the footer with a support contact
+      - declares the document language
+      - renders exactly one h1
+    Trefa
+      - renders the primary navigation
+      - renders the footer with a support contact
+      - declares the document language
+      - renders exactly one h1
+    Chat
+      - renders the primary navigation
+      - renders the footer with a support contact
+      - declares the document language
+      - renders exactly one h1
+    Marketplace
+      - renders the primary navigation
+      - renders the footer with a support contact
+      - declares the document language
+      - renders exactly one h1
+    Média
+      - renders the primary navigation
+      - renders the footer with a support contact
+      - declares the document language
+      - renders exactly one h1
+    Kredit / platební brána
+      - renders the primary navigation
+      - renders the footer with a support contact
+      - declares the document language
+      - renders exactly one h1
+    Popisky navigace
+      ✓ does not render a navigation label twice in a row (2333ms)
+
+
+  9 passing (25s)
+  28 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        37                                                                               │
+  │ Passing:      9                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      28                                                                               │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     24 seconds                                                                       │
+  │ Spec Ran:     platform/shell.cy.ts                                                             │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+=== Libertin e2e findings (30) ===
+
+a11y-color-contrast (2)
+  homepage / — serious: Elements must meet minimum color contrast ratio thresholds — 40 node(s), first: .underline
+  wall /wall — serious: Elements must meet minimum color contrast ratio thresholds — 110 node(s), first: div:nth-child(1) > .text-left.py-2\.5.justify-between > .uppercase.text-\[15px\].text-ink-faint
+
+a11y-scrollable-region-focusable (1)
+  homepage / — serious: Scrollable region must have keyboard access — 2 node(s), first: .bg-surface-muted.py-12.sm\:py-20:nth-child(4) > .max-w-7xl.mx-auto.sm\:px-6 > .relative > .no-scrollbar.gap-\[30px\].overflow-x-auto
+
+anonymous-payload-leak (3)
+  privacy /wall — "Vytvořit příběh" is in the body served to a signed-out visitor, although the rendered page shows the guest view
+  privacy /wall — "Od přátel" is in the body served to a signed-out visitor, although the rendered page shows the guest view
+  privacy /wall — "Co sleduji" is in the body served to a signed-out visitor, although the rendered page shows the guest view
+
+czech-typo (4)
+  homepage / — "Zapomenute" should be "Zapomenuté"
+  homepage / — "svůj učet" should be "svůj účet"
+  wall /wall — "Zapomenute" should be "Zapomenuté"
+  wall /wall — "svůj učet" should be "svůj účet"
+
+gdpr-cookie-banner (1)
+  discretion / — no one-click refusal on the cookie banner; offered: Souhlas, Detaily, Více o cookies, Upravit, Povolit vše
+
+missing-empty-state (1)
+  profiles /profile/[id] — unknown profile id renders without a not-found state
+
+missing-referrer-policy (1)
+  discretion / — no Referrer-Policy header — an outbound click tells the destination which page the member came from
+
+missing-security-header (2)
+  discretion / — X-Content-Type-Options not set
+  discretion / — X-Frame-Options (or a CSP frame-ancestors) not set
+
+perf-budget (3)
+  wall /wall — load 2532 ms exceeds the 1500 ms budget (ttfb 45 ms)
+  wall /wall — load 2295 ms exceeds the 1500 ms budget (ttfb 29 ms)
+  wall /wall — load 1774 ms exceeds the 1500 ms budget (ttfb 20 ms)
+
+placeholder-copy (1)
+  copy / — filler text still rendered: Lorem ipsum, dolor sit amet, consectetuer
+
+redirect (11)
+  bog /messages — redirected to /login
+  profiles /people — redirected to /login
+  profiles /profile — redirected to /login
+  profiles /profile/favorites — redirected to /login
+  profiles /profile/friends — redirected to /login
+  trefa /trefa — redirected to /login
+  chat /chat — redirected to /login
+  marketplace /marketplace — redirected to /login
+  media /media — redirected to /login
+  credit /profile/credit — redirected to /login
+  profiles /profile/does-not-exist-cypress — redirected to /login
+
+================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✔  modules/00-route-inventory.cy.ts         00:32       12       12        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  modules/01-homepage.cy.ts                00:09        5        5        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  modules/02-wall.cy.ts                    00:14        7        4        -        3        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  modules/03-bog.cy.ts                     273ms        5        -        -        5        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  modules/04-profiles.cy.ts                00:10        7        4        -        3        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  modules/05-trefa.cy.ts                   273ms        5        -        -        5        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  modules/06-chat.cy.ts                    285ms        5        -        -        5        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  modules/07-marketplace.cy.ts             277ms        5        -        -        5        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  modules/08-media.cy.ts                   235ms        4        -        -        4        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  modules/09-credit.cy.ts                  310ms        6        -        -        6        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✖  platform/a11y.cy.ts                      00:21        9        -        2        7        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✖  platform/czech-copy.cy.ts                00:22       12        2        3        7        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✖  platform/discretion.cy.ts                01:36        8        3        5        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  platform/navigation-links.cy.ts          01:30        1        1        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✖  platform/performance.cy.ts               00:29        9        -        2        7        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✖  platform/rsc-leak.cy.ts                  00:04        2        1        1        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  platform/runtime-errors.cy.ts            00:05        9        2        -        7        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  platform/shell.cy.ts                     00:24       37        9        -       28        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✖  5 of 18 failed (28%)                     06:04      148       43       13       92        -  
+

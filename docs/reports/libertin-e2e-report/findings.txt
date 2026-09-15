@@ -1,0 +1,54 @@
+
+=== Libertin e2e findings (30) ===
+
+a11y-color-contrast (2)
+  homepage / — serious: Elements must meet minimum color contrast ratio thresholds — 40 node(s), first: .underline
+  wall /wall — serious: Elements must meet minimum color contrast ratio thresholds — 110 node(s), first: div:nth-child(1) > .text-left.py-2\.5.justify-between > .uppercase.text-\[15px\].text-ink-faint
+
+a11y-scrollable-region-focusable (1)
+  homepage / — serious: Scrollable region must have keyboard access — 2 node(s), first: .bg-surface-muted.py-12.sm\:py-20:nth-child(4) > .max-w-7xl.mx-auto.sm\:px-6 > .relative > .no-scrollbar.gap-\[30px\].overflow-x-auto
+
+anonymous-payload-leak (3)
+  privacy /wall — "Vytvořit příběh" is in the body served to a signed-out visitor, although the rendered page shows the guest view
+  privacy /wall — "Od přátel" is in the body served to a signed-out visitor, although the rendered page shows the guest view
+  privacy /wall — "Co sleduji" is in the body served to a signed-out visitor, although the rendered page shows the guest view
+
+czech-typo (4)
+  homepage / — "Zapomenute" should be "Zapomenuté"
+  homepage / — "svůj učet" should be "svůj účet"
+  wall /wall — "Zapomenute" should be "Zapomenuté"
+  wall /wall — "svůj učet" should be "svůj účet"
+
+gdpr-cookie-banner (1)
+  discretion / — no one-click refusal on the cookie banner; offered: Souhlas, Detaily, Více o cookies, Upravit, Povolit vše
+
+missing-empty-state (1)
+  profiles /profile/[id] — unknown profile id renders without a not-found state
+
+missing-referrer-policy (1)
+  discretion / — no Referrer-Policy header — an outbound click tells the destination which page the member came from
+
+missing-security-header (2)
+  discretion / — X-Content-Type-Options not set
+  discretion / — X-Frame-Options (or a CSP frame-ancestors) not set
+
+perf-budget (3)
+  wall /wall — load 2532 ms exceeds the 1500 ms budget (ttfb 45 ms)
+  wall /wall — load 2295 ms exceeds the 1500 ms budget (ttfb 29 ms)
+  wall /wall — load 1774 ms exceeds the 1500 ms budget (ttfb 20 ms)
+
+placeholder-copy (1)
+  copy / — filler text still rendered: Lorem ipsum, dolor sit amet, consectetuer
+
+redirect (11)
+  bog /messages — redirected to /login
+  profiles /people — redirected to /login
+  profiles /profile — redirected to /login
+  profiles /profile/favorites — redirected to /login
+  profiles /profile/friends — redirected to /login
+  trefa /trefa — redirected to /login
+  chat /chat — redirected to /login
+  marketplace /marketplace — redirected to /login
+  media /media — redirected to /login
+  credit /profile/credit — redirected to /login
+  profiles /profile/does-not-exist-cypress — redirected to /login
