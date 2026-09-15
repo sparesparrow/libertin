@@ -71,8 +71,15 @@ Tag `v0.1.0` spustí `release.yml`:
 |---|---|---|
 | `verify` | verze z tagu vs. manifesty, publikovatelná množina, `type-check` + `test:all` + `build` | manifest má jinou verzi, přibyl nečekaně publikovatelný balíček, nebo neprojde brána |
 | `pack` | `pnpm pack` každého balíčku + kontrola obsahu tarballu | v tarballu je test/story/`vitest`, nebo přežil specifikátor `workspace:` |
+| `pack-web` | standalone build `apps/web` → `libertin-web-<verze>.tar.gz` + `libertin-openapi-<verze>.yaml` | bundle nejde spustit (chybí `server.js`), nebo by se vydal mockovací service worker |
 | `publish-npm` | `pnpm publish -r` | jen když je nastavený `NPM_TOKEN` — viz níže |
-| `github-release` | připne tarbally k GitHub Release | — |
+| `github-release` | připne **všechny** artefakty + `SHA256SUMS.txt` k GitHub Release | připnutá sada nesedí na zabalenou |
+
+**Co si jde z Release stáhnout:** čtyři balíčkové tarbally, spustitelný bundle
+webu, zmrazený API kontrakt a `SHA256SUMS.txt`. Bundle má rozložení, které
+očekává runtime stupeň `apps/web/Dockerfile` — po rozbalení se spustí
+`node apps/web/server.js`. Externí provozovatel (**C8**) tak nepotřebuje ani
+registr balíčků, ani přístup k registru imagí, ani toolchain.
 
 **Proč `verify` znovu pouští celou bránu:** `ci.yml` se spouští na
 `push: branches:`, a push tagu **nesedí na žádnou branch** — otagování commitu

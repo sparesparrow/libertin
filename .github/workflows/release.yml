@@ -6,10 +6,11 @@
 #   1. verify  — the tag and every publishable manifest agree on the version,
 #                and the workspace still type-checks, tests and builds
 #   2. pack    — one .tgz per package, with the tarball contents asserted
+#   2b. pack-web — the runnable Next.js standalone bundle + the API contract
 #   3. npm     — push to the registry, but only when NPM_TOKEN is configured
-#   4. release — attach the tarballs to the GitHub Release
+#   4. release — attach every artifact, plus SHA256SUMS.txt, to the Release
 #
-# Steps 1, 2 and 4 need no secrets and work today. Step 3 is deliberately
+# Steps 1, 2, 2b and 4 need no secrets and work today. Step 3 is deliberately
 # optional: which registry these packages belong in is an open owner decision
 # (docs/backlog.yaml, D-008), so a tag without NPM_TOKEN still produces a
 # complete, downloadable release instead of failing.
@@ -212,6 +213,78 @@ jobs:
           retention-days: 30
 
   # ---------------------------------------------------------------------------
+  # Stage 2b — the deployable web build.
+  #
+  # The four tarballs are libraries; nobody can run the product from them. A
+  # handover to an external operator (C8) has to be able to download a release
+  # and serve the site without a registry account, a Docker registry pull or a
+  # working toolchain — so the release also carries the traced Next.js
+  # standalone server, plus the frozen API contract the client is locked to.
+  # ---------------------------------------------------------------------------
+  pack-web:
+    name: pack web bundle
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Same override as apps/web/Dockerfile, and for the same reason: the app
+      # config is not owned here and does not set `output: 'standalone'`. When
+      # that option moves into apps/web/next.config.mjs, delete this step here
+      # and there.
+      - name: build the standalone server
+        env:
+          NODE_ENV: production
+        run: |
+          set -euo pipefail
+          # A service worker that mocks the API must never leave development.
+          rm -f apps/web/public/mockServiceWorker.js
+          cd apps/web
+          mv next.config.mjs next.config.source.mjs
+          printf '%s\n' \
+            "import base from './next.config.source.mjs';" \
+            "export default { ...base, output: 'standalone' };" \
+            > next.config.mjs
+          cd ../..
+          pnpm --filter=@libertin/web build
+
+      # Laid out exactly as the runtime stage of apps/web/Dockerfile expects it,
+      # so `node apps/web/server.js` works straight out of the archive.
+      - name: assemble the bundle
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p .pack out
+          cp -r apps/web/.next/standalone/. out/
+          mkdir -p out/apps/web/.next
+          cp -r apps/web/.next/static out/apps/web/.next/static
+          cp -r apps/web/public out/apps/web/public
+          # Refuse to ship a bundle that cannot start.
+          test -f out/apps/web/server.js
+          test ! -f out/apps/web/public/mockServiceWorker.js
+          tar czf ".pack/libertin-web-${VERSION}.tar.gz" -C out .
+
+      - name: attach the frozen API contract
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: cp contracts/openapi.snapshot.yaml ".pack/libertin-openapi-${VERSION}.yaml"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-bundle
+          path: .pack/*
+          if-no-files-found: error
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
   # Stage 3 — npm registry. Optional by design; see the header and D-008.
   # ---------------------------------------------------------------------------
   publish-npm:
@@ -272,12 +345,13 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Stage 4 — GitHub Release. The artifact of record for handover (C8): a
-  # tagged, downloadable set of tarballs that does not depend on a registry
-  # account existing.
+  # tagged, downloadable set of everything the release produced — the four
+  # package tarballs, the runnable web bundle, the frozen API contract and a
+  # checksum file — none of which depends on a registry account existing.
   # ---------------------------------------------------------------------------
   github-release:
     name: github release
-    needs: [verify, pack]
+    needs: [verify, pack, pack-web]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -287,10 +361,27 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # Every artifact this release produced, flattened into one directory. A
+      # pattern rather than a single name, so a future pack job is attached
+      # automatically instead of being silently left out of the release.
       - uses: actions/download-artifact@v4
         with:
-          name: npm-tarballs
           path: .pack
+          merge-multiple: true
+
+      # Lets a downloader verify what they got without trusting the transport.
+      - name: checksums and inventory
+        run: |
+          set -euo pipefail
+          cd .pack
+          # No subdirectories are expected, but a stray one would make the
+          # upload glob miss files rather than fail — so flatten and assert.
+          find . -mindepth 2 -type f -exec mv -t . {} +
+          find . -mindepth 1 -type d -empty -delete
+          sha256sum -- * > SHA256SUMS.txt
+          echo 'Release assets:'
+          ls -l
 
       - name: create or update the release
         env:
@@ -303,11 +394,29 @@ jobs:
           [ "$PRERELEASE" = 'true' ] && flags+=(--prerelease)
           # Re-running a release must not fail on "already exists".
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" .pack/*.tgz --clobber
+            gh release upload "$TAG" .pack/* --clobber
           else
-            gh release create "$TAG" .pack/*.tgz \
+            gh release create "$TAG" .pack/* \
               --title "$TAG" \
               --generate-notes \
               --verify-tag \
               "${flags[@]}"
           fi
+
+      # A release whose assets did not all attach is worse than a failed one:
+      # it looks complete. Assert the uploaded set matches what was packed.
+      - name: every packed file is downloadable
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          expected="$(cd .pack && ls | sort)"
+          actual="$(gh release view "$TAG" --json assets \
+            --jq '.assets[].name' | sort)"
+          if [ "$expected" != "$actual" ]; then
+            echo '::error::Release assets do not match the packed artifacts.'
+            diff <(printf '%s\n' "$expected") <(printf '%s\n' "$actual") || true
+            exit 1
+          fi
+          printf '%s\n' "$actual"
