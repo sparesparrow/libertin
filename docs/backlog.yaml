@@ -158,6 +158,43 @@ decisions:
       workflow se nemění. Detaily: docs/publishing.md.
 
 # ---------------------------------------------------------------------------
+  - id: D-010
+    title: Kontrast primární značkové barvy vs. WCAG AA
+    req: [A3, C1]
+    status: open
+    blocker: >
+      Bílý text na --color-primary (#F20B49) má kontrast 4,27:1. WCAG AA
+      vyžaduje pro běžný text 4,5:1; CTA v Hero je 18px/600, což se za "velký
+      text" podle WCAG nepočítá (ten začíná na 24px, nebo 18,66px tučně).
+      Porušení je tedy skutečné, ne falešný poplach axe.
+    verified: >
+      2026-09-15, změřeno na buildu tohoto repa: axe (serious) hlásí
+      color-contrast na a[href="/login"] v Hero na "/". Spočítané poměry:
+      #FFFFFF na #F20B49 = 4,27:1; #FFFFFF na #C40A3C = 6,08:1.
+      Bílou na značkové výplni vykresluje sedm komponent: Hero, Button
+      (primary), AgeGate, SiteFooter, CategoryCard, Avatar a odkazy v patičce.
+      Na /login se přestupek neprojeví jen proto, že je tlačítko do vyplnění
+      formuláře disabled a axe ho přeskakuje — nejde o to, že by tam problém
+      nebyl.
+    note: >
+      Rozhodnutí je značkové, ne technické, proto ho e2e sada nevynucuje:
+      cypress/e2e/local/a11y.cy.ts vede tento nález jako evidovaný dluh
+      (KNOWN_VIOLATIONS) — hlásí ho při každém běhu, ale nesráží merge gate.
+      Jakýkoli NOVÝ přestupek padá. Po rozhodnutí se z toho seznamu smaže.
+    unblock_options:
+      - >
+        Ztmavit výplň na --color-primary-text (#C40A3C, 6,08:1). Token už v
+        systému je a je označený jako "AA on white". Dopad: viditelně tmavší
+        odstín na všech primárních plochách.
+      - >
+        Ponechat #F20B49 a zvětšit text CTA na 24px (nebo 18,66px tučně), čímž
+        se uplatní prahová hodnota 3:1 pro velký text. Řeší Hero, neřeší Button
+        v běžné velikosti.
+      - >
+        Vědomě přijmout výjimku a zapsat ji do prohlášení o přístupnosti.
+        Upozornění: u díla pro dospělé publikum, které se z podstaty používá na
+        ztlumeném displeji, je to ta nejhorší z těchto tří variant.
+
 epics:
 
   - id: E0

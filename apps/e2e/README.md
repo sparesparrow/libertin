@@ -150,7 +150,8 @@ cypress/
   e2e/
     modules/     one spec per module the owner tracks
     platform/    cross-cutting: shell, a11y, perf, Czech copy, discretion, leaks
-    local/       this repo's apps/web — age gate, login, security headers
+    local/       this repo's apps/web — age gate, homepage, login, copy,
+                 accessibility, public surface, security headers
   support/
     routes.ts    module -> route registry; the single place a path is written
     commands.ts  visitModule, login, settle, visibleText, dismissCookieBanner
