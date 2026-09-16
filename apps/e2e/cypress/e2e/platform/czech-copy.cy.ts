@@ -1,4 +1,4 @@
-import { ALL_MODULES, CZECH_TYPO_BLOCKLIST } from '../../support/routes';
+import { ALL_MODULES, CZECH_TYPO_BLOCKLIST, MISSING_DIACRITIC_FORMS } from '../../support/routes';
 import { openModule } from '../../support/session';
 import { note } from '../../support/findings';
 
@@ -49,5 +49,35 @@ describe('Čeština — zakázané řetězce', () => {
   it('blocklist je neprázdný (ochrana proti prázdnému testu)', () => {
     // A blocklist that quietly emptied would make every check above pass.
     expect(CZECH_TYPO_BLOCKLIST.length).to.be.greaterThan(0);
+  });
+
+  /**
+   * The blocklist only catches typos someone has already reported. This catches
+   * the class they belong to — copy that lost its diacritics on the way to the
+   * page — so the next one does not need a human to notice it first.
+   *
+   * `Kde te nikdo neposuzuje` was found exactly this way on 2026-09-16: the
+   * blocklist knew nothing about it, and the paragraph above it spells `tě`
+   * correctly, so nothing else would have flagged the inconsistency.
+   */
+  it('hlásí česká slova, kterým chybí diakritika', () => {
+    for (const route of ['/', '/faq', '/novinky']) {
+      cy.visitModule(route, { module: 'copy' });
+      cy.visibleText().then((text) => {
+        for (const form of MISSING_DIACRITIC_FORMS) {
+          // Whole-word only: `te` must not match inside `internet`, and it
+          // cannot match `tě`, which is `t` + `ě` rather than `t` + `e`.
+          const pattern = new RegExp(`(^|[^\\p{L}])${form.bare}([^\\p{L}]|$)`, 'iu');
+          if (pattern.test(text)) {
+            note(
+              'copy',
+              route,
+              'missing-diacritics',
+              `"${form.bare}" se vykreslilo bez diakritiky — má být "${form.correct}"`,
+            );
+          }
+        }
+      });
+    }
   });
 });

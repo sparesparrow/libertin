@@ -147,4 +147,38 @@ export const CZECH_TYPO_BLOCKLIST: readonly { wrong: string; right: string }[] =
   { wrong: 'nenámé', right: 'neznámé' },
   // Poll copy in the member sidebar.
   { wrong: 'se vám libí', right: 'se vám líbí' },
+  // Homepage "O platformě Libertin" block, 2026-09-16. The same paragraph
+  // writes "kteří tě chápou" correctly one line earlier, so this is a slip in
+  // a single string rather than a systematic encoding problem.
+  { wrong: 'Kde te ', right: 'Kde tě ' },
+];
+
+/**
+ * Czech words whose diacritic-stripped form is not a word in Czech at all.
+ *
+ * The blocklist above only catches typos someone has already seen. This list
+ * catches the *class*: a string that lost its diacritics somewhere between the
+ * catalogue and the page. Each entry is a whole-word match, so `te` does not
+ * match inside `internet` and does not match `tě` (which is `t` + `ě`, never
+ * `t` + `e`).
+ *
+ * Reported as findings rather than asserted: a member's display name or a
+ * foreign word could legitimately produce one of these, and a check that can
+ * fire on user-generated content must not gate a merge.
+ */
+export const MISSING_DIACRITIC_FORMS: readonly { bare: string; correct: string }[] = [
+  { bare: 'te', correct: 'tě' },
+  { bare: 'vam', correct: 'vám' },
+  { bare: 'vas', correct: 'vás' },
+  { bare: 'nam', correct: 'nám' },
+  { bare: 'nas', correct: 'nás' },
+  { bare: 'muze', correct: 'může' },
+  { bare: 'muzete', correct: 'můžete' },
+  { bare: 'jeste', correct: 'ještě' },
+  { bare: 'prosim', correct: 'prosím' },
+  { bare: 'dekujeme', correct: 'děkujeme' },
+  { bare: 'ucet', correct: 'účet' },
+  { bare: 'svuj', correct: 'svůj' },
+  { bare: 'prihlasit', correct: 'přihlásit' },
+  { bare: 'heslo je prilis', correct: 'heslo je příliš' },
 ];
