@@ -142,7 +142,8 @@ e2e:
 # login, so it needs a test account that only exists as a masked variable.
 # Without that account those specs skip rather than pass.
 #
-# Required CI/CD variables: E2E_BASE_URL, and E2E_TEST_USERNAME /
+# CI/CD variables: E2E_BASE_URL is optional (defaults to https://libertin.app);
+# E2E_TEST_USERNAME /
 # E2E_TEST_PASSWORD as masked+protected. The account behind them must be a
 # throwaway test member with no real personal data.
 e2e-modules:
@@ -152,16 +153,43 @@ e2e-modules:
   allow_failure: true
   variables:
     CYPRESS_CACHE_FOLDER: '$CI_PROJECT_DIR/.cypress-cache'
-    CYPRESS_BASE_URL: '$E2E_BASE_URL'
     CYPRESS_TEST_USERNAME: '$E2E_TEST_USERNAME'
     CYPRESS_TEST_PASSWORD: '$E2E_TEST_PASSWORD'
+    # Default, not a placeholder. An unset E2E_BASE_URL used to resolve to the
+    # empty string, at which point Cypress falls back to its own
+    # http://localhost:3000 and the job fails against a port nothing is
+    # listening on — a misconfiguration that reads like an outage.
+    E2E_BASE_URL_DEFAULT: 'https://libertin.app'
   script:
     - apt-get update && apt-get install -y --no-install-recommends
       libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xauth xvfb libasound2 libgbm1 ca-certificates curl
+    - export CYPRESS_BASE_URL="${E2E_BASE_URL:-$E2E_BASE_URL_DEFAULT}"
+    - echo "Cíl: $CYPRESS_BASE_URL"
+    # Say it out loud: without the account seven of the ten modules skip, and a
+    # run that skipped most of the product must not read as one that verified it.
+    - |
+      if [ -z "$CYPRESS_TEST_USERNAME" ] || [ -z "$CYPRESS_TEST_PASSWORD" ]; then
+        echo "VAROVÁNÍ: není nastaven testovací účet (E2E_TEST_USERNAME / E2E_TEST_PASSWORD)."
+        echo "Sedm z deseti modulů se PŘESKOČÍ, nikoli projde — většina produktu zůstane neověřená (D-009)."
+      fi
     - pnpm install --frozen-lockfile --prefer-offline
     - pnpm --filter @libertin/e2e cy:install
-    - pnpm --filter @libertin/e2e e2e:modules
-    - pnpm --filter @libertin/e2e e2e:platform
+    # Both suites always run. Chained as plain script lines the first failure
+    # aborts the job, and the module suite currently fails one assertion — which
+    # would mean the platform suite (a11y, výkon, úniky dat, česká kopie) never
+    # ran at all. Each records its own status; the job verdict comes after.
+    - pnpm --filter @libertin/e2e e2e:modules || modules_failed=1
+    - pnpm --filter @libertin/e2e e2e:platform || platform_failed=1
+    - |
+      for f in apps/e2e/reports/*/findings.txt; do
+        [ -f "$f" ] || continue
+        echo "=== $f ==="; cat "$f"
+      done
+    - |
+      if [ -n "$modules_failed" ] || [ -n "$platform_failed" ]; then
+        echo "e2e proti nasazenému klientovi selhalo (moduly: ${modules_failed:-ok}, platforma: ${platform_failed:-ok})"
+        exit 1
+      fi
   cache:
     - <<: *pnpm_cache
       policy: pull

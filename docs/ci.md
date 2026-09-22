@@ -153,7 +153,7 @@ pokrytí, které neexistuje.
 
 | Chybí | Proč / kde to je |
 |---|---|
-| ~~**E2E testy hlavních toků**~~ | **E11-T5 hotovo** — Cypress harness v `apps/e2e`. V pipeline jsou dva joby: `e2e` (lokální sada proti `apps/web`, deterministická, **gatuje merge**) a **manuální** `e2e-modules` proti nasazenému klientovi. Modulový job je manuální ze dvou důvodů: míří na nasazení, které tahle pipeline nevyrábí (červený běh může reportovat cizí push), a sedm z devíti modulů je za loginem, takže potřebuje testovací účet z maskovaných proměnných (**D-009**). Bez účtu se ty testy přeskočí, ne "propustí". Viz [apps/e2e/README.md](../apps/e2e/README.md) a [e2e-findings-2026-08-15.md](e2e-findings-2026-08-15.md). |
+| ~~**E2E testy hlavních toků**~~ | **E11-T5 hotovo** — Cypress harness v `apps/e2e`. V pipeline jsou dva joby: `e2e` (lokální sada proti `apps/web`, deterministická, **gatuje merge**) a **manuální** `e2e-modules` proti nasazenému klientovi. Modulový job je manuální ze dvou důvodů: míří na nasazení, které tahle pipeline nevyrábí (červený běh může reportovat cizí push), a sedm z devíti modulů je za loginem, takže potřebuje testovací účet z maskovaných proměnných (**D-009**). Bez účtu se ty testy přeskočí, ne "propustí". Viz [apps/e2e/README.md](../apps/e2e/README.md), [e2e-findings-2026-08-15.md](e2e-findings-2026-08-15.md) a [e2e-findings-2026-09-16.md](e2e-findings-2026-09-16.md). |
 | **Výkonnostní brána ≤ 1,5 s** (k6, C12.1) | **E11-T4 hotovo** — harness v `perf/k6/`, budget je zapsaný jako k6 threshold (k6 končí kódem 99 při překročení). V obou pipeline je jako **manuální** job: časy sdíleného runneru kolísají o stovky ms, a flaky výkonnostní brána naučí tým jen mačkat re-run. Vlastní akceptační měření proti backendu je E11-T4b, čeká na D-007. Viz [perf/k6/README.md](../perf/k6/README.md). |
 | **Contract drift proti živému API** | **E11-T3**. `packages/api` je ručně psaný proti `contracts/openapi.snapshot.yaml`, žádný codegen. Shodu dnes drží jen disciplína — CI ji nekontroluje. |
 | **Lint jako samostatná brána** | `pnpm lint` má dnes obsah jen pro `apps/web` (`next lint`) a ten se stejně pouští uvnitř `next build`. Samostatný stupeň se přidá, až bude lint nakonfigurovaný napříč balíčky. |
@@ -170,3 +170,42 @@ nesmí protéct nic o členech — dnes je to bezpečné, protože testy běží
 mockům a build nepotřebuje žádné přihlašovací údaje. **Až se do CI dostane
 cokoliv, co se dotýká reálných dat nebo živého API (E11-T3), musí to jít přes
 secrets a výstup se musí maskovat.**
+
+
+## Job `e2e-modules` — jak ho spustit
+
+Míří na **nasazený** klient, ne na build z téhle pipeline. Proto je ruční a
+proto nezastaví merge.
+
+**GitHub:** Actions → CI → Run workflow. Pole `base_url` je předvyplněné na
+`https://libertin.app`; přepsáním se dá otestovat staging, aniž by se sahalo na
+proměnné repozitáře. Pořadí, ve kterém se cíl hledá: vstup z dispatch →
+proměnná repozitáře `E2E_BASE_URL` → vestavěná výchozí hodnota.
+
+**GitLab:** pipeline → job `e2e-modules` → spustit ručně. Proměnná
+`E2E_BASE_URL` je volitelná; bez ní se použije stejná výchozí hodnota.
+
+### Proměnné
+
+| Proměnná | Povinná | K čemu |
+|---|---|---|
+| `E2E_BASE_URL` | ne | Cíl běhu. Bez ní `https://libertin.app`. |
+| `E2E_TEST_USERNAME` | ano, pro plné pokrytí | Účet pro moduly za přihlášením. |
+| `E2E_TEST_PASSWORD` | ano, pro plné pokrytí | Heslo k témuž účtu. Maskované a chráněné. |
+
+Účet musí být **jednorázový testovací člen bez skutečných osobních údajů** —
+sada se přihlašuje do produkčního nasazení.
+
+**Bez účtu job neselže, ale sedm z deseti modulů se přeskočí.** Job to říká
+nahlas: na GitHubu jako `::warning` a v souhrnu běhu, na GitLabu ve výpisu.
+Přeskočený test není prošlý test — viz D-009.
+
+### Co se z běhu dá přečíst
+
+Obě sady běží vždy, i když ta první spadne. Dřív byly zřetězené, takže pád
+modulové sady znamenal, že platformní (a11y, výkon, úniky dat, česká kopie)
+neproběhla vůbec. Verdikt jobu se skládá až z obou.
+
+Nálezy — pozorování, která sada hlásí, ale nepadá na nich — se vypisují do
+souhrnu běhu, takže se nemusí stahovat artefakt. Artefakt (`reports/`,
+`screenshots/`) zůstává pro detail.

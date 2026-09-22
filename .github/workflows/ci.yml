@@ -12,6 +12,11 @@ on:
       - main
       - 'claude/**'
   workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Deployed client to run the module + platform suites against'
+        required: false
+        default: 'https://libertin.app'
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -220,14 +225,102 @@ jobs:
         # with no browser, which is what failed the first run of this job.
         # `cypress install` is idempotent: a no-op when the binary is present.
         run: pnpm --filter @libertin/e2e cy:install
-      - name: run the module + platform suites
+      # Resolve the target once, in one place, with a default that is a real
+      # deployment. Without the default an unset variable resolves to the empty
+      # string, Cypress falls back to its own localhost default, and the job
+      # fails against a port nothing is listening on — which reads like the
+      # site is down rather than like the pipeline is misconfigured.
+      #
+      # The values go through `env:` rather than being interpolated into the
+      # script: a `${{ }}` expression is pasted in before bash ever sees it, so
+      # a crafted dispatch input would be executed rather than assigned.
+      - name: resolve the target
+        id: target
         env:
-          CYPRESS_BASE_URL: ${{ vars.E2E_BASE_URL }}
+          INPUT_URL: ${{ inputs.base_url }}
+          VAR_URL: ${{ vars.E2E_BASE_URL }}
+        run: |
+          url="${INPUT_URL:-${VAR_URL:-https://libertin.app}}"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "### e2e proti nasazenému klientovi" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Cíl: \`$url\`" >> "$GITHUB_STEP_SUMMARY"
+
+      # Say it out loud. Without the account seven of the ten modules skip, and
+      # a run that skips most of the product must not be mistaken for a run that
+      # verified it.
+      - name: report whether a test account is configured
+        env:
+          USERNAME: ${{ secrets.E2E_TEST_USERNAME }}
+          PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        run: |
+          if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+            echo "::warning title=No e2e test account::E2E_TEST_USERNAME / E2E_TEST_PASSWORD are not set. The seven modules behind the login will SKIP, not pass — most of the product goes unverified. See D-009."
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "⚠️ **Bez testovacího účtu.** Sedm z deseti modulů se přeskočí, nikoli projde (D-009)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "✅ Testovací účet nastaven — moduly za přihlášením se testují." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # The two suites run as separate steps, each allowed to fail, because
+      # `run: |` with both commands aborts at the first failure under `bash -e`.
+      # The module suite currently fails on one assertion, which would mean the
+      # platform suite — a11y, výkon, úniky dat, česká kopie — never ran at all.
+      - name: module suite
+        id: modules
+        continue-on-error: true
+        env:
+          CYPRESS_BASE_URL: ${{ steps.target.outputs.url }}
           CYPRESS_TEST_USERNAME: ${{ secrets.E2E_TEST_USERNAME }}
           CYPRESS_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        run: pnpm --filter @libertin/e2e e2e:modules
+
+      - name: platform suite
+        id: platform
+        continue-on-error: true
+        env:
+          CYPRESS_BASE_URL: ${{ steps.target.outputs.url }}
+          CYPRESS_TEST_USERNAME: ${{ secrets.E2E_TEST_USERNAME }}
+          CYPRESS_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        run: pnpm --filter @libertin/e2e e2e:platform
+
+      # Findings are observations the suite reports without failing on them, so
+      # they never reach the exit code. Putting them in the run summary is what
+      # makes them readable without downloading an artifact.
+      - name: publish findings to the run summary
+        if: always()
         run: |
-          pnpm --filter @libertin/e2e e2e:modules
-          pnpm --filter @libertin/e2e e2e:platform
+          found=0
+          for f in apps/e2e/reports/*/findings.txt; do
+            [ -f "$f" ] || continue
+            found=1
+            {
+              echo ""
+              echo "<details><summary>Nálezy — $f</summary>"
+              echo ""
+              echo '```'
+              cat "$f"
+              echo '```'
+              echo ""
+              echo "</details>"
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+          [ "$found" = "1" ] || echo "" >> "$GITHUB_STEP_SUMMARY"
+
+      # Both suites ran; now decide the job. Without this the `continue-on-error`
+      # steps above would leave the job green with failing tests in it.
+      - name: fail the job if either suite failed
+        if: always()
+        env:
+          MODULES: ${{ steps.modules.outcome }}
+          PLATFORM: ${{ steps.platform.outcome }}
+        run: |
+          echo "moduly: $MODULES, platforma: $PLATFORM"
+          if [ "$MODULES" != "success" ] || [ "$PLATFORM" != "success" ]; then
+            echo "::error::e2e proti nasazenému klientovi selhalo (moduly: $MODULES, platforma: $PLATFORM)"
+            exit 1
+          fi
       - name: archive findings
         if: always()
         uses: actions/upload-artifact@v4
