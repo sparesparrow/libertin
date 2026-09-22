@@ -91,3 +91,40 @@ nahlásil. Doplněno:
 
 Ověřeno proti živému webu: obě kontroly se rozsvítí na `/`, a heuristika
 nevydala jediný falešný poplach na `/`, `/faq` ani `/novinky`.
+
+---
+
+## Doplněk 22. 9. 2026 — veřejné a právní stránky
+
+Dosud nepokrytá část: patička odkazuje na **17 veřejných rout**, ale registr
+sady jich znal šest. Chyběly přesně ty stránky, podle kterých se smluvní dílo
+posuzuje — `/gdpr`, `/vop`, `/pravidla`, `/impresum`, `/clenstvi`.
+
+Nový spec `platform/public-pages.cy.ts` je projde všechny: **61 testů, 61
+prošlo.** Pro tohle nasazení je to skutečná informace, ne prázdný test —
+všech patnáct stránek existuje, jsou dostupné bez přihlášení, nesou vlastní
+obsah a `/gdpr` i `/vop` opravdu mluví o svém tématu (`osobní údaj`, `podmín`).
+
+Ověřuje se u každé stránky:
+
+- je to skutečná routa, ne 404 obrazovka s kódem 200 (tohle nasazení vrací na
+  neznámé cesty 200, takže stavový kód nic nedokazuje)
+- **je dostupná bez přihlášení** — právní dokument za loginem není zveřejněný;
+  kdo se rozhoduje, jestli vstoupí, si nemůže přečíst, s čím by souhlasil
+- nese vlastní obsah, ne jen shell (formulářové stránky jsou z téhle kontroly
+  vyjmuté — jsou krátké oprávněně)
+- neobsahuje překlepy z blocklistu
+- patička neodkazuje na nic, co vrací chybu
+
+### Co to našlo
+
+- `/clenstvi` přesměrovává na `/membership`. Funguje to, ale patička inzeruje
+  českou adresu a přistane se na anglické — nekonzistence v URL, ne chyba.
+- `/pomoc` má 381 znaků viditelného textu. Na stránku jménem „Nápověda“ je to
+  málo; hlásí se jako nález, protože prahová hodnota je odhad, ne pravidlo.
+
+### Pro srovnání
+
+Vlastní klient v tomhle repu má v patičce **čtyři mrtvé odkazy** (`/o-nas`,
+`/kontakt`, `/soukromi`, `/podminky`). Nasazený klient nemá ani jeden. Stejná
+kontrola teď běží na obě strany, takže se nemůžou rozejít.

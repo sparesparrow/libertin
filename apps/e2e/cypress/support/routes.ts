@@ -134,6 +134,72 @@ export const SUPPORT_ROUTES = {
 } as const;
 
 /**
+ * The public, informational and legal surface — every route the footer and the
+ * signed-out header link to.
+ *
+ * These are not "modules", which is exactly why they went uncovered: the module
+ * registry describes the member-facing product, and nothing described the pages
+ * the platform is legally and contractually judged on. A member never has to
+ * log in to reach any of them, and several of them (GDPR, VOP, pravidla) are
+ * the documents that make the product lawful to operate at all.
+ *
+ * `marker` is copy that proves the page rendered its own content rather than a
+ * shell or a placeholder. Missing markers are reported, not asserted — the
+ * wording is the owner's to choose — while existence and anonymous
+ * reachability are asserted, because those are not matters of taste.
+ */
+export interface PublicPage {
+  readonly path: string;
+  readonly label: string;
+  /** Why this page has to exist. Shown in the finding when it does not. */
+  readonly why: string;
+  readonly marker?: readonly string[];
+  /**
+   * A form page is mostly inputs, so it is legitimately short — the
+   * thin-content check would fire on every one of them and train readers to
+   * skim past findings. Documents are the pages where thin means empty.
+   */
+  readonly kind?: 'document' | 'form';
+}
+
+export const PUBLIC_PAGES: readonly PublicPage[] = [
+  { path: '/o-nas', label: 'O nás', why: 'odkazováno z patičky' },
+  { path: '/kontakt', label: 'Kontakt', why: 'odkazováno z patičky' },
+  { path: '/faq', label: 'Časté dotazy', why: 'odkazováno z patičky' },
+  { path: '/pomoc', label: 'Nápověda', why: 'odkazováno z patičky' },
+  { path: '/support', label: 'Podpora', why: 'odkazováno z patičky' },
+  { path: '/novinky', label: 'Novinky', why: 'odkazováno z patičky' },
+  { path: '/clenstvi', label: 'Členství', why: 'ceník a rozsah placené služby' },
+  {
+    path: '/vop',
+    label: 'Všeobecné obchodní podmínky',
+    why: 'smluvní vztah s členem; bez nich nelze provozovat placenou službu',
+    marker: ['podmín'],
+  },
+  {
+    path: '/gdpr',
+    label: 'Ochrana osobních údajů',
+    why: 'GDPR čl. 13 — informační povinnost; u citlivých údajů podle čl. 9 o to víc',
+    marker: ['osobní údaj'],
+  },
+  { path: '/pravidla', label: 'Pravidla webu', why: 'pravidla komunity a moderace' },
+  {
+    path: '/impresum',
+    label: 'Impresum',
+    why: 'identifikace provozovatele — povinný údaj',
+  },
+  { path: '/prohlaseni', label: 'Prohlášení', why: 'odkazováno z patičky' },
+  { path: '/reklama', label: 'Reklama', why: 'odkazováno z patičky' },
+  { path: '/marketing', label: 'Marketing', why: 'odkazováno z patičky' },
+  {
+    path: '/forgot-password',
+    label: 'Zapomenuté heslo',
+    why: 'obnova přístupu k účtu',
+    kind: 'form',
+  },
+] as const;
+
+/**
  * Czech copy that must never appear. CLAUDE.md calls these out by name: they
  * were fixed once in `packages/i18n/locales.json` and must not come back.
  * `wrong` is what must not render, `right` is the correction to report.
