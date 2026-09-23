@@ -182,6 +182,12 @@ proto nezastaví merge.
 proměnné repozitáře. Pořadí, ve kterém se cíl hledá: vstup z dispatch →
 proměnná repozitáře `E2E_BASE_URL` → vestavěná výchozí hodnota.
 
+**Bez oprávnění spouštět workflow** (např. integrace, která smí pushovat, ale
+dispatch vrací 403): push, jehož zpráva commitu obsahuje `[e2e-deployed]`,
+spustí tentýž job. Je to opt-in pro jeden commit, jako `[skip ci]`; běžné
+pushe se nemění. Na push není vstup z dispatch, takže cíl je proměnná
+repozitáře nebo výchozí `https://libertin.app`.
+
 **GitLab:** pipeline → job `e2e-modules` → spustit ručně. Proměnná
 `E2E_BASE_URL` je volitelná; bez ní se použije stejná výchozí hodnota.
 
