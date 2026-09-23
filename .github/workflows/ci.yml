@@ -291,9 +291,11 @@ jobs:
       - name: publish findings to the run summary
         if: always()
         run: |
+          # Recursive: each suite writes its own reports/<host>/<suite>/ folder
+          # (see LIBERTIN_SUITE in cypress.config.ts), one level deeper than a
+          # `reports/*/findings.txt` glob reaches.
           found=0
-          for f in apps/e2e/reports/*/findings.txt; do
-            [ -f "$f" ] || continue
+          while IFS= read -r f; do
             found=1
             {
               echo ""
@@ -305,8 +307,8 @@ jobs:
               echo ""
               echo "</details>"
             } >> "$GITHUB_STEP_SUMMARY"
-          done
-          [ "$found" = "1" ] || echo "" >> "$GITHUB_STEP_SUMMARY"
+          done < <(find apps/e2e/reports -name findings.txt 2>/dev/null | sort)
+          [ "$found" = "1" ] || echo "_Žádné nálezy nebyly zapsány._" >> "$GITHUB_STEP_SUMMARY"
 
       # Both suites ran; now decide the job. Without this the `continue-on-error`
       # steps above would leave the job green with failing tests in it.

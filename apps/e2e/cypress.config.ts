@@ -53,6 +53,25 @@ const CAPTURING_EVIDENCE = process.env.CYPRESS_CAPTURE_EVIDENCE === '1';
 const ARTIFACT_KIND = CAPTURING_EVIDENCE ? 'evidence' : 'failures';
 
 /**
+ * The third axis: which suite. Host and kind were still not enough.
+ *
+ * `e2e:modules` and `e2e:platform` hit the same host and are both failure runs,
+ * so they shared one folder — and Cypress empties its output folders at the
+ * start of every run. Running them back to back (which is exactly what the CI
+ * job does) meant the platform suite silently deleted every module failure
+ * screenshot and overwrote the module findings. On 2026-09-23 that erased the
+ * three homepage failure screenshots, including the one for the B13 language
+ * switcher, and the `missing-empty-state` finding, with nothing to say they had
+ * ever existed.
+ *
+ * Set by `scripts/run-deployed.mjs`. When it is unset — the local suite, the
+ * evidence run, `cy:open` — the layout is unchanged, so nothing that reads the
+ * old paths (e.g. `scripts/publish-evidence.mjs`) moves.
+ */
+const SUITE = process.env.LIBERTIN_SUITE?.replace(/[^a-z0-9-]/gi, '') || '';
+const ARTIFACT_ROOT = SUITE ? `${TARGET}/${SUITE}` : TARGET;
+
+/**
  * C12.1 — contracted acceptance limit for a UI response is 1,5 s. Kept as an
  * env value so a run can tighten it, never so a run can quietly loosen it in
  * CI: the pipeline pins it to the contract number.
@@ -73,8 +92,8 @@ export default defineConfig({
     specPattern: 'cypress/e2e/**/*.cy.ts',
     supportFile: 'cypress/support/e2e.ts',
     fixturesFolder: 'cypress/fixtures',
-    screenshotsFolder: `screenshots/${TARGET}/${ARTIFACT_KIND}`,
-    videosFolder: `videos/${TARGET}/${ARTIFACT_KIND}`,
+    screenshotsFolder: `screenshots/${ARTIFACT_ROOT}/${ARTIFACT_KIND}`,
+    videosFolder: `videos/${ARTIFACT_ROOT}/${ARTIFACT_KIND}`,
     downloadsFolder: 'downloads',
 
     video: false,
@@ -141,7 +160,7 @@ export default defineConfig({
         // eslint-disable-next-line no-console
         console.log(report);
 
-        const reportDir = `reports/${TARGET}`;
+        const reportDir = `reports/${ARTIFACT_ROOT}`;
         mkdirSync(reportDir, { recursive: true });
         writeFileSync(`${reportDir}/findings.txt`, `${report}\n`, 'utf8');
         writeFileSync(

@@ -128,3 +128,72 @@ Ověřuje se u každé stránky:
 Vlastní klient v tomhle repu má v patičce **čtyři mrtvé odkazy** (`/o-nas`,
 `/kontakt`, `/soukromi`, `/podminky`). Nasazený klient nemá ani jeden. Stejná
 kontrola teď běží na obě strany, takže se nemůžou rozejít.
+
+---
+
+## Doplněk 23. 9. 2026 — co se na nasazení změnilo za týden
+
+Běh bez nastavené URL: `pnpm e2e:modules` a `e2e:platform` teď mají výchozí
+cíl `https://libertin.app` (`apps/e2e/scripts/run-deployed.mjs`).
+
+| Sada | Testů | Prošlo | Padlo | Přeskočeno |
+|---|---|---|---|---|
+| moduly | 70 | 26 | **3** (bylo 1) | 41 |
+| platforma | 164 | 85 | 14 | 65 |
+
+### Z úvodní stránky zmizela sekce akcí
+
+Dva nové pády modulové sady (`01-homepage`) mají společnou příčinu: sekce
+**„Doporučené akce“ a „Nadcházející akce“ zmizela celá** — z vykreslené
+stránky i ze serverového HTML, včetně všech dvanácti karet akcí, které tam byly
+16. 9. Nejde o přejmenování ani o jiný tag nadpisu.
+
+Nepřesunula se ani na vlastní routu: `/akce`, `/events`, `/udalosti`,
+`/kalendar` i `/party` vrací stránku 404 bez obsahu akcí a úvodní stránka na
+nic takového neodkazuje.
+
+**Testy jsou záměrně ponechané červené.** Hlásí přesně to, co se stalo, a
+jestli bylo odebrání akcí záměrné, rozhoduje objednatel. Pokud ano, oba testy
+se smažou jedním commitem; pokud ne, je to regrese.
+
+### Co se zlepšilo
+
+- `color-contrast` na `/`: **36 → 4 uzly.**
+- `scrollable-region-focusable` na `/` **zmizel.** Pravděpodobně vedlejší
+  efekt odebrání akcí, ne oprava — nahlášený prvek byl vodorovný karusel
+  (`.no-scrollbar.overflow-x-auto`) ve čtvrté sekci stránky, kde akce byly.
+
+### Beze změny
+
+Únik členského obsahu v odpovědi pro nepřihlášeného na `/wall`, chybějící
+přepínač jazyka (B13), cookie lišta bez odmítnutí na jedno kliknutí, `/wall`
+zaseknuté na „Načítám…“, `nested-interactive` na `/`, chybějící stav
+„nenalezeno“ u neznámého profilu, překlep „Kde te nikdo“, tenká `/pomoc`.
+
+### Výkon — co číst a co ne
+
+`/wall` je nad rozpočtem C12.1 **v každém běhu za poslední dva týdny**
+(1580–1871 ms proti 1500 ms). To je signál.
+
+Úvodní stránka se v jednom měření ocitla na 1508 ms, tedy 8 ms nad rozpočtem.
+To signál **není**: jedno měření, v kontejneru, který celé sezení pouštěl
+Cypress, a v předchozím běhu téhož dne rozpočet držela. Hlásí se to jako nález,
+ne jako regrese.
+
+### Vada v samotné sadě — opravená
+
+Tenhle běh odhalil, že si sady navzájem mažou důkazy. `e2e:modules` a
+`e2e:platform` míří na stejný host a obě jsou „failure“ běhy, takže sdílely
+jednu složku — a Cypress ji na začátku každého běhu vyprázdní. Platformní sada
+puštěná po modulové tak smazala **všechny tři screenshoty pádů úvodní stránky**
+(včetně toho pro B13) a přepsala nálezy modulové sady (`missing-empty-state`
+a další) — bez jakékoli stopy, že kdy existovaly.
+
+Přesně tohle pořadí přitom pouští CI job, takže jeho artefakt i souhrn běhu by
+pády modulové sady tiše vynechaly.
+
+Oprava: třetí osa artefaktů vedle hostu a druhu běhu — **sada**
+(`screenshots/<host>/<sada>/…`, `reports/<host>/<sada>/…`). Lokální sada,
+evidence i `cy:open` mají cesty beze změny. Ověřeno stejným pořadím běhů: obě
+složky nálezů přežijí a screenshoty pádů úvodní stránky zůstanou (9 souborů,
+předtím 0).

@@ -181,8 +181,8 @@ e2e-modules:
     - pnpm --filter @libertin/e2e e2e:modules || modules_failed=1
     - pnpm --filter @libertin/e2e e2e:platform || platform_failed=1
     - |
-      for f in apps/e2e/reports/*/findings.txt; do
-        [ -f "$f" ] || continue
+      # Recursive: each suite writes its own reports/<host>/<suite>/ folder.
+      find apps/e2e/reports -name findings.txt 2>/dev/null | sort | while IFS= read -r f; do
         echo "=== $f ==="; cat "$f"
       done
     - |

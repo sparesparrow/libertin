@@ -136,8 +136,10 @@ of this repo; `cypress/e2e/modules/*` and `platform/*` run against whatever
 `CYPRESS_BASE_URL` points at, defaulting to `https://libertin.app` via
 `apps/e2e/scripts/run-deployed.mjs` — a deployment that is **not** this repo's
 code on any branch (tracked as D-009). The same default is repeated in both CI
-configs; change all three together. Artifacts are written per host and
-per kind so runs never clobber each other. Routes live only in
+configs; change all three together. Artifacts are written per host, per
+kind (failures/evidence) and per deployed suite (modules/platform) — each axis
+was added after a run silently deleted another's evidence, because Cypress
+empties its output folders at the start of every run. Routes live only in
 `apps/e2e/cypress/support/routes.ts`; no spec hardcodes a path. Credentials come
 from `CYPRESS_TEST_USERNAME` / `CYPRESS_TEST_PASSWORD` and are never committed —
 note that Cypress parses an all-digit env value as a *number*, so coerce with

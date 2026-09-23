@@ -44,6 +44,9 @@ if (!suite || !(suite in SPECS)) {
 
 const env = { ...process.env };
 if (!env.CYPRESS_BASE_URL) env.CYPRESS_BASE_URL = DEPLOYED_DEFAULT;
+// Gives each suite its own screenshots/ and reports/ folder — see the SUITE
+// comment in cypress.config.ts for the run that lost its evidence without it.
+env.LIBERTIN_SUITE = suite;
 
 console.log(`→ e2e:${suite} proti ${env.CYPRESS_BASE_URL}`);
 
