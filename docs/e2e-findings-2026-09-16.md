@@ -39,12 +39,22 @@ U produktu, jehož hlavní vlastností je diskrétnost, je tohle nejzávažněj�
 nález běhu. Ověřit `cy.visibleText()` nestačí — `$body.text()` vrací i RSC
 payload, právě proto na to sada kouká zvlášť.
 
-### 2. Chybí přepínač jazyka (B13) — smluvní brána
+### 2. ~~Chybí přepínač jazyka (B13)~~ — **odvoláno 23. 9.**
 
-Na `/` není nikde `Česky` / `English`. Smlouva žádá plné CS+EN. Jediný padající
-test modulové sady.
+> **Tenhle nález byl chybou testu, ne webu.** Přepínač v záhlaví je a je
+> správně označený (`aria-label="Jazyk"`), nabízí dvanáct jazyků včetně
+> angličtiny a po volbě „Angličtina“ se stránka opravdu přepne do angličtiny.
+> Podrobnosti v doplňku z 23. 9. níže.
 
-### 3. Cookie lišta nenabízí odmítnutí na jedno kliknutí (ePrivacy)
+~~Na `/` není nikde `Česky` / `English`. Smlouva žádá plné CS+EN. Jediný padající
+test modulové sady.~~
+
+### 3. Cookie lišta nenabízí odmítnutí na jedno kliknutí (ePrivacy) — **zúženo 23. 9.**
+
+> Odmítnout na jedno kliknutí **jde** — křížkem (✕, „Zavřít“), a funguje:
+> neuloží se žádná cookie a nenačte se žádný tracker. Otevřené zůstává jen to,
+> že odmítnutí není označené tlačítko stejně výrazné jako „Povolit vše“ a že se
+> nepamatuje. Viz doplněk z 23. 9.
 
 Nabízí: `Zapnout slušný režim`, `Souhlas`, `Detaily`, `Více o cookies`,
 `Upravit`, `Povolit vše`. Odmítnout jde až přes `Upravit`. Souhlas musí být
@@ -197,3 +207,95 @@ Oprava: třetí osa artefaktů vedle hostu a druhu běhu — **sada**
 evidence i `cy:open` mají cesty beze změny. Ověřeno stejným pořadím běhů: obě
 složky nálezů přežijí a screenshoty pádů úvodní stránky zůstanou (9 souborů,
 předtím 0).
+
+
+---
+
+## Doplněk 23. 9. 2026 (odpoledne) — co ukázalo zkoumání v prohlížeči
+
+Tentokrát jsem nejdřív zjišťoval, jak se stránka *chová*, a teprve pak psal
+testy. Vyšly z toho dvě opravy toho, co jsem dřív tvrdil, a dva nové nálezy.
+Jeden z nich je zatím nejzávažnější ze všech.
+
+### Oprava: B13 je splněné
+
+Tvrzení, že chybí přepínač jazyka, bylo **chybou testu, a to dvakrát**:
+
+1. První verze hledala na stránce slova „Česky“ a „English“. Přepínač je ale
+   ikona (vlajka) bez viditelného textu, s `aria-label="Jazyk"`, takže ho test
+   nemohl najít.
+2. Při prvním prozkoumání menu jsem hledal slovo „English“. Menu uvádí
+   **dvanáct jazyků pojmenovaných česky** (Angličtina, Španělština, Němčina,
+   Italština, Francouzština, Nizozemština, Ruština, Norština, Rumunština,
+   Čeština, Chorvatština, Maďarština), takže filtr v angličtině „Angličtinu“
+   nenašel a mylně ohlásil, že je nabízená jen čeština.
+
+Test teď dělá to, co B13 opravdu požaduje: vybere angličtinu a ověří, že se
+stránka přepnula. Výsledek: `lang="en"` a méně než 0,5 % textu nese českou
+diakritiku. **Prochází.**
+
+### Oprava: odmítnout cookies na jedno kliknutí jde
+
+Křížek (✕) na cookie liště je funkční odmítnutí: po zavření **žádná cookie,
+nic v localStorage, žádný tracker** — ani po znovunačtení. Test teď měří
+právě tohle (a spadne, kdyby se ✕ někdy začal tvářit jako souhlas) a
+**prochází**.
+
+Zůstávají dva menší nálezy: odmítnutí je jen neoznačený křížek vedle
+výrazného „Povolit vše“ a **nepamatuje se** — lišta se po každém načtení
+ptá znovu, což je přesně ten tlak, pod kterým lidé nakonec klepnou na souhlas.
+
+Pozitivní: **před jakoukoli volbou se nenačte ani jeden tracker.**
+
+### Nový nález: nepřihlášený vidí tváře členů — nejzávažnější nález
+
+Hostovský pohled na `/wall` skrývá **jména** členů („Zaregistrujte se zdarma
+a uvidíte jména…“), ale v postranním panelu ukazuje jejich **tváře**, a to
+nerozmazané:
+
+- **„Online uživatelé“** — v tomto běhu 25 nerozmazaných profilových fotek
+- **„Narozeniny dnes“** — 4 tváře, ke kterým stránka přidává datum narození
+
+Tvář identifikuje člověka mnohem spolehlivěji než přezdívka, a „dnes má
+narozeniny“ k ní přidává datum narození. U platformy, jejíž hlavní slib je,
+že nikoho neprozradí, je to horší než únik textů z RSC payloadu (bod 1 výše),
+protože tohle je **vidět na obrazovce**, ne jen ve zdrojovém kódu.
+
+Nový spec `platform/member-exposure.cy.ts` to kontroluje tvrdě, stejně jako
+test úniku z RSC. Hlásí **jen počty**, nikdy adresy fotek — URL obsahuje ID
+člena, a výsledky testů končí v artefaktech CI a v souhrnech běhů.
+
+Záměrně jsem **neověřoval**, jestli jsou fotky dostupné i napřímo bez
+přihlášení (URL mají tvar `…/user_profile_photo/<číselné ID>`, což naznačuje
+výčet po sobě jdoucích ID). Jediný pokus o takový dotaz zablokovala politika
+oprávnění jako práci s osobními údaji a obcházet ji jsem nezkoušel. Nález
+stojí na tom, co stránka sama vykreslí nepřihlášenému návštěvníkovi. Přímou
+dostupnost fotek by měl ověřit provozovatel na své straně.
+
+### Nový nález: slušný režim neskrývá to, co může někoho prozradit
+
+„Zapnout slušný režim“ v patičce je skutečný přepínač (`<button
+aria-pressed>`), **pamatuje si volbu** a na `/wall` **rozmaže příspěvky**
+(z 1 na 21 rozmazaných prvků). To všechno prochází. Ale:
+
+- **tváře členů nechává nerozmazané** — 24 z 24. Právě ty jsou v hostovském
+  pohledu to jediné, co může někoho prozradit, a slušný režim je přesně ten
+  vypínač, po kterém nervózní návštěvník sáhne.
+- **na úvodní stránce nedělá nic** — žádný obrázek včetně úvodní fotografie
+  nezmizí ani se nerozmaže. Co má úvodní stránka v tomhle režimu skrýt, je
+  rozhodnutí o obsahu, proto se to jen hlásí.
+
+Nový spec `platform/decent-mode.cy.ts`.
+
+### Oprava testu: „noreferrer“
+
+Kontrola odkazů `target="_blank"` bez `rel="noreferrer"` padala, když stránka
+**žádné** externí odkazy nemá — tedy v nejbezpečnějším možném případě.
+`cy.get()` čeká, dokud nenajde aspoň jednu shodu, takže nula znamenala
+vypršení času. Teď se dotazuje přes `body` a nula projde.
+
+### Stav po těchto změnách
+
+Skutečné pády, které zůstávají: zmizelá sekce akcí (×2, čeká se na
+vyjádření objednatele), cookie lišta překrývá přihlašovací formulář, slušný
+režim nerozmaže tváře a nepřihlášený vidí tváře členů i jejich narozeniny.

@@ -59,36 +59,77 @@ describe('Diskrétnost — co stránka prozradí o návštěvníkovi', () => {
     });
   });
 
-  it('nabízí odmítnutí cookies stejně snadno jako souhlas', () => {
-    // GDPR/ePrivacy: refusing non-essential cookies must be no harder than
-    // accepting. A banner whose only one-click actions are "Souhlas" and
-    // "Povolit vše", with refusal hidden behind "Upravit", does not clear that
-    // bar — and on a platform whose members are already at risk from being
-    // profiled, the default matters more than usual.
+  /**
+   * GDPR/ePrivacy: refusing non-essential cookies must be no harder than
+   * accepting, and a refusal must actually refuse.
+   *
+   * This used to decide the question from button *labels* — it looked for
+   * "Odmítnout" and, finding none, reported that no one-click refusal existed.
+   * That was wrong: the banner's close button (✕, `aria-label="Zavřít"`) is a
+   * one-click refusal that works — measured on 2026-09-23, closing it stores
+   * no cookie, writes nothing to localStorage and loads no tracker. So the
+   * check now measures the outcome instead of reading the wording: click the
+   * one-click way out, then see whether anyone was told the visitor was here.
+   *
+   * What is asserted is the part that is not a matter of opinion: after one
+   * click, no tracker loads. It also catches the opposite failure, a close
+   * button quietly treated as consent, which some banners do.
+   *
+   * What is reported rather than asserted is the part that is a judgement:
+   * whether an unlabelled ✕ is as prominent as a filled "Povolit vše" button,
+   * and whether the refusal is remembered.
+   */
+  it('nabízí odmítnutí cookies na jedno kliknutí, které skutečně odmítne', () => {
+    const trackerHits: string[] = [];
+    cy.intercept('**/*', (req) => {
+      if (KNOWN_TRACKERS.some((host) => req.url.includes(host))) trackerHits.push(new URL(req.url).host);
+    });
     cy.visitModule('/', { module: 'discretion', keepCookieBanner: true });
 
-    cy.get('button').then(($buttons) => {
-      const labels = $buttons
-        .toArray()
-        .map((b) => (b.textContent ?? '').trim())
-        // Long strings here are card bodies, not banner actions — a banner
-        // action is a short label, and letting prose through made the reported
-        // finding unreadable.
-        .filter((label) => label.length > 0 && label.length <= 40);
+    cy.get('button:visible').then(($buttons) => {
+      const labelOf = (b: HTMLElement) => ((b.textContent ?? '').trim() || b.getAttribute('aria-label') || '').trim();
+      const banner = $buttons.toArray().filter((b) => labelOf(b).length > 0 && labelOf(b).length <= 40);
+      const labels = banner.map(labelOf);
+      if (!labels.some((l) => /souhlas|povolit vše/i.test(l))) return; // banner not shown on this visit
 
-      const accepts = labels.some((l) => /souhlas|povolit vše/i.test(l));
-      if (!accepts) return; // banner not shown on this visit
+      const labelled = banner.find((b) => /odmítnout|zamítnout|pouze nezbytné|jen nezbytné/i.test(labelOf(b)));
+      const close = banner.find((b) => /^(zavřít|close)$/i.test(b.getAttribute('aria-label') ?? ''));
+      const refuse = labelled ?? close;
 
-      const rejects = labels.some((l) => /odmítnout|zamítnout|pouze nezbytné|jen nezbytné/i.test(l));
-      if (!rejects) {
+      if (!labelled) {
         note(
           'discretion',
           '/',
           'gdpr-cookie-banner',
-          `cookie lišta nenabízí odmítnutí na jedno kliknutí; nabízí: ${labels.slice(0, 8).join(', ')}`,
+          close
+            ? 'odmítnout jde jen neoznačeným ✕ ("Zavřít") — chybí tlačítko "Odmítnout" stejně výrazné jako "Povolit vše"'
+            : `cookie lišta nenabízí odmítnutí na jedno kliknutí; nabízí: ${labels.slice(0, 8).join(', ')}`,
         );
       }
-      expect(rejects, 'cookie banner offers a one-click refusal').to.equal(true);
+      expect(refuse, `a one-click way to refuse (offered: ${labels.slice(0, 8).join(', ')})`).to.not.equal(undefined);
+
+      cy.wrap(refuse).click();
+      cy.wait(2000);
+      cy.then(() => {
+        expect(trackerHits, 'trackers loaded after refusing in one click').to.deep.equal([]);
+      });
+
+      // Remembered? A refusal that is forgotten on the next page view is asked
+      // again and again, which is how "accept" eventually gets clicked.
+      cy.reload();
+      cy.wait(2000);
+      cy.get('body').then(($body) => {
+        const askedAgain = $body
+          .find('button:visible')
+          .toArray()
+          .some((b) => /povolit vše/i.test((b.textContent ?? '').trim()));
+        if (askedAgain) {
+          note('discretion', '/', 'gdpr-cookie-banner', 'odmítnutí se nepamatuje — lišta se po znovunačtení ptá znovu');
+        }
+      });
+      cy.then(() => {
+        expect(trackerHits, 'trackers loaded after reload following a refusal').to.deep.equal([]);
+      });
     });
   });
 
@@ -126,8 +167,12 @@ describe('Diskrétnost — co stránka prozradí o návštěvníkovi', () => {
 
   it('neposílá odkazy na cizí weby bez rel="noreferrer"', () => {
     cy.visitModule('/', { module: 'discretion' });
-    cy.get('a[target="_blank"]').then(($links) => {
-      const unsafe = $links
+    // Queried through `body`, not `cy.get('a[target=_blank]')`: `cy.get`
+    // retries until it finds at least one match, so a page with no external
+    // links at all — the safest possible answer — timed out and failed.
+    cy.get('body').then(($body) => {
+      const unsafe = $body
+        .find('a[target="_blank"]')
         .toArray()
         .filter((a) => !(a.getAttribute('rel') ?? '').includes('noreferrer'))
         .map((a) => a.getAttribute('href') ?? '(no href)');
