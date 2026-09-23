@@ -299,3 +299,42 @@ vypršení času. Teď se dotazuje přes `body` a nula projde.
 Skutečné pády, které zůstávají: zmizelá sekce akcí (×2, čeká se na
 vyjádření objednatele), cookie lišta překrývá přihlašovací formulář, slušný
 režim nerozmaže tváře a nepřihlášený vidí tváře členů i jejich narozeniny.
+
+---
+
+## Doplněk 23. 9. 2026 (večer) — průzkumná sada `e2e:explore`
+
+Průzkum je teď v repu jako rerunovatelná sada v Cypressu (`pnpm e2e:explore`,
+výstup `reports/<host>/explore/observations.md`). Nic netvrdí, jen
+zaznamenává. První běh: 9/9. Zpřesnil tři věci z předchozích doplňků.
+
+**Cookie lišta — přesný stav.** Výslovné tlačítko **„Odmítnout“ existuje**,
+jen o úroveň hlouběji, v nabídce „Upravit“. Všechny volitelné kategorie
+(Preferenční, Statistické, Marketingové, Neklasifikované) jsou ve výchozím
+stavu **nezaškrtnuté**; zaškrtnuté a nezměnitelné jsou jen „Nutné“. To je
+výchozí stav, jaký GDPR požaduje. Na jedno kliknutí jde odmítnout křížkem, a
+to na `/`, `/login` i `/register` stejně: lišta se vykreslí jednou a zavře ji
+jedno kliknutí. Na `/` se **nenačte žádný známý tracker ani po „Povolit vše“**.
+
+Z nálezu tak zbývá jen to, že označené „Odmítnout“ není vedle „Povolit vše“
+stejně výrazně, ale až za „Upravit“, a že se odmítnutí křížkem **nepamatuje**.
+Souhlas přes „Povolit vše“ se naproti tomu zapamatuje
+(`libertine_cookie_consent`).
+
+**Jazyky.** Všech dvanáct voleb nastaví správný atribut `lang` a volba se
+ukládá do cookie `libertine.locale`. U angličtiny zbývá 0,15 % textu s českou
+diakritikou, tedy prakticky nic. U chorvatštiny je to 3,13 %, což nálezem
+**není**: chorvatština sama používá č, š a ž.
+
+**Slušný režim — potvrzeno.** Na `/` nezmění nic (0 rozmazaných prvků, 17
+obrázků před i po). Na `/wall` rozmaže příspěvky (1 → 21 rozmazaných prvků),
+ale **všech 25 fotek členů zůstane ostrých**. Volba se ukládá do cookie
+`libertine_child_mode`.
+
+**Chyby v průzkumu, které průzkum sám odhalil.** Obě jsou opravené a
+zapsané v komentářích kódu. Výpočet přístupného jména ohlásil 7
+„nepojmenovaných“ prvků na `/register`, které byly ve skutečnosti pole
+pojmenovaná přes `<label>`. Pomocník pro zavření lišty sahal po prvním
+tlačítku „Zavřít“ v DOM, trefil jiné, zakryté tlačítko a vypadalo to, že
+lišta zakrývá vlastní křížek. Obojí se ukázalo až měřením. Proto průzkum
+existuje.
