@@ -39,6 +39,7 @@ End-to-end (Cypress 15, `apps/e2e`):
 pnpm e2e                                       # builds web, serves it, runs cypress/e2e/local
 pnpm e2e:modules                               # the 10 module specs, against https://libertin.app
 pnpm e2e:platform                              # a11y, czech copy, discretion, perf, RSC leak, public pages
+pnpm e2e:explore                               # records what the deployed client does; asserts nothing
 CYPRESS_BASE_URL=https://staging.example.com pnpm e2e:modules   # any other deployment
 pnpm --filter @libertin/e2e cy:install         # idempotent; needed after a cached pnpm install
 ```
@@ -154,6 +155,14 @@ conclusions before:
   rendered page never shows. Use `cy.visibleText()`. (This is also the E14-T5b
   defect class: `self.__next_f.push(...)` ships signed-in wall content to
   anonymous visitors.)
+
+**Look before asserting.** `cypress/e2e/explore/` records observations rather
+than asserting (`reports/<host>/explore/observations.md`). Two findings about
+the deployed client were withdrawn because the checks were written from
+assumptions: an icon-only language button, and a menu that names English
+"Angličtina". Run `pnpm e2e:explore` before writing an assertion about a
+feature you have not seen work. Observations and reports record cookie names,
+never values, and member-photo counts, never URLs (a URL carries the member's ID).
 
 `note()` in `cypress/support/findings.ts` is a plain synchronous function, **not**
 a `cy.*` command — a queued command is lost when the assertion in the same

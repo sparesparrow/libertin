@@ -78,6 +78,19 @@ const ARTIFACT_ROOT = SUITE ? `${TARGET}/${SUITE}` : TARGET;
  */
 const RESPONSE_BUDGET_MS = Number(process.env.LIBERTIN_RESPONSE_BUDGET_MS ?? 1500);
 
+/**
+ * An observation is a neutral fact recorded by the exploration suite
+ * (`cypress/e2e/explore/`): what a control is called, what a banner stores,
+ * which languages a menu offers. Unlike a finding it claims nothing is wrong,
+ * so it is written to its own report and never mixed into `findings.txt`.
+ */
+interface Observation {
+  readonly spec: string;
+  readonly route: string;
+  readonly topic: string;
+  readonly data: unknown;
+}
+
 /** A finding is an observation that is reported but does not fail the run. */
 interface Finding {
   readonly module: string;
@@ -119,6 +132,7 @@ export default defineConfig({
        * multiply findings.
        */
       const findings = new Map<string, Finding>();
+      const observations: Observation[] = [];
 
       on('task', {
         recordFindings(batch: Finding[]): null {
@@ -131,6 +145,11 @@ export default defineConfig({
           return null;
         },
 
+        recordObservation(observation: Observation): null {
+          observations.push(observation);
+          return null;
+        },
+
         log(message: string): null {
           // eslint-disable-next-line no-console
           console.log(message);
@@ -139,6 +158,22 @@ export default defineConfig({
       });
 
       on('after:run', () => {
+        const reportDir = `reports/${ARTIFACT_ROOT}`;
+
+        if (observations.length > 0) {
+          mkdirSync(reportDir, { recursive: true });
+          writeFileSync(
+            `${reportDir}/observations.json`,
+            `${JSON.stringify(observations, null, 2)}\n`,
+            'utf8',
+          );
+          const md = [`# Pozorování — ${BASE_URL}`, ''];
+          for (const o of observations) {
+            md.push(`## ${o.topic} — \`${o.route}\``, '', '```json', JSON.stringify(o.data, null, 2), '```', '');
+          }
+          writeFileSync(`${reportDir}/observations.md`, `${md.join('\n')}\n`, 'utf8');
+        }
+
         if (findings.size === 0) return;
 
         const byKind = new Map<string, Finding[]>();
@@ -160,7 +195,6 @@ export default defineConfig({
         // eslint-disable-next-line no-console
         console.log(report);
 
-        const reportDir = `reports/${ARTIFACT_ROOT}`;
         mkdirSync(reportDir, { recursive: true });
         writeFileSync(`${reportDir}/findings.txt`, `${report}\n`, 'utf8');
         writeFileSync(

@@ -33,6 +33,8 @@ const DEPLOYED_DEFAULT = 'https://libertin.app';
 const SPECS = {
   modules: 'cypress/e2e/modules/**/*.cy.ts',
   platform: 'cypress/e2e/platform/**/*.cy.ts',
+  // Records observations (reports/<host>/explore/observations.md); asserts nothing.
+  explore: 'cypress/e2e/explore/**/*.cy.ts',
 };
 
 const [suite, ...passThrough] = process.argv.slice(2);

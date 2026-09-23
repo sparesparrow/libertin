@@ -156,7 +156,9 @@ incident waiting to happen. In CI it belongs in masked/protected variables
 cypress/
   e2e/
     modules/     one spec per module the owner tracks
-    platform/    cross-cutting: shell, a11y, perf, Czech copy, discretion, leaks
+    platform/    cross-cutting: shell, a11y, perf, Czech copy, discretion, leaks,
+                 public pages, decent mode, member exposure
+    explore/     records what the deployed client does; asserts nothing
     local/       this repo's apps/web — age gate, homepage, login, copy,
                  accessibility, public surface, security headers
   support/
@@ -219,3 +221,31 @@ overridable with `LIBERTIN_RESPONSE_BUDGET_MS`). Read its numbers as a
 page is already over budget with nobody on it, but it cannot prove the contract
 is met. Peak-load acceptance stays with the k6 harness in `perf/k6`
 (E11-T4 / E11-T4b).
+
+
+## Exploration (`e2e:explore`)
+
+```bash
+pnpm e2e:explore        # against https://libertin.app; writes reports/<host>/explore/observations.md
+```
+
+The exploration suite records what the deployed client *does* and asserts
+nothing. Run it before writing an assertion about a feature you have not seen
+work. Two findings were withdrawn in September 2026 because checks were
+written from assumptions:
+
+- the language switcher was reported missing for a week. It is an icon button
+  with no text (`aria-label="Jazyk"`), and its menu names English
+  "Angličtina";
+- the cookie banner was reported as having no one-click refusal. Its ✕ is one,
+  and it works.
+
+What it covers: an inventory of every visible control on the public pages
+(this is how decent mode and the language button were found), what each exit
+from the cookie banner stores and loads, every entry in the language menu and
+what switching to it changes, and decent mode off versus on.
+
+It records cookie and storage **names and lengths, never values**, because
+signed-in runs carry session tokens. For member photos it records **counts,
+never URLs**, because a photo URL contains the member's ID. Reports land in CI
+artifacts, so neither may be copied into them.

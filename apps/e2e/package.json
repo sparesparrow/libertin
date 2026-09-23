@@ -11,6 +11,7 @@
     "e2e": "cypress run",
     "e2e:modules": "node scripts/run-deployed.mjs modules",
     "e2e:platform": "node scripts/run-deployed.mjs platform",
+    "e2e:explore": "node scripts/run-deployed.mjs explore",
     "e2e:local": "cypress run --spec \"cypress/e2e/local/**/*.cy.ts\"",
     "e2e:local:ci": "start-server-and-test \"pnpm --filter @libertin/web start\" http://localhost:3000/gate \"pnpm e2e:local\"",
     "type-check": "tsc --noEmit",
