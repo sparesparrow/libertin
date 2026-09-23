@@ -37,9 +37,9 @@ End-to-end (Cypress 15, `apps/e2e`):
 
 ```bash
 pnpm e2e                                       # builds web, serves it, runs cypress/e2e/local
-pnpm e2e:modules                               # the 10 module specs
-pnpm e2e:platform                              # a11y, czech copy, discretion, perf, RSC leak
-CYPRESS_BASE_URL=https://example.com pnpm e2e:modules   # run against a deployed client
+pnpm e2e:modules                               # the 10 module specs, against https://libertin.app
+pnpm e2e:platform                              # a11y, czech copy, discretion, perf, RSC leak, public pages
+CYPRESS_BASE_URL=https://staging.example.com pnpm e2e:modules   # any other deployment
 pnpm --filter @libertin/e2e cy:install         # idempotent; needed after a cached pnpm install
 ```
 
@@ -133,8 +133,10 @@ client.
 
 **e2e targets two different things.** `cypress/e2e/local/*` runs against a build
 of this repo; `cypress/e2e/modules/*` and `platform/*` run against whatever
-`CYPRESS_BASE_URL` points at — currently a deployment that is **not** this
-repo's code on any branch (tracked as D-009). Artifacts are written per host and
+`CYPRESS_BASE_URL` points at, defaulting to `https://libertin.app` via
+`apps/e2e/scripts/run-deployed.mjs` — a deployment that is **not** this repo's
+code on any branch (tracked as D-009). The same default is repeated in both CI
+configs; change all three together. Artifacts are written per host and
 per kind so runs never clobber each other. Routes live only in
 `apps/e2e/cypress/support/routes.ts`; no spec hardcodes a path. Credentials come
 from `CYPRESS_TEST_USERNAME` / `CYPRESS_TEST_PASSWORD` and are never committed —

@@ -21,11 +21,15 @@ Nothing in the specs hardcodes a host. `CYPRESS_BASE_URL` is the only switch.
 # this repo's client, production build, server started and stopped for you
 pnpm --filter @libertin/e2e e2e:local:ci
 
-# a deployed client
-CYPRESS_BASE_URL=https://example.vercel.app pnpm --filter @libertin/e2e e2e:modules
+# the deployed client — defaults to https://libertin.app
+pnpm --filter @libertin/e2e e2e:modules
+pnpm --filter @libertin/e2e e2e:platform
 
-# interactive
-CYPRESS_BASE_URL=https://example.vercel.app pnpm --filter @libertin/e2e cy:open
+# any other deployment
+CYPRESS_BASE_URL=https://staging.example.com pnpm --filter @libertin/e2e e2e:modules
+
+# interactive (cy:open does not go through the wrapper — pass the URL)
+CYPRESS_BASE_URL=https://libertin.app pnpm --filter @libertin/e2e cy:open
 ```
 
 ### PowerShell (Windows)
@@ -38,8 +42,11 @@ variable in the environment first, then run:
 # this repo's client, production build, server started and stopped for you
 pnpm --filter @libertin/e2e e2e:local:ci
 
-# a deployed client
-$env:CYPRESS_BASE_URL = "https://example.vercel.app"
+# the deployed client — defaults to https://libertin.app, no variable needed
+pnpm --filter @libertin/e2e e2e:modules
+
+# any other deployment
+$env:CYPRESS_BASE_URL = "https://staging.example.com"
 pnpm --filter @libertin/e2e e2e:modules
 
 # interactive
@@ -52,7 +59,7 @@ Remove-Item Env:\CYPRESS_BASE_URL
 Scoped to a single command, without leaving the variable set:
 
 ```powershell
-$env:CYPRESS_BASE_URL = "https://example.vercel.app"
+$env:CYPRESS_BASE_URL = "https://staging.example.com"
 try { pnpm --filter @libertin/e2e e2e:modules }
 finally { Remove-Item Env:\CYPRESS_BASE_URL -ErrorAction SilentlyContinue }
 ```

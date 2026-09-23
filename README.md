@@ -36,8 +36,12 @@ pnpm --filter=@libertin/mobile start    # then i / a for simulator
 # End-to-end (Cypress) — builds apps/web, serves it, drives it
 pnpm e2e
 
-# End-to-end against a deployed client
-CYPRESS_BASE_URL=https://example.com pnpm e2e:modules
+# End-to-end against the deployed client (defaults to https://libertin.app)
+pnpm e2e:modules
+pnpm e2e:platform
+
+# …or any other deployment
+CYPRESS_BASE_URL=https://staging.example.com pnpm e2e:modules
 ```
 
 **Manual setup — PowerShell (Windows):**
@@ -64,8 +68,12 @@ pnpm type-check
 # End-to-end (Cypress) — builds apps/web, serves it, drives it
 pnpm e2e
 
-# End-to-end against a deployed client
-$env:CYPRESS_BASE_URL = "https://example.com"
+# End-to-end against the deployed client (defaults to https://libertin.app)
+pnpm e2e:modules
+pnpm e2e:platform
+
+# …or any other deployment
+$env:CYPRESS_BASE_URL = "https://staging.example.com"
 pnpm e2e:modules
 Remove-Item Env:\CYPRESS_BASE_URL
 
