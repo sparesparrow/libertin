@@ -159,6 +159,7 @@ cypress/
     platform/    cross-cutting: shell, a11y, perf, Czech copy, discretion, leaks,
                  public pages, decent mode, member exposure
     explore/     records what the deployed client does; asserts nothing
+    scenarios/   persona journeys across pages; some submit real forms
     local/       this repo's apps/web — age gate, homepage, login, copy,
                  accessibility, public surface, security headers
   support/
@@ -167,6 +168,8 @@ cypress/
     findings.ts  the finding buffer (read the comment before changing it)
     session.ts   openModule() — the auth guard that skips instead of lying
     errors.ts    console/uncaught error collection
+    observe.ts   observation helpers for explore/ (names and counts, never values)
+    scenario.ts  Journey (steps + write guard), viewports, language/decent-mode helpers
 ```
 
 ## Things worth knowing before you edit a spec
@@ -249,3 +252,43 @@ It records cookie and storage **names and lengths, never values**, because
 signed-in runs carry session tokens. For member photos it records **counts,
 never URLs**, because a photo URL contains the member's ID. Reports land in CI
 artifacts, so neither may be copied into them.
+
+
+## Scenarios (`e2e:scenarios`)
+
+```bash
+pnpm e2e:scenarios                             # against https://libertin.app
+CYPRESS_ALLOW_SIGNUP=1 pnpm e2e:scenarios      # also creates one real account
+```
+
+The rest of the suite is organised by feature. A scenario follows a *person*
+across pages, because some defects exist only between pages: a language or a
+decent-mode choice that survives a reload but not a click, a cookie refusal
+that is forgotten on the next full load, the Back button after logout, a layout
+that breaks only at phone width.
+
+| Spec | Persona | What it asserts |
+| --- | --- | --- |
+| `first-visit` | curious first-time visitor | real page at every hop, Back works, refusal via Detaily → Odmítnout holds, nothing written |
+| `shared-device` | discreet visitor, shared laptop | decent mode stays on across *clicks* and Back; wall blurred |
+| `english-visitor` | English speaker | `lang="en"` on every page reached by a link; banner not asked again |
+| `phone` | visitor on a 390×844 phone | ✕ closes the banner, menus reachable, no page scrolls sideways |
+| `keyboard-only` | no mouse | banner closable, login reachable, fillable and submittable by keyboard |
+| `forgot-password` | member who forgot the password | one real request, address never in a URL, answer does not reveal whether the account exists |
+| `register` | new member | server failure is reported and the form keeps its values; real signup only with `CYPRESS_ALLOW_SIGNUP=1` |
+| `returning-member` | member on a shared device | after logout, Back does not show messages (skips without a test account) |
+
+**Writes to production.** Every scenario runs inside a `Journey`
+(`support/scenario.ts`) that intercepts every `POST`/`PUT`/`PATCH`/`DELETE`.
+Only the endpoints in `WRITES` may pass, and each scenario lists the ones it
+needs; anything else is answered locally with 418 and fails the test. The
+endpoints were measured by `explore/form-submissions.cy.ts`, not guessed. A
+default run sends exactly one forgot-password request (for an `example.com`
+address) and one login with a made-up account, which the server refuses with
+401. The ledger of every write, with field names only, is in
+`reports/<host>/scenarios/observations.md`.
+
+**Enter vs. Space.** `cy.press(Enter)` activates no native button on the
+deployed client, not even the plain `<button>` of the language menu, so
+`keyboard-only` activates buttons with Space. Don't report "Enter does not
+work" from this suite: it's the tool, not the site.

@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       base_url:
-        description: 'Deployed client to run the module + platform suites against'
+        description: 'Deployed client to run the module, platform and scenario suites against'
         required: false
         default: 'https://libertin.app'
 
@@ -295,6 +295,21 @@ jobs:
           CYPRESS_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
         run: pnpm --filter @libertin/e2e e2e:platform
 
+      # Persona journeys across pages. This suite writes to production, within
+      # an allowlist: one forgot-password request for an example.com address
+      # and one login with a made-up account (401). Anything else is stopped
+      # before it leaves the runner and fails the run; the ledger of what was
+      # sent is in reports/<host>/scenarios/observations.md. CYPRESS_ALLOW_SIGNUP
+      # is deliberately not set here, so CI never creates an account.
+      - name: scenario suite
+        id: scenarios
+        continue-on-error: true
+        env:
+          CYPRESS_BASE_URL: ${{ steps.target.outputs.url }}
+          CYPRESS_TEST_USERNAME: ${{ secrets.E2E_TEST_USERNAME }}
+          CYPRESS_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        run: pnpm --filter @libertin/e2e e2e:scenarios
+
       # Findings are observations the suite reports without failing on them, so
       # they never reach the exit code. Putting them in the run summary is what
       # makes them readable without downloading an artifact.
@@ -320,17 +335,18 @@ jobs:
           done < <(find apps/e2e/reports -name findings.txt 2>/dev/null | sort)
           [ "$found" = "1" ] || echo "_Žádné nálezy nebyly zapsány._" >> "$GITHUB_STEP_SUMMARY"
 
-      # Both suites ran; now decide the job. Without this the `continue-on-error`
+      # All suites ran; now decide the job. Without this the `continue-on-error`
       # steps above would leave the job green with failing tests in it.
-      - name: fail the job if either suite failed
+      - name: fail the job if any suite failed
         if: always()
         env:
           MODULES: ${{ steps.modules.outcome }}
           PLATFORM: ${{ steps.platform.outcome }}
+          SCENARIOS: ${{ steps.scenarios.outcome }}
         run: |
-          echo "moduly: $MODULES, platforma: $PLATFORM"
-          if [ "$MODULES" != "success" ] || [ "$PLATFORM" != "success" ]; then
-            echo "::error::e2e proti nasazenému klientovi selhalo (moduly: $MODULES, platforma: $PLATFORM)"
+          echo "moduly: $MODULES, platforma: $PLATFORM, scénáře: $SCENARIOS"
+          if [ "$MODULES" != "success" ] || [ "$PLATFORM" != "success" ] || [ "$SCENARIOS" != "success" ]; then
+            echo "::error::e2e proti nasazenému klientovi selhalo (moduly: $MODULES, platforma: $PLATFORM, scénáře: $SCENARIOS)"
             exit 1
           fi
       - name: archive findings

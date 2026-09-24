@@ -12,6 +12,7 @@
     "e2e:modules": "pnpm --filter @libertin/e2e e2e:modules",
     "e2e:platform": "pnpm --filter @libertin/e2e e2e:platform",
     "e2e:explore": "pnpm --filter @libertin/e2e e2e:explore",
+    "e2e:scenarios": "pnpm --filter @libertin/e2e e2e:scenarios",
     "e2e:open": "pnpm --filter @libertin/e2e cy:open",
     "perf": "k6 run perf/k6/web-browse.js",
     "storybook": "pnpm --filter=@libertin/ui storybook",

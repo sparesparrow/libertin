@@ -208,9 +208,29 @@ Přeskočený test není prošlý test — viz D-009.
 
 ### Co se z běhu dá přečíst
 
-Obě sady běží vždy, i když ta první spadne. Dřív byly zřetězené, takže pád
-modulové sady znamenal, že platformní (a11y, výkon, úniky dat, česká kopie)
-neproběhla vůbec. Verdikt jobu se skládá až z obou.
+Všechny tři sady (moduly, platforma, scénáře) běží vždy, i když některá
+spadne. Dřív byly zřetězené, takže pád modulové sady znamenal, že platformní
+(a11y, výkon, úniky dat, česká kopie) neproběhla vůbec. Verdikt jobu se skládá
+až ze všech tří.
+
+### Co job zapisuje do produkce
+
+Scénářová sada (`e2e:scenarios`) odesílá skutečné formuláře, ale jen přes
+seznam povolených zápisů v `apps/e2e/cypress/support/scenario.ts`. Za jeden
+běh bez testovacího účtu je to přesně:
+
+- jedna žádost o obnovu hesla (`POST /api/auth/forgot-password`) pro adresu na
+  `example.com`, která nikomu nepatří a pošta na ni nedojde;
+- jedno přihlášení vymyšleným účtem (`POST /api/auth/login`), které server
+  odmítne se 401.
+
+Jakýkoli jiný zápis se zastaví ještě v prohlížeči (odpověď 418) a test
+spadne. Registraci sada simuluje s odpovědí podvrženou v prohlížeči, takže nic
+nevznikne. Skutečný účet založí jen s `CYPRESS_ALLOW_SIGNUP=1` a **CI tu
+proměnnou nenastavuje**. Kdo ji nastaví, najde přezdívky založených účtů v
+nálezech (`created-account`), aby je mohl smazat. Seznam všech zápisů jednoho
+běhu, jen s názvy polí a bez hodnot, je v artefaktu
+`reports/<host>/scenarios/observations.md`.
 
 Nálezy — pozorování, která sada hlásí, ale nepadá na nich — se vypisují do
 souhrnu běhu, takže se nemusí stahovat artefakt. Artefakt (`reports/`,

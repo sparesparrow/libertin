@@ -93,10 +93,15 @@ describe('Registrace', { retries: 0 }, () => {
 
     cy.contains('select', 'Muž').select('Muž');
 
-    // First community opt-in, then the terms box — the last checkbox on the
-    // form is the consent one.
+    // First community opt-in, then *both* consent boxes — terms and the 18+ /
+    // content declaration. Ticking only the last checkbox, as this used to,
+    // leaves the terms box empty and the client never sends the request
+    // (measured by explore/form-submissions.cy.ts on 2026-09-24).
     cy.get('input[type="checkbox"]').first().check({ force: true });
-    cy.get('input[type="checkbox"]').last().check({ force: true });
+    cy.get('label')
+      .filter((_, l) => /souhlasím/i.test(l.textContent ?? ''))
+      .find('input[type="checkbox"]')
+      .check({ force: true });
 
     cy.get('button[type="submit"]').click();
 

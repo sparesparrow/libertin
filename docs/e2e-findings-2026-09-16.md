@@ -338,3 +338,58 @@ pojmenovaná přes `<label>`. Pomocník pro zavření lišty sahal po prvním
 tlačítku „Zavřít“ v DOM, trefil jiné, zakryté tlačítko a vypadalo to, že
 lišta zakrývá vlastní křížek. Obojí se ukázalo až měřením. Proto průzkum
 existuje.
+
+---
+
+## Doplněk 24. 9. 2026 — scénáře uživatelů (`e2e:scenarios`)
+
+Nová sada sleduje *člověka* napříč stránkami, ne jednu funkci. Má osm person,
+viz `apps/e2e/README.md`. Dva běhy proti `https://libertin.app` skončily
+stejně: 7 prošlo, 2 přeskočené (skutečná registrace je vypnutá bez
+`CYPRESS_ALLOW_SIGNUP=1` a vracející se člen nemá testovací účet, D-009). Do
+produkce šla za běh jedna žádost o obnovu hesla pro adresu na `example.com`
+(201) a jedno přihlášení vymyšleným účtem (401). Nic jiného.
+
+**Co funguje (ověřeno tvrzením, ne jen pozorováním):**
+- Zapomenuté heslo **neprozradí, jestli účet existuje**. Odpověď zní „Pokud u
+  nás účet s adresou … existuje, poslali jsme…“. Adresa jde v těle požadavku,
+  nikdy v URL.
+- Slušný režim **vydrží navigaci kliknutím i tlačítko Zpět**, nejen
+  znovunačtení. Zeď otevřená kliknutím je rozmazaná.
+- Angličtina **vydrží navigaci**: `lang="en"` na FAQ, členství, VOP, GDPR,
+  přihlášení i registraci.
+- Na telefonu (390 px) se **žádná** z `/`, `/login`, `/register`, `/wall`,
+  `/faq` neposouvá do strany. Cookie lišta jde zavřít a menu jazyků otevřít.
+- Klávesnicí jde zavřít cookie lištu, dojít na přihlašovací formulář, vyplnit
+  ho a odeslat Enterem. Odmítnutí hesla se zobrazí.
+- Když server registraci nepřijme (simulovaná 503), návštěvník se to dozví
+  („Registrace se nezdařila.“) a o vyplněné údaje nepřijde.
+- Odmítnutí cookies přes Detaily → Odmítnout **se pamatuje** po celou
+  procházku. Nepamatuje se jen odmítnutí křížkem, to už je nahlášené.
+
+**Nové nálezy:**
+- **Souhlas se při registraci neodesílá** (`consent-not-sent`). Tělo
+  `POST /api/auth/register` nese jen `username`, `email`, `password`,
+  `gender` a `interests`. Obě zaškrtávací pole (VOP a prohlášení 18+) hlídá
+  jen klient. Pokud server souhlas nezaznamenává sám, provozovatel nemá doklad
+  o souhlasu ani o prohlášení plnoletosti (GDPR čl. 7 odst. 1). Ověřit na
+  straně API.
+- **Fokus pod cookie lištou** (`focus-behind-modal`). Lišta zakryje celou
+  stránku, ale tabulátor projde nejdřív 25 prvků *pod* ní, než se dostane na
+  její ✕. Uživatel klávesnice pracuje naslepo pod překryvem.
+- **Angličtina po navigaci není úplná** (`b13-partial`). Úvodní stránka má
+  0,15 % textu s českou diakritikou. Po navigaci ale zůstává 2,7 % na
+  `/membership`, 4,7 % na `/vop`, 4,2 % na `/gdpr` a `/login` a 3,9 % na
+  `/register`. Tělo cookie lišty zůstává v angličtině česky.
+- **Dvě cesty pro Členství.** Patička úvodní stránky vede na `/clenstvi`,
+  odkaz na stránce FAQ (a na zdi) na `/membership`. Obě jsou živé stránky.
+  Zapsané jako pozorování, ne vada.
+
+**Oprava v existující sadě.** `platform/registration.cy.ts` při skutečné
+registraci zaškrtával jen první a poslední pole. Pole souhlasu s VOP tak
+zůstávalo prázdné a klient požadavek vůbec neodeslal. Test by s
+`CYPRESS_ALLOW_SIGNUP=1` nikdy účet nezaložil. Teď zaškrtne obě pole souhlasu.
+
+**Omezení nástroje, ne vada webu.** `cy.press(Enter)` neaktivuje na
+nasazeném klientu žádné nativní tlačítko, ani obyčejné `<button>` menu Jazyk.
+Mezerník funguje. Enter na ✕ lišty proto **není** nahlášen jako vada.

@@ -180,14 +180,18 @@ e2e-modules:
     # ran at all. Each records its own status; the job verdict comes after.
     - pnpm --filter @libertin/e2e e2e:modules || modules_failed=1
     - pnpm --filter @libertin/e2e e2e:platform || platform_failed=1
+    # Persona journeys. Writes to production only within an allowlist (one
+    # forgot-password request for an example.com address, one 401 login);
+    # CYPRESS_ALLOW_SIGNUP stays unset, so CI never creates an account.
+    - pnpm --filter @libertin/e2e e2e:scenarios || scenarios_failed=1
     - |
       # Recursive: each suite writes its own reports/<host>/<suite>/ folder.
       find apps/e2e/reports -name findings.txt 2>/dev/null | sort | while IFS= read -r f; do
         echo "=== $f ==="; cat "$f"
       done
     - |
-      if [ -n "$modules_failed" ] || [ -n "$platform_failed" ]; then
-        echo "e2e proti nasazenému klientovi selhalo (moduly: ${modules_failed:-ok}, platforma: ${platform_failed:-ok})"
+      if [ -n "$modules_failed" ] || [ -n "$platform_failed" ] || [ -n "$scenarios_failed" ]; then
+        echo "e2e proti nasazenému klientovi selhalo (moduly: ${modules_failed:-ok}, platforma: ${platform_failed:-ok}, scénáře: ${scenarios_failed:-ok})"
         exit 1
       fi
   cache:

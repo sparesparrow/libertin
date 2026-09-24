@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Runs the module or platform suite against a deployed client.
+ * Runs a deployed-client suite (modules, platform, explore, scenarios).
  *
  *   pnpm e2e:modules                                  -> https://libertin.app
  *   CYPRESS_BASE_URL=https://staging.example pnpm e2e:modules
@@ -35,6 +35,8 @@ const SPECS = {
   platform: 'cypress/e2e/platform/**/*.cy.ts',
   // Records observations (reports/<host>/explore/observations.md); asserts nothing.
   explore: 'cypress/e2e/explore/**/*.cy.ts',
+  // Persona journeys across pages; some submit real forms (see the specs).
+  scenarios: 'cypress/e2e/scenarios/**/*.cy.ts',
 };
 
 const [suite, ...passThrough] = process.argv.slice(2);

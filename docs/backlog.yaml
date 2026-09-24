@@ -793,6 +793,21 @@ epics:
         note: >
           92 přeskočených testů čeká pouze na účet. Harness je hotový a ověřený,
           chybí jen přihlašovací údaje k nasazení, proti kterému běží.
+      - id: E11-T5c
+        title: Scénáře uživatelů napříč stránkami (Cypress, e2e:scenarios)
+        scope: qa
+        role: qa
+        status: done
+        blocked_by: [E11-T5]
+        note: >
+          Osm person v apps/e2e/cypress/e2e/scenarios: první návštěvník,
+          diskrétní návštěvník na sdíleném zařízení, anglicky mluvící, telefon
+          390×844, jen klávesnice, zapomenuté heslo, registrace, vracející se
+          člen. Běží proti nasazení a v CI jobu e2e-modules jako třetí sada.
+          Zápisy do produkce hlídá seznam povolených endpointů (support/scenario.ts),
+          změřený průzkumem explore/form-submissions.cy.ts. Jiný zápis se zastaví
+          a test spadne. Skutečná registrace jen s CYPRESS_ALLOW_SIGNUP=1, v CI
+          vypnuto. returning-member čeká na testovací účet (D-009).
       - id: E11-T6
         title: Pokrytí "většiny funkcí systému" — měření a report
         scope: qa

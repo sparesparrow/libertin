@@ -40,6 +40,7 @@ pnpm e2e                                       # builds web, serves it, runs cyp
 pnpm e2e:modules                               # the 10 module specs, against https://libertin.app
 pnpm e2e:platform                              # a11y, czech copy, discretion, perf, RSC leak, public pages
 pnpm e2e:explore                               # records what the deployed client does; asserts nothing
+pnpm e2e:scenarios                             # persona journeys; writes only via the allowlist in support/scenario.ts
 CYPRESS_BASE_URL=https://staging.example.com pnpm e2e:modules   # any other deployment
 pnpm --filter @libertin/e2e cy:install         # idempotent; needed after a cached pnpm install
 ```
