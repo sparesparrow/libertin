@@ -103,7 +103,7 @@ describe('Scénář — návštěvník jen s klávesnicí', () => {
       // Implicit form submission from a text field — this one Cypress does
       // perform, unlike activating a button with Enter.
       cy.focused().type('{enter}', { log: false });
-      cy.contains(/nesprávný email nebo heslo|incorrect/i, { timeout: 10_000 }).should('be.visible');
+      cy.contains(/nesprávný (email|nick) nebo heslo|incorrect/i, { timeout: 10_000 }).should('be.visible');
     });
 
     visit.step('odmítnutí dostal jako výsledek skutečného odeslání', () => {
