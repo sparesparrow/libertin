@@ -26,15 +26,16 @@ describe('Shell — globální navigace a patička', () => {
       // 25. 9. 2026), so the structural check is a visible link to /wall,
       // whatever it is called; "Domů" is still asserted by name.
       it('renders the primary navigation', () => {
-        cy.get('body').then(($body) => {
+        // On /wall itself the wall item is the current page, not a link.
+        cy.location('pathname').then((pathname) => cy.get('body').then(($body) => {
           const text = $body.find('a:visible').toArray().map((a) => (a.textContent ?? '').trim());
           const hrefs = $body.find('a:visible').toArray().map((a) => a.getAttribute('href') ?? '');
           const missing = [
             ...(text.includes('Domů') ? [] : ['Domů']),
-            ...(hrefs.includes('/wall') ? [] : ['odkaz na /wall']),
+            ...(hrefs.includes('/wall') || pathname === '/wall' ? [] : ['odkaz na /wall']),
           ];
           expect(missing, 'primary navigation items').to.deep.equal([]);
-        });
+        }));
       });
 
       // "Kontaktovat podporu" appears only in some footers; others say

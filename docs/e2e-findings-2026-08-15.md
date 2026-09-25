@@ -1,5 +1,7 @@
 # Nálezy e2e — nasazený klient
 
+> **Nahrazeno [závěrečnou zprávou z 25. 9. 2026](./zaverecna-zprava-2026-09-25.md)**, která obsahuje jen nálezy, jež k tomu dni trvají. Tento dokument zůstává jako historie.
+
 Cypress sada (`apps/e2e`, backlog E11-T5) proti rozpracovanému nasazení modulů.
 
 > **Aktuální stav je [druhý běh, 16. 8. 2026](#druhy-beh)** — 57 nálezů místo 78.

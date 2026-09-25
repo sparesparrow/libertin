@@ -125,6 +125,12 @@ decisions:
       Bez (1) je harness funkční, ale pokrytí modulů je nulové a report to
       poctivě přiznává. Bez (2) může červený běh reportovat cizí push.
 
+      25. 9. 2026: (2) se vyjasnilo samo — libertin.app trvale přesměrovává
+      (301) na swingerslife.cz, kde běží nová platforma. (1) trvá: účet dodaný
+      k testování nová platforma odmítá („Nesprávný nick nebo heslo“), takže
+      migrace uživatelů pro něj není potvrzená a členská část zůstává
+      neověřená. Viz docs/zaverecna-zprava-2026-09-25.md.
+
   - id: D-005
     title: AI-asistovaná moderace obsahu — mimo smlouvu, navrženo
     req: [C2]

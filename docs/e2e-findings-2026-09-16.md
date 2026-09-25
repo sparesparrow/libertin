@@ -1,5 +1,7 @@
 # E2E nálezy — https://libertin.app, 16. 9. 2026
 
+> **Nahrazeno [závěrečnou zprávou z 25. 9. 2026](./zaverecna-zprava-2026-09-25.md)**, která obsahuje jen nálezy, jež k tomu dni trvají. Tento dokument zůstává jako historie.
+
 Běh proti novému nasazení (`CYPRESS_BASE_URL=https://libertin.app`). Předchozí
 běhy mířily na `libertine-omega.vercel.app`; tohle je jiný hosting (Apache, ne
 Vercel) a jiný, dál dotažený stav. Srovnání s [nálezy z 15. 8.](./e2e-findings-2026-08-15.md).
