@@ -53,11 +53,15 @@ describe('Výkon — rozpočet C12.1 (≤ 1,5 s, jeden uživatel)', () => {
               `načtení ${timing.loadMs} ms překračuje rozpočet ${budgetMs} ms (ttfb ${timing.ttfbMs} ms)`,
             );
           }
-          cy.task(
-            'log',
-            `${module.label.padEnd(24)} ttfb=${timing.ttfbMs}ms dcl=${timing.domContentLoadedMs}ms load=${timing.loadMs}ms`,
-          );
-          return timing;
+          // Returned as a chain: queuing `cy.task` and then returning a plain
+          // value is "mixing async and sync code", which threw on every page
+          // and hid the timing of every module that met the budget.
+          return cy
+            .task(
+              'log',
+              `${module.label.padEnd(24)} ttfb=${timing.ttfbMs}ms dcl=${timing.domContentLoadedMs}ms load=${timing.loadMs}ms`,
+            )
+            .then(() => timing);
         })
         .then((timing) => {
           expect(timing.loadMs, `load time for ${module.path}`).to.be.at.most(budgetMs);

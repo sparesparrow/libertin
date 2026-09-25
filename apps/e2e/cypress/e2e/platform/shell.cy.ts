@@ -8,15 +8,12 @@ import { note } from '../../support/findings';
  * of nine module failures pointing at the wrong owner.
  */
 
-/**
- * Items the global shell puts in its primary navigation.
- *
- * `Události` used to be here and is not any more — the nav was reworked to
- * Trefa / Marketplace / Skupinový chat. That is a product decision, not a
- * defect, so the expectation moved with it. Kept to the two items that are
- * structural rather than fashionable: home, and the wall.
+/*
+ * Primary navigation: only what is structural rather than fashionable — home,
+ * and a way to the wall. `Události` used to be expected and is gone since the
+ * nav was reworked to Trefa / Marketplace / Skupinový chat; that is a product
+ * decision, not a defect.
  */
-const PRIMARY_NAV = ['Domů', 'Zeď'] as const;
 
 describe('Shell — globální navigace a patička', () => {
   for (const module of ALL_MODULES) {
@@ -25,15 +22,25 @@ describe('Shell — globální navigace a patička', () => {
         openModule(this, module);
       });
 
+      // The guest homepage names the wall "Objevujte", not "Zeď" (measured
+      // 25. 9. 2026), so the structural check is a visible link to /wall,
+      // whatever it is called; "Domů" is still asserted by name.
       it('renders the primary navigation', () => {
-        cy.visibleText().then((text) => {
-          const missing = PRIMARY_NAV.filter((item) => !text.includes(item));
+        cy.get('body').then(($body) => {
+          const text = $body.find('a:visible').toArray().map((a) => (a.textContent ?? '').trim());
+          const hrefs = $body.find('a:visible').toArray().map((a) => a.getAttribute('href') ?? '');
+          const missing = [
+            ...(text.includes('Domů') ? [] : ['Domů']),
+            ...(hrefs.includes('/wall') ? [] : ['odkaz na /wall']),
+          ];
           expect(missing, 'primary navigation items').to.deep.equal([]);
         });
       });
 
+      // "Kontaktovat podporu" appears only in some footers; others say
+      // "Napište nám" (→ /kontakt). Either is a support contact.
       it('renders the footer with a support contact', () => {
-        cy.visibleText().should('include', 'Kontaktovat podporu');
+        cy.visibleText().should('match', /Kontaktovat podporu|Napište nám/);
       });
 
       it('declares the document language', () => {

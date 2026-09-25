@@ -17,8 +17,22 @@ import { countBlurredElements, isBlurred, isShown, memberPhotos } from '../../su
 
 const TOGGLE = /slušný režim/i;
 
+/**
+ * The visible toggle. Not `cy.contains('button', TOGGLE)`: that yields only
+ * the *first* match. Since 25. 9. 2026 the footer — toggle included — is in
+ * the page twice, `cy.contains` settled on a copy that is not visible, and
+ * every test here timed out on a toggle a visitor could see and click.
+ */
+function toggle(): Cypress.Chainable<JQuery<HTMLElement>> {
+  return cy
+    .get('button')
+    .filter(':visible')
+    .filter((_, b) => TOGGLE.test(b.textContent ?? ''))
+    .first();
+}
+
 function turnOn(): void {
-  cy.contains('button', TOGGLE).filter(':visible').first().as('toggle');
+  toggle().as('toggle');
   cy.get('@toggle').should('have.attr', 'aria-pressed', 'false');
   cy.get('@toggle').click();
 }
@@ -34,9 +48,7 @@ describe('Slušný režim', () => {
     // in — without it, "is this safe to have open right now?" has no answer.
     cy.visitModule('/', { module: 'decent-mode' });
     turnOn();
-    cy.contains('button', TOGGLE)
-      .filter(':visible')
-      .first()
+    toggle()
       .should('have.attr', 'aria-pressed', 'true')
       .and('contain.text', 'Vypnout');
   });
@@ -47,7 +59,7 @@ describe('Slušný režim', () => {
     cy.visitModule('/', { module: 'decent-mode' });
     turnOn();
     cy.reload();
-    cy.contains('button', TOGGLE).filter(':visible').first().should('have.attr', 'aria-pressed', 'true');
+    toggle().should('have.attr', 'aria-pressed', 'true');
   });
 
   it('rozmaže obsah zdi', () => {

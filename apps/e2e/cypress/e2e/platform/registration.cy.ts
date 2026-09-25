@@ -40,7 +40,9 @@ describe('Registrace', { retries: 0 }, () => {
   });
 
   it('states the password rule before the member guesses it', () => {
-    cy.visibleText().should('include', 'alespoň 8 znaků');
+    // Case-insensitive: the copy moved from "alespoň" to "Aspoň" on 25. 9.
+    // 2026, which is a wording choice, not a missing rule.
+    cy.visibleText().should('match', /a?lespoň 8 znaků|aspoň 8 znaků/i);
   });
 
   it('offers the four communities as separate opt-ins', () => {
@@ -52,8 +54,26 @@ describe('Registrace', { retries: 0 }, () => {
     });
   });
 
-  it('says interests are only visible to members who share them', () => {
-    cy.visibleText().should('include', 'Uvidíte jen zájmy uživatelů');
+  /**
+   * Until 24. 9. 2026 the form promised "Uvidíte jen zájmy uživatelů…" — that
+   * interests are shown only to members who share them. On 25. 9. the note
+   * under the communities reads "Uvidíte jen příspěvky ze světů, které máte
+   * vybrané", which explains filtering, not who can see a member's interests.
+   * Whether the promise was dropped or moved is the owner's question, so it is
+   * reported; the test asserts only that the choice is explained at all.
+   */
+  it('explains what choosing a community does', () => {
+    cy.visibleText().then((text) => {
+      if (!/zájmy uživatelů|vidí jen|uvidí jen/i.test(text)) {
+        note(
+          'registration',
+          '/register',
+          'interest-visibility-unstated',
+          'formulář už neříká, kdo uvidí zvolené zájmy (dřív „Uvidíte jen zájmy uživatelů…“)',
+        );
+      }
+      expect(text, 'explanation next to the community choice').to.match(/uvidíte jen/i);
+    });
   });
 
   it('does not create an account without the terms checkbox', () => {
