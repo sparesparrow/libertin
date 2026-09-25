@@ -48,7 +48,7 @@ i 8 modulů, u kterých selhalo přihlášení, a 2 testy členské zdi, které 
 přihlášení nemají co měřit.
 Přeskočené testy nejsou „prošlé“: jde o testy za přihlášením a o skutečnou
 registraci, kterou sada bez výslovného povolení neprovádí. Počty platformy
-a scénářů jsou po opravě čtyř chyb v samotné sadě (viz konec zprávy).
+a scénářů jsou po opravě pěti chyb v samotné sadě (viz konec zprávy).
 
 ---
 
@@ -307,7 +307,11 @@ zápis sada zastaví ještě v prohlížeči a test spadne. Účty nezakládá.
 tváří, kolik obrázků), nikdy adresy fotek, jména ani ID členů. Hodnoty cookies
 se nezapisují, jen jejich názvy. Přihlašovací údaje nejsou v repozitáři.
 
-**Čtyři chyby v samotné sadě** odhalil tento běh a jsou opravené: měření
+**Pět chyb v samotné sadě** odhalil tento běh a jsou opravené: měření
 výkonu padalo na každé stránce, test slušného režimu hledal skrytou kopii
-přepínače a dva testy čekaly texty, které web mezitím přeformuloval. Žádná
-z nich se do nálezů výše nepromítla.
+přepínače, kontrola navigace a patičky čekala popisky, které host nevidí,
+a dva testy čekaly texty, které web mezitím přeformuloval (pravidlo hesla,
+hláška o odmítnutém přihlášení). Žádná z nich se do nálezů výše nepromítla.
+
+Sdílená verze této zprávy pro čtení a komentáře:
+https://claude.ai/artifact/WUXj86UzzepsNQBtgsL2GQ
