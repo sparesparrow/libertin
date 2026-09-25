@@ -23,5 +23,7 @@ export function openModule(context: Mocha.Context, module: ModuleRoute, path?: s
   }
 
   cy.visitModule(route, { module: module.id });
+  // Signed in, the "unknown network" modal covers the page on first visits.
+  if (module.requiresAuth === true) cy.dismissNetworkModal();
   cy.settle(module.id, route);
 }

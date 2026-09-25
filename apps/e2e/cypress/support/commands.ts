@@ -128,13 +128,30 @@ Cypress.Commands.add('dismissCookieBanner', (): void => {
  * of obstacle, so it gets the same treatment.
  */
 Cypress.Commands.add('dismissNetworkModal', (): void => {
-  cy.get('body', { log: false }).then(($body) => {
-    const hasModal = $body.text().includes('Přihlašuješ se z');
-    if (!hasModal) return;
-    const $go = $body.find('button').filter((_, el) => (el.textContent ?? '').trim() === 'Přejít do účtu');
-    if ($go.length > 0) {
-      cy.wrap($go.first(), { log: false }).click({ force: true });
-    }
+  // Waits briefly for the modal: it mounts after hydration, so a single look
+  // right after the visit can miss it — the cookie banner's race, again.
+  cy.wait(1500, { log: false });
+  cy.document({ log: false }).then((doc) => {
+    const shown = Array.from(doc.querySelectorAll('h1, h2, h3, p, div'))
+      .some((el) => (el as HTMLElement).offsetParent !== null && /^Přihlašuješ se z/.test((el.textContent ?? '').trim()));
+    if (!shown) return;
+    // Until 24. 9. 2026 the modal had a "Přejít do účtu" button. Since 25. 9.
+    // it has only a ✕ and a "Dětský režim" switch, so the old helper found
+    // nothing to click and the modal stayed over every member page. Close it
+    // with whichever of the two is on top — the one a click would reach —
+    // never the switch, which would change the member's content mode.
+    const candidates = Array.from(doc.querySelectorAll('button')).filter(
+      (b) =>
+        b.offsetParent !== null &&
+        (/^(zavřít|close)$/i.test(b.getAttribute('aria-label') ?? '') ||
+          (b.textContent ?? '').trim() === 'Přejít do účtu'),
+    );
+    const topmost = candidates.find((b) => {
+      const r = b.getBoundingClientRect();
+      const hit = doc.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return hit !== null && (hit === b || b.contains(hit));
+    });
+    if (topmost) cy.wrap(topmost, { log: false }).click();
   });
 });
 

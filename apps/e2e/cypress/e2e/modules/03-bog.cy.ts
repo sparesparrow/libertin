@@ -13,9 +13,11 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
     openModule(this, M);
   });
 
+  // Tabs as they stand on 25. 9. 2026 (Zprávy / Skupiny / Volání); the
+  // earlier Lidé / Místnosti tabs were a previous design, not a regression.
   it('renders the messenger tabs', () => {
     cy.visibleText().then((text) => {
-      const missing = ['Lidé', 'Místnosti', 'Volání'].filter((t) => !text.includes(t));
+      const missing = ['Zprávy', 'Skupiny', 'Volání'].filter((t) => !text.includes(t));
       expect(missing, 'messenger tabs present').to.deep.equal([]);
     });
   });
