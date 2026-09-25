@@ -50,6 +50,9 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
   describe('Člen (přihlášený)', () => {
     beforeEach(function () {
       if (!hasCredentials()) this.skip();
+      // /wall is public, so openModule() does not sign in for it — these
+      // tests used to run as a guest and "fail" on member-only content.
+      cy.login();
       openModule(this, M);
     });
 

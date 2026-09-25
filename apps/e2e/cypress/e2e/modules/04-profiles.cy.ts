@@ -1,3 +1,4 @@
+import { hasCredentials } from '../../support/auth';
 import { MODULES } from '../../support/routes';
 import { openModule } from '../../support/session';
 import { note } from '../../support/findings';
@@ -5,6 +6,18 @@ import { note } from '../../support/findings';
 const M = MODULES.profiles;
 
 describe(`Modul: ${M.label} (${M.path})`, () => {
+  // Every route here is behind the login. Only the directory went through
+  // openModule(); the rest visited as a guest, were bounced to /login, and
+  // reported "unknown profile id has no not-found state" — which, signed in,
+  // it does ("Profil nenalezen.", 25. 9. 2026).
+  beforeEach(function () {
+    if (!hasCredentials()) {
+      this.skip();
+      return;
+    }
+    cy.login();
+  });
+
   describe('Adresář lidí', () => {
     beforeEach(function () {
       openModule(this, M);

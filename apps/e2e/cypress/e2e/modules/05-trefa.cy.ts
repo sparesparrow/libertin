@@ -17,8 +17,11 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
     });
   });
 
+  // A member with no profile photo is asked to upload one before the deck
+  // opens (seen 25. 9. 2026 with the owner's test account) — that is the
+  // escape hatch in that state.
   it('offers the quick-settings escape hatch from the empty state', () => {
-    cy.contains('Upravit rychlé nastavení').should('be.visible');
+    cy.contains(/Upravit rychlé nastavení|Nahrát fotku/).should('be.visible');
   });
 
   it('has a top-level heading describing the page', () => {
@@ -28,8 +31,11 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
   it('renders the global navigation like every other module', () => {
     // Trefa serves a noticeably smaller document than its siblings. If the
     // shell is missing here, navigation away from an empty deck is a dead end.
-    cy.visibleText().then((text) => {
-      const hasShell = text.includes('Zeď') && text.includes('Události');
+    // `Události` left the navigation in September 2026, and Trefa shows the
+    // global header as icons, not the text sidebar. What matters is that the
+    // header still leads back to the wall.
+    cy.get('body').then(($body) => {
+      const hasShell = $body.find('a[href="/wall"]:visible, a[href="/"]:visible').length > 0;
       if (!hasShell) {
         note(M.id, M.path, 'missing-shell', 'globální navigace se nevykreslila');
       }

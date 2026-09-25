@@ -24,7 +24,9 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
 
   it('renders the listing browse controls', () => {
     cy.visibleText().then((text) => {
-      const missing = ['Dnešní výběr', 'Prohlížet vše', 'Uložené'].filter(
+      // "Dnešní výběr" was dropped in the September redesign (the page now
+      // offers Kategorie / Řazení); not a regression.
+      const missing = ['Prohlížet vše', 'Uložené'].filter(
         (t) => !text.includes(t),
       );
       expect(missing, 'browse controls present').to.deep.equal([]);
