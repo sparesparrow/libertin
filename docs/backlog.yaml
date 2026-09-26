@@ -131,6 +131,13 @@ decisions:
       migrace uživatelů pro něj není potvrzená a členská část zůstává
       neověřená. Viz docs/zaverecna-zprava-2026-09-25.md.
 
+      26. 9. 2026: objednatel dodal druhý účet a ten funguje; členská část je
+      ověřená (moduly 62/70, zbývajících 8 selhání jsou skutečné nálezy).
+      Zeď sama oznamuje, že přihlášení údaji ze starého webu funguje, takže
+      migrace uživatelů podle všeho proběhla. Údaje jsou jen v proměnných
+      prostředí běhu, ne v repozitáři. Pro CI zbývá uložit je do tajných
+      proměnných (E2E_TEST_USERNAME / E2E_TEST_PASSWORD).
+
   - id: D-005
     title: AI-asistovaná moderace obsahu — mimo smlouvu, navrženo
     req: [C2]

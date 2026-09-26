@@ -1,54 +1,61 @@
 # Závěrečná zpráva z testování — swingerslife.cz
 
 **Pro:** produktového vlastníka
-**Stav k:** 25. 9. 2026
+**Stav k:** 25.–26. 9. 2026
 **Co bylo testováno:** nasazená platforma na `https://swingerslife.cz`
-(`https://libertin.app` na ni trvale přesměrovává, HTTP 301)
+(`https://libertin.app` na ni trvale přesměrovává, HTTP 301), veřejná část
+i členská část za přihlášením
 **Jak:** automatická sada Cypress z tohoto repozitáře (`apps/e2e`) a přímé
-dotazy na server, vše 25. 9. 2026
+dotazy na server; členská část testovacím účtem, který dodal objednatel
 
 Tato zpráva nahrazuje dřívější dílčí zprávy (15. 8., 16. 9. a jejich doplňky).
 Obsahuje **jen to, co k dnešku není opravené**. Každý bod je znovu změřený
-25. 9., žádný se nepřebírá ze starého běhu. Co se mezitím opravilo, je
+25.–26. 9., žádný se nepřebírá ze starého běhu. Co se mezitím opravilo, je
 souhrnně na konci, abyste viděli, že se to kontrolovalo.
 
 ---
 
 ## Shrnutí
 
-Vývojáři oznámili, že je vývoj hotový. Veřejná část webu je v dobrém stavu:
-bezpečnostní hlavičky, právní stránky, výběr jazyka, obnova hesla i
-registrační formulář fungují a nenačítá se žádný sledovací skript třetí strany.
+Vývojáři oznámili, že je vývoj hotový. Veřejná i členská část z velké
+části funguje: bezpečnostní hlavičky, právní stránky, výběr jazyka, obnova
+hesla, registrace, zprávy, chat, marketplace i kredit. Nenačítá se žádný
+sledovací skript třetí strany. Po odhlášení se zprávy přes tlačítko Zpět
+znovu neukážou.
 
-**Tři věci ale brání tomu, aby se dodávka převzala jako hotová:**
+Migrace uživatelů podle všeho proběhla: na zdi je oznámení, že se lze přihlásit
+jménem a heslem ze starého webu, a testovací účet objednatele funguje. (První
+dodaný účet nefungoval, nový ano.)
+
+**Čtyři věci ale brání tomu, aby se dodávka převzala jako hotová:**
 
 1. **Nepřihlášený návštěvník vidí tváře členů.** Na stránce „Zeď“ je vidí bez
-   rozmazání, u části z nich i s tím, že mají dnes narozeniny. U platformy,
-   jejímž hlavním slibem je diskrétnost, je to nejzávažnější nález.
-   „Slušný režim“ tváře nerozmaže.
-2. **Testovací účet na nové platformě nefunguje** („Nesprávný nick nebo
-   heslo“). Buď uživatelská databáze zatím převedená není, nebo v ní tento účet
-   chybí. Proto **celou členskou část (9 modulů za přihlášením) nešlo 25. 9.
-   ověřit vůbec.** Tvrzení „hotovo“ je pro ni zatím nepodložené.
-3. **Registrace neposílá na server souhlas s podmínkami ani prohlášení
-   o věku 18+.** Zaškrtávací pole kontroluje jen prohlížeč. Pokud server
-   souhlas nezaznamenává sám, provozovatel nemá doklad o souhlasu, který po
-   něm může dozorový úřad chtít.
+   rozmazání, u části z nich i s tím, že mají dnes narozeniny. „Slušný
+   režim“ tváře nerozmaže. U platformy, jejímž hlavním slibem je diskrétnost,
+   je to nejzávažnější nález.
+2. **Vlastní profil člena spadne.** Stránka `/profile` testovacího účtu
+   skončí hláškou „This page couldn't load“ (chyba v kódu stránky), ve všech
+   šesti pokusech.
+3. **Citlivé údaje bez ovládání viditelnosti.** Nastavení „O mně“ sbírá
+   sexuální orientaci a vztahový stav, ale nikde neříká ani nedovoluje
+   nastavit, kdo je uvidí. Jde o zvláštní kategorie osobních údajů (GDPR
+   čl. 9).
+4. **Registrace neposílá na server souhlas s podmínkami ani prohlášení
+   o věku 18+.** Pokud server souhlas nezaznamenává sám, provozovatel nemá
+   doklad o souhlasu.
 
-| Sada (25. 9., swingerslife.cz) | Testů | Prošlo | Selhalo | Přeskočeno |
+| Sada (swingerslife.cz, přihlášeně) | Testů | Prošlo | Selhalo | Přeskočeno |
 |---|---|---|---|---|
-| Platforma: soukromí, přístupnost, výkon, čeština, veřejné a právní stránky (vč. 61 testů stránek, všechny prošly) | 171 | 97 | **9** | 65 |
-| Scénáře uživatelů (8 person napříč stránkami) | 9 | 7 | 0 | 2 |
+| Moduly (Zeď, Bog, Profily, Trefa, Chat, Marketplace, Média, Kredit, Nastavení) | 70 | 62 | **8** | 0 |
+| Platforma: soukromí, přístupnost, výkon, čeština, 15 veřejných a právních stránek | 171 | 145 | **25** | 1 |
+| Scénáře uživatelů (8 person napříč stránkami) | 9 | 8 | 0 | 1 |
 | Průzkum (jen zaznamenává, nic netvrdí) | 12 | 12 | 0 | 0 |
-| Moduly | 70 | 28 | **2** | 40 **nelze ověřit**, účet odmítnut |
 
-Všech 9 selhání platformy jsou skutečné nálezy níže. Obě selhání modulů jsou
-zmizelá sekce akcí na úvodní stránce (k rozhodnutí). Do „nelze ověřit“ patří
-i 8 modulů, u kterých selhalo přihlášení, a 2 testy členské zdi, které bez
-přihlášení nemají co měřit.
-Přeskočené testy nejsou „prošlé“: jde o testy za přihlášením a o skutečnou
-registraci, kterou sada bez výslovného povolení neprovádí. Počty platformy
-a scénářů jsou po opravě pěti chyb v samotné sadě (viz konec zprávy).
+Všech 33 selhání jsou skutečné nálezy níže, nebo sekce akcí k rozhodnutí.
+Přeskočená je jen skutečná registrace nového účtu, kterou sada bez
+výslovného povolení neprovádí. Během měření se v samotné sadě našlo a opravilo
+několik míst, kde čekala starý návrh webu (viz konec zprávy); do nálezů se
+žádné nepromítlo.
 
 ---
 
@@ -63,9 +70,9 @@ a uvidíte jména…“). V postranním panelu ale ukazuje jejich profilové fot
 nerozmazané:
 
 - **24 nerozmazaných profilových fotek** v panelu (mimo jiné „Online
-  uživatelé“), 25. 9. všech 24 z 24 zobrazených
-- **„Narozeniny dnes“: 3 tváře** a u nich informace, že má člověk dnes
-  narozeniny
+  uživatelé“), 24 z 24 zobrazených
+- **„Narozeniny dnes“: 2–3 tváře** (podle dne) a u nich informace, že má
+  člověk dnes narozeniny
 
 Tvář identifikuje člověka spolehlivěji než přezdívka a k ní se přidává datum
 narození. Na obrazovce to vidí kdokoli, přihlášení není potřeba.
@@ -75,191 +82,196 @@ narození. Na obrazovce to vidí kdokoli, přihlášení není potřeba.
 *Poznámka:* zda jsou fotky dostupné i napřímo přes svou adresu, jsme záměrně
 nezkoušeli (šlo by o práci s osobními údaji). Měl by to ověřit provozovatel.
 
-### 2. Slušný režim nerozmaže tváře a na úvodní stránce nedělá nic — vysoké
+### 2. Vlastní profil člena spadne — vysoké
 
-„Zapnout slušný režim“ v patičce funguje jako přepínač, pamatuje si volbu i po
-přechodu na jinou stránku a na zdi rozmaže příspěvky (z 1 na 21 rozmazaných
-prvků). Ale:
+Přihlášený člen, který otevře svůj profil (`/profile`), uvidí jen „This
+page couldn't load — Reload to try again, or go back“. V konzoli prohlížeče je
+chyba `TypeError: Cannot read properties of null (reading 'length')`.
+Zopakováno v šesti pokusech během dvou běhů. Testovací účet nemá profilovou
+fotku ani vyplněné údaje „O mně“; pravděpodobně stránka nepočítá s prázdnou
+hodnotou. Takových nových členů bude většina.
 
-- **tváře členů nechá ostré: 24 z 24.** Právě ty jsou to, co může někoho
-  prozradit, a slušný režim je vypínač, po kterém sáhne nervózní návštěvník.
-- **na úvodní stránce neskryje nic**, ani úvodní fotografii (17 obrázků před
-  i po zapnutí).
+*Ověření:* přihlásit se účtem bez fotky → ikona profilu vpravo nahoře →
+jméno v nabídce.
 
-*Ověření:* patička → „Zapnout slušný režim“ → `/wall` → tváře v pravém panelu.
+### 3. Citlivé údaje bez ovládání viditelnosti — vysoké
 
-### 3. Stránka „Zeď“ posílá nepřihlášenému členský obsah — vysoké
+Nastavení profilu → „O mně“ nabízí vyplnit **sexuální orientaci** a **stav**
+(vztahový). U žádného z polí není volba, kdo je uvidí, ani vysvětlení, kde se
+zobrazí. Nastavení soukromí, jako „skrýt profil“ nebo „anonymní prohlížení“,
+jsme v nastavení nenašli. Sexuální orientace patří mezi zvláštní kategorie
+osobních údajů (GDPR čl. 9); u této platformy je to přesně ten údaj, jehož
+prozrazení člověku ublíží.
 
-Nepřihlášený návštěvník vidí hostovský pohled. V těle odpovědi serveru jsou
-ale i prvky členské zdi: „Vytvořit příběh“, „Od přátel“, „Co sleduji“.
-Na obrazovce to vidět není, ve zdrojovém kódu stránky ano. Brána se tedy
-rozhoduje až v prohlížeči, když data už dorazila. Až bude zeď plná
-skutečného obsahu, poteče stejnou cestou i ten.
+*Ověření:* přihlásit se → Nastavení profilu → 3. O mně.
 
-*Ověření:* anonymní okno → `/wall` → `Ctrl+U` (zdroj stránky) → hledat
-„Vytvořit příběh“.
+### 4. Slušný režim nerozmaže tváře — vysoké
 
-### 4. Členská část je neověřitelná — testovací účet nefunguje — vysoké
+Přepínač „Zapnout slušný režim“ funguje, pamatuje si volbu i při přechodu
+mezi stránkami a na zdi rozmaže příspěvky (z 1 na 21 prvků). **Tváře členů ale
+nechá ostré (24 z 24)** a na úvodní stránce neskryje nic, ani úvodní
+fotografii.
 
-Účet, který jsme dostali k testování, nová platforma odmítá hláškou
-„Nesprávný nick nebo heslo“. Na migrovanou databázi to neukazuje: buď převod
-uživatelů ještě neproběhl, nebo účet nebyl jeho součástí, nebo má jiné heslo.
+*Ověření:* patička → „Zapnout slušný režim“ → `/wall`.
 
-Důsledek: **Bog (zprávy), Profily, Trefa, Chat, Marketplace, Média, Kredit
-a Nastavení nebyly 25. 9. otestované vůbec.** Seznam toho, co se v nich
-v srpnu našlo a co teď ověřit nejde, je v oddílu
-[Co nešlo ověřit](#co-neslo-overit).
+### 5. Zeď posílá nepřihlášenému členský obsah — vysoké
 
-*Potřebujeme:* jednorázový testovací účet **bez skutečných osobních údajů**,
-předaný mimo repozitář (rozhodnutí D-009), a potvrzení, zda a kdy proběhla
-migrace uživatelů.
+V těle odpovědi pro nepřihlášeného jsou prvky členské zdi („Vytvořit
+příběh“, „Od přátel“, „Co sleduji“). Na obrazovce nejsou, ve zdroji stránky
+ano: brána se rozhoduje až v prohlížeči, kdy data už dorazila.
 
-### 5. Souhlas s podmínkami a prohlášení 18+ se na server neposílá — vysoké
+*Ověření:* anonymní okno → `/wall` → `Ctrl+U` → hledat „Vytvořit příběh“.
 
-Registrační formulář vyžaduje zaškrtnout „Četl/a jsem a souhlasím
-s podmínkami“ i „Je mi 18 let a souhlasím s prohlášením uživatele“. Kontroluje
-to ale jen prohlížeč. Požadavek na server nese pouze přezdívku, e-mail, heslo,
-pohlaví a zájmy.
+### 6. Souhlas s VOP a prohlášení 18+ se na server neposílá — vysoké
 
-Pokud server souhlas nezaznamenává sám od sebe, provozovatel nemá doklad, že
-člen souhlasil, ani že prohlásil plnoletost (GDPR čl. 7 odst. 1). U platformy
-pro dospělé jde o obojí. **Prosíme ověřit na straně serveru.**
+Obě zaškrtávací pole registrace kontroluje jen prohlížeč. Požadavek na
+server nese jen přezdívku, e-mail, heslo, pohlaví a zájmy. Pokud server
+souhlas nezaznamenává sám, provozovatel nemá doklad o souhlasu ani
+o prohlášení plnoletosti (GDPR čl. 7 odst. 1). Prosíme ověřit na straně
+serveru.
 
-### 6. Zeď je pomalejší, než dovoluje smlouva (C12.1) — střední
+### 7. Čtyři stránky jsou pomalejší, než dovoluje smlouva (C12.1) — střední
 
-Smlouva dovoluje odezvu uživatelského rozhraní nejvýš 1,5 s. `/wall` se
-25. 9. načítala **1 688 – 2 031 ms** (tři měření), a to s jediným
-uživatelem, bez zátěže. Odpověď serveru přitom přijde za 16–27 ms, zdržení
-tedy vzniká v prohlížeči. Úvodní stránka se vejde s rezervou (429 ms).
+Smlouva dovoluje odezvu nejvýš 1,5 s. Měřeno s jediným přihlášeným
+uživatelem, bez zátěže, tři pokusy na stránku:
 
-Zeď je nad limitem ve všech bězích od srpna. Formální akceptační měření pod
-zátěží zatím nejde provést, protože smlouva neurčuje, co je „špička“
-(rozhodnutí D-007).
+| Stránka | Načtení | Stav |
+|---|---|---|
+| Média | 1 966 – 2 179 ms | nad limitem ve všech pokusech |
+| Chat | 1 719 – 1 889 ms | nad limitem ve všech pokusech |
+| Lidé | 1 576 – 1 873 ms | nad limitem ve všech pokusech |
+| Zeď | 1 508 – 1 833 ms | nad limitem ve všech pokusech |
+| Nastavení profilu | 1 359 – 2 172 ms | na hraně |
+| Kredit | 1 433 – 1 619 ms | na hraně |
+| Bog (zprávy) | 1 482 – 1 595 ms | na hraně |
+| Marketplace | 1 471 ms | v limitu |
+| Trefa | 653 ms | v limitu |
+| Úvodní stránka | 402 – 429 ms | v limitu |
 
-### 7. Widgety Počasí a Horoskop na zdi se nenačtou — střední
+Server odpovídá za 16–77 ms, zdržení tedy vzniká v prohlížeči. Formální
+akceptační měření pod zátěží zatím nejde provést, protože smlouva neurčuje, co
+je „špička“ (D-007).
 
-V pravém panelu zdi zůstávají „Počasí“ i „Horoskop“ i po 8 sekundách na
-„Načítám…“. Samotný obsah zdi se načte normálně.
+### 8. Přístupnost — střední
 
-### 8. Cookie lišta — střední
+Automatická kontrola (axe, jen závažné a kritické), přihlášeně:
 
-Dobrá zpráva: před jakoukoli volbou se nenačte žádný sledovací skript a
-volitelné kategorie nejsou předem zaškrtnuté. Zbývá:
+- **nedostatečný kontrast textu na každé stránce:** od 2 prvků (Trefa) po 92
+  (Chat); nejčastěji malé šedé nadpisy v levém menu
+- **Nastavení „Osobní“:** 6 rozbalovacích polí a pole data narození bez
+  popisu pro čtečku obrazovky (kritické)
+- **chybí hlavní nadpis `h1`** na Bogu, Lidech a Trefě; Nastavení má
+  nadpisy `h1` dva
+- **Média:** 33 ikon rozhraní bez alternativního textu
+- **vnořené ovládací prvky:** 2 na úvodní stránce
 
-- **Odmítnutí křížkem (✕) se nepamatuje.** Lišta se po každém načtení stránky
-  ptá znovu. Tímto tlakem lidé nakonec klepnou na „Povolit vše“.
-- **Výslovné tlačítko „Odmítnout“ je schované v „Detaily“**, kdežto „Povolit
-  vše“ je výrazné tlačítko hned na liště.
-- **Lišta překrývá přihlašovací formulář.** Dokud ji návštěvník nezavře,
-  nemůže psát do pole pro heslo.
-- **Klávesnicí se pracuje naslepo pod lištou.** Tabulátor projde 25 prvků
-  stránky pod ní, než se dostane na její ✕.
+### 9. Widgety Počasí a Horoskop se nenačtou — střední
 
-### 9. Angličtina není úplná — střední (B13)
+V pravém panelu zdi zůstávají i po 8 s na „Načítám…“. Obsah zdi se načte
+normálně.
 
-Přepnutí jazyka funguje: úvodní stránka je po volbě „Angličtina“ anglicky
-téměř celá a jazyk vydrží i při procházení webu. Na dalších stránkách ale
-zůstává česky **2,6 – 4,6 % textu**: členství, VOP, GDPR, přihlášení
-i registrace. Česky zůstává i text cookie lišty. Smlouva požaduje plnou
-dodávku v češtině i angličtině.
+### 10. Cookie lišta — střední
 
-### 10. Přístupnost — střední
+Před volbou se nenačte žádný sledovací skript a volitelné kategorie nejsou
+předem zaškrtnuté. Zbývá:
 
-Automatická kontrola (axe, jen závažné a kritické):
+- odmítnutí křížkem (✕) se nepamatuje, lišta se ptá po každém načtení
+  stránky; přihlášenému členovi pak znovu zakrývá nabídku účtu
+- tlačítko „Odmítnout“ je schované v „Detaily“, „Povolit vše“ je výrazné
+  hned na liště
+- lišta překrývá přihlašovací formulář, do hesla nejde psát
+- tabulátor projde 25 prvků pod lištou, než se dostane na její ✕
 
-- **nedostatečný kontrast textu:** 4 prvky na úvodní stránce, 16 na zdi
-- **vnořené ovládací prvky:** 2 na úvodní stránce (tlačítko v tlačítku, čtečka
-  obrazovky pak neumí říct, co je co)
+### 11. Angličtina není úplná (B13) — střední
 
-### 11. Web nemá vstupní potvrzení věku 18+ — střední
+Přepnutí jazyka funguje a vydrží při procházení, ale na členství, VOP, GDPR,
+přihlášení a registraci zůstává česky **2,6 – 4,6 % textu**, stejně jako
+text cookie lišty.
 
-Starý web neměl při vstupu potvrzení, že je návštěvníkovi 18 let. Nová
-platforma ho nemá taky: při prvním příchodu se zobrazí jen cookie lišta. Zeď
-s příspěvky a fotografiemi členů je přístupná bez přihlášení i bez
-potvrzení věku. Příspěvky jsou pro hosta částečně rozmazané, jejich texty ale
-stránka obsahuje. Prohlášení „Je mi 18 let“ je až součástí
-registrace. Zda vstupní brána má být, je právní a obsahové rozhodnutí.
-Vlastní klient v tomto repozitáři ji má (viz příloha).
+### 12. Chybí vstupní potvrzení věku 18+ — střední
 
-### 12. Texty a značka — nízké
+Při prvním příchodu se zobrazí jen cookie lišta. Zeď s příspěvky
+a fotografiemi členů je přístupná bez přihlášení i bez potvrzení věku.
+Příspěvky jsou pro hosta částečně rozmazané, jejich texty ale stránka
+obsahuje. Prohlášení „Je mi 18 let“ je až součástí registrace.
 
-- **Překlep na úvodní stránce:** „Kde **te** nikdo neposuzuje“, správně „Kde
-  **tě**“. O řádek výš je „kteří tě chápou“ napsané správně.
-- **Tři různé názvy na jednom webu:** titulek stránky „SwingersLIFE“, patička
-  „© 2026 Libertin“, text na úvodní stránce „Na **Libertine** vytváříme…“.
-- **Registrace už neříká, kdo uvidí zvolené zájmy.** Dřív tam stálo „Uvidíte
-  jen zájmy uživatelů…“, teď jen „Uvidíte jen příspěvky ze světů, které máte
-  vybrané“. Pro člena je to podstatná informace o tom, co o sobě prozradí.
-- **Adresa členství:** patička odkazuje na `/clenstvi`, stránka ale přesměruje
-  na `/membership`. Funguje, jen je to nejednotné.
+### 13. Trefa nemá patičku — nízké
+
+Na Trefě chybí patička, a s ní odkazy na podporu, VOP a GDPR, které mají
+všechny ostatní stránky.
+
+### 14. Texty a značka — nízké
+
+- překlep na úvodní stránce: „Kde **te** nikdo neposuzuje“, správně „Kde
+  **tě**“
+- tři názvy na jednom webu: titulek „SwingersLIFE“, patička „© 2026
+  Libertin“, text „Na **Libertine** vytváříme…“
+- registrace už neříká, kdo uvidí zvolené zájmy (dřív „Uvidíte jen zájmy
+  uživatelů…“)
+- patička odkazuje na `/clenstvi`, stránka přesměruje na `/membership`
 
 ---
 
-<a id="co-neslo-overit"></a>
+## Co nešlo ověřit
 
-## Co nešlo ověřit (členská část)
-
-Tyto nálezy jsou z přihlášeného běhu 15.–16. 8. na tehdejším nasazení. Kvůli
-odmítnutému testovacímu účtu je **nelze potvrdit ani vyvrátit**. Nejsou tedy
-„otevřené“, ale nejsou ani „opravené“. Ověří se, jakmile bude funkční účet.
-
-| Tehdy nalezeno | Proč na tom záleží |
+| Dříve nalezeno | Proč nešlo ověřit |
 |---|---|
-| Heslo `123456789` projde registrací (pravidlo je jen „aspoň 8 znaků“, beze změny) | Nejčastější heslo vůbec; bez založení účtu to nejde znovu ověřit |
-| `/verify-email` se nevymáhá, neověřený účet se dostane všude | Buď text slibuje víc, než systém dělá, nebo chybí brána |
-| Všech 9 členských modulů nad limitem 1,5 s | Smluvní požadavek C12.1 |
-| Nepopsané tlačítko v horní liště (7 modulů) | Čtečka obrazovky ho ohlásí jen jako „tlačítko“ |
-| `/media`: desítky obrázků bez alternativního textu | Pro nevidomé je stránka prázdná |
-| `/profile/<neexistující>` se vykreslí bez hlášky „nenalezeno“ | Nelze odlišit profil od překlepu |
-| Překlep v modálu po přihlášení („nenámé síti“) | Čeština |
-| Bog, Profily a Trefa bez nadpisu `h1`; Trefa bez patičky | Přístupnost, konzistence |
-| Zeď se přihlášenému zasekla na „Načítám…“ | Hlavní stránka pro členy |
+| Heslo `123456789` projde registrací (pravidlo je stále jen „aspoň 8 znaků“) | Bez založení nového účtu to znovu ověřit nejde; účty sada nezakládá |
+| Ověření e-mailu se nevymáhá | Testovací účet je už ověřený |
+| Konverzace, interakce v Trefě, platba kreditu | Účet nemá konverzace ani fotku a platba potřebuje testovací přístup k bráně |
 
 ---
 
-## Co je potřeba rozhodnout (objednatel)
+## K rozhodnutí objednatele
 
 | # | Otázka |
 |---|---|
-| D-009 | Funkční testovací účet bez osobních údajů a potvrzení migrace uživatelů. Bez toho zůstane členská část neověřená. |
-| — | **Sekce akcí na úvodní stránce zmizela** („Doporučené akce“, „Nadcházející akce“, 12 karet). Záměr, nebo chyba? Na žádnou jinou adresu se nepřesunula. |
-| — | **Název v titulku a v náhledu odkazu.** Náhled při sdílení odkazu zní „SwingersLIFE — swingers seznamka a komunita“, titulek v záložce a historii prohlížeče „SwingersLIFE“. Kdo uvidí cizí obrazovku nebo historii, pozná, o jaký web jde. Je to v souladu se slibem diskrétnosti? |
-| — | Záznam souhlasu s VOP a prohlášení 18+ na serveru (nález 5). |
-| — | Vstupní potvrzení věku 18+ před zobrazením zdi (nález 11). |
+| — | **„Dětský režim“ na platformě pro dospělé.** Po přihlášení z nové sítě se zobrazí „Chceš prohlížet obsah v režimu do 18 let?“ s přepínačem „Dětský režim“. Platforma je 18+. Je text záměrný? Naznačuje, že s nezletilými uživateli se počítá. |
+| — | **Sekce akcí na úvodní stránce zmizela** („Doporučené akce“, „Nadcházející akce“, 12 karet) a nepřesunula se jinam. Záměr, nebo chyba? |
+| — | **Náhled odkazu a titulek.** Náhled při sdílení odkazu zní „SwingersLIFE — swingers seznamka a komunita“, titulek v záložce a historii prohlížeče „SwingersLIFE“. Je to v souladu se slibem diskrétnosti? |
+| — | Záznam souhlasu s VOP a prohlášení 18+ na serveru (nález 6). |
+| — | Vstupní potvrzení věku 18+ před zobrazením zdi (nález 12). |
 | D-007 | Co je „špička“ pro akceptační měření výkonu C12.1. |
 
 ---
 
 ## Co je opraveno
 
-Všechno níže bylo v některé z dřívějších zpráv a 25. 9. už to neplatí.
+Všechno níže bylo v některé z dřívějších zpráv a 25.–26. 9. už to neplatí.
 
-| Dříve nalezeno | Stav 25. 9. |
+| Dříve nalezeno | Stav 25.–26. 9. |
 |---|---|
 | Chybějící bezpečnostní hlavičky (starý web i první nasazení) | Všechny nastavené: HSTS, CSP `frame-ancestors`, `Referrer-Policy: same-origin`, `X-Frame-Options`, `X-Content-Type-Options` |
 | Přesměrování HTTP → HTTPS jen dočasné (307) | Trvalé (301) |
 | Chybějící `sitemap.xml` | Existuje |
-| `robots.txt` bez výjimek | Členské stránky (`/wall`, `/profile`, `/messages`, …) jsou vyloučené z vyhledávačů |
+| `robots.txt` bez výjimek | Členské stránky jsou vyloučené z vyhledávačů |
+| Neexistující profil se vykreslí bez hlášky | „Profil nenalezen.“ |
+| Nepopsané tlačítko v horní liště (7 modulů) | Opraveno, kontrola ho už nehlásí |
+| Média: 65–71 obrázků bez alt | Bez alt je už jen 33 ikon rozhraní (nález 8) |
+| Zeď se přihlášenému zasekne na „Načítám…“ | Obsah zdi se načte (zbývají widgety, nález 9) |
+| Překlep v modálu po přihlášení („nenámé síti“) | „neznámé síti“ |
 | Překlepy „Zapomenute heslo“, „svůj učet“ | Opraveno |
 | Lorem ipsum na kartách komunit | Nahrazeno skutečným textem |
 | Zdvojené popisky v navigaci | Opraveno |
-| Tenká stránka Nápověda (`/pomoc`) | Nahlášení zmizelo |
-| Kontrast na úvodní stránce | Zlepšen z 36 na 4 prvky (zbytek viz nález 10) |
-| Vodorovný karusel neovladatelný klávesnicí | Zmizel |
-| Mrtvé odkazy | Žádný — všech 15 veřejných a právních stránek existuje a je dostupných bez přihlášení |
+| Tenká stránka Nápověda | Opraveno |
+| Kontrast na úvodní stránce | Zlepšen z 36 na 4 prvky (zbytek viz nález 8) |
+| Karusel neovladatelný klávesnicí | Zmizel |
+| Mrtvé odkazy | Žádný; všech 15 veřejných a právních stránek existuje a je dostupných bez přihlášení |
+| Testovací účet nefunguje | Nový účet objednatele funguje |
 
-Dvě dřívější tvrzení se ukázala jako **chyba testu, ne webu**, a byla
-odvolaná: přepínač jazyka existuje (ikona v záhlaví, 12 jazyků) a odmítnutí
-cookies křížkem funguje (neuloží nic a nenačte žádný tracker).
+Dvě dřívější tvrzení byla chybou testu a jsou odvolaná: přepínač jazyka
+existuje (ikona v záhlaví, 12 jazyků) a odmítnutí cookies křížkem funguje.
 
-**Co navíc funguje (ověřeno 25. 9.):**
+**Ověřeno, že funguje:**
 
-- obnova hesla neprozradí, jestli účet s danou adresou existuje, a adresa
-  nikdy neprojde adresním řádkem
-- telefon (390 px): žádná stránka se neposouvá do strany, lišta jde zavřít
-- klávesnice: přihlášení jde vyplnit a odeslat bez myši
-- výpadek serveru při registraci: návštěvník se to dozví a nepřijde
-  o vyplněné údaje
+- po odhlášení tlačítko Zpět vrátí na přihlášení a zprávy se neukážou
+- obnova hesla neprozradí, jestli účet existuje, a adresa nikdy neprojde
+  adresním řádkem
+- na telefonu (390 px) se žádná stránka neposouvá do strany
+- přihlášení jde vyplnit a odeslat jen klávesnicí
+- při výpadku serveru se návštěvník dozví chybu a nepřijde o vyplněné údaje
+- žádná chyba v konzoli na devíti členských stránkách (kromě vlastního
+  profilu, nález 2)
 - nenačítá se žádný sledovací skript třetí strany, ani po „Povolit vše“
 
 ---
@@ -289,29 +301,34 @@ zůstávají:
 ```bash
 pnpm install
 export CYPRESS_BASE_URL=https://swingerslife.cz
+export CYPRESS_TEST_USERNAME=… CYPRESS_TEST_PASSWORD=…   # testovací účet, mimo repozitář
+pnpm e2e:modules       # členské moduly
 pnpm e2e:platform      # soukromí, přístupnost, výkon, čeština, veřejné stránky
 pnpm e2e:scenarios     # 8 person napříč stránkami
 pnpm e2e:explore       # jen zaznamenává, nic netvrdí
-# s funkčním testovacím účtem navíc:
-CYPRESS_TEST_USERNAME=… CYPRESS_TEST_PASSWORD=… pnpm e2e:modules
 ```
 
 Výsledky se zapíšou do `apps/e2e/reports/swingerslife.cz/<sada>/`.
 
-**Co sada při běhu posílá na produkční server:** jednu žádost o obnovu hesla
-pro adresu na `example.com` (nikomu nepatří, pošta na ni nedojde) a jedno
-přihlášení vymyšleným účtem, které server odmítne. Nic jiného: každý další
-zápis sada zastaví ještě v prohlížeči a test spadne. Účty nezakládá.
+**Co sada při běhu posílá na produkční server:** přihlášení testovacím
+účtem a odhlášení, jednu žádost o obnovu hesla pro adresu na `example.com`
+(nikomu nepatří, pošta na ni nedojde) a jedno přihlášení vymyšleným účtem,
+které server odmítne. K tomu provoz, který přihlášená stránka posílá sama
+(připojení v reálném čase, značka „online“, hledání lidí). Nic jiného: každý
+další zápis sada zastaví ještě v prohlížeči a test spadne. Nic nepublikuje,
+nikomu nepíše a účty nezakládá.
 
 **Ochrana soukromí členů při testování:** zprávy obsahují jen počty (kolik
 tváří, kolik obrázků), nikdy adresy fotek, jména ani ID členů. Hodnoty cookies
-se nezapisují, jen jejich názvy. Přihlašovací údaje nejsou v repozitáři.
+se nezapisují, jen jejich názvy. Přihlašovací údaje nejsou v repozitáři ani
+v této zprávě.
 
-**Pět chyb v samotné sadě** odhalil tento běh a jsou opravené: měření
-výkonu padalo na každé stránce, test slušného režimu hledal skrytou kopii
-přepínače, kontrola navigace a patičky čekala popisky, které host nevidí,
-a dva testy čekaly texty, které web mezitím přeformuloval (pravidlo hesla,
-hláška o odmítnutém přihlášení). Žádná z nich se do nálezů výše nepromítla.
+**Opravy v samotné sadě během měření:** sada na několika místech čekala
+předchozí návrh webu nebo se u některých stránek nepřihlásila. Měření výkonu
+padalo na každé stránce, test slušného režimu hledal skrytou kopii
+přepínače a pomocník pro modál „neznámé sítě“ hledal tlačítko, které už
+neexistuje. Každá oprava je v kódu okomentovaná s tím, co bylo 25. 9.
+změřeno. Žádná se do nálezů výše nepromítla.
 
 Sdílená verze této zprávy pro čtení a komentáře:
 https://claude.ai/artifact/WUXj86UzzepsNQBtgsL2GQ
