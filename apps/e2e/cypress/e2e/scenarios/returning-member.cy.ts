@@ -1,7 +1,6 @@
 import { hasCredentials, NO_CREDENTIALS_REASON, testPassword, testUsername } from '../../support/auth';
-import { refuseCookieBanner } from '../../support/observe';
 import { MODULES } from '../../support/routes';
-import { clickNamed, Journey, WRITES } from '../../support/scenario';
+import { Journey, refuseCookiesRemembered, WRITES } from '../../support/scenario';
 
 /**
  * A returning member: signs in, looks around, signs out — and then someone
@@ -25,14 +24,16 @@ describe('Scénář — vracející se člen', () => {
       this.skip();
       return;
     }
-    const visit = new Journey('vracející se člen', [WRITES.login, WRITES.logout]);
+    const visit = new Journey('vracející se člen', [WRITES.login, WRITES.logout, WRITES.presence, WRITES.profileSearch]);
     cy.clearCookies();
     cy.clearLocalStorage();
 
     visit.step('přihlásí se formulářem', () => {
       cy.visit('/login', { failOnStatusCode: false });
       cy.wait(2000);
-      refuseCookieBanner();
+      // Refused the remembered way: a ✕ refusal is forgotten on the next full
+      // page load, and the banner then covers the account menu.
+      refuseCookiesRemembered();
       cy.get('input[aria-label="Vaše uživatelské jméno"]').type(testUsername() ?? '', { log: false });
       cy.get('input[aria-label="Heslo"]').type(testPassword() ?? '', { log: false });
       cy.get('button[type="submit"]').click();
@@ -42,16 +43,21 @@ describe('Scénář — vracející se člen', () => {
 
     visit.step('prohlédne si zeď', () => {
       cy.visit(MODULES.wall.path);
-      cy.contains(MODULES.wall.marker).should('exist');
+      cy.dismissNetworkModal();
+      // "Vytvořit příběh" is only for certified members; the feed filter
+      // "Od přátel" is on the wall for every signed-in member.
+      cy.contains('Od přátel').should('exist');
     });
 
     visit.step('otevře Lidi', () => {
       cy.visit(MODULES.profiles.path);
+      cy.dismissNetworkModal();
       cy.location('pathname').should('equal', MODULES.profiles.path);
     });
 
     visit.step('otevře zprávy', () => {
       cy.visit(MODULES.bog.path);
+      cy.dismissNetworkModal();
       cy.location('pathname').should('equal', MODULES.bog.path);
       cy.contains(MODULES.bog.marker).should('exist');
     });
@@ -60,8 +66,10 @@ describe('Scénář — vracející se člen', () => {
       cy.get('body').then(($body) => {
         const direct = $body.find('a:visible, button:visible').toArray().some((el) => LOGOUT.test((el.textContent ?? '').trim()));
         if (!direct) {
-          // Sign-out usually lives in the account menu; open it first.
-          cy.get('button[aria-haspopup], button[aria-expanded]').filter(':visible').last().click();
+          // Sign-out is in the account menu, "Profil a menu" (seen 25. 9.
+          // 2026). Picking "the last menu button" instead opened the hidden
+          // language menu.
+          cy.get('button[aria-label="Profil a menu"]').filter(':visible').first().click();
         }
       });
       cy.get('a, button').filter(':visible').filter((_, el) => LOGOUT.test((el.textContent ?? '').trim())).first().click();

@@ -56,8 +56,10 @@ describe(`Modul: ${M.label} (${M.path})`, () => {
       openModule(this, M);
     });
 
+    // Stories are reserved for certified members since September 2026: an
+    // uncertified member sees "Příběhy jsou pro vás skryté" in their place.
     it('renders the story rail with a create-story affordance', () => {
-      cy.contains('Vytvořit příběh').should('be.visible');
+      cy.contains(/Vytvořit příběh|Příběhy jsou pro vás skryté/).should('be.visible');
     });
 
     it('renders every feed filter', () => {

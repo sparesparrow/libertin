@@ -30,6 +30,15 @@ export const WRITES = {
   forgotPassword: { name: 'zapomenuté heslo', path: /^\/api\/auth\/forgot-password$/ },
   /** Body `username`, `email`, `password`, `gender`, `interests`. */
   register: { name: 'registrace', path: /^\/api\/auth\/register$/ },
+  /**
+   * What any signed-in page sends by itself, seen 25. 9. 2026: the realtime
+   * connection (socket.io long-polling POSTs) and the online-presence
+   * heartbeat. Not content, but it does mark the account online — so only
+   * the returning-member scenario, which signs in, allows it.
+   */
+  presence: { name: 'přítomnost online', path: /^(\/socket\.io\/|\/api\/profiles\/me\/heartbeat)$/ },
+  /** The People directory loads through a POST search — a query, not a write. */
+  profileSearch: { name: 'hledání lidí', path: /^\/api\/profiles\/search$/ },
 } as const;
 
 export interface WriteRule {
@@ -116,6 +125,13 @@ export class Journey {
       if (rule.stub) {
         record.status = rule.stub.statusCode;
         req.reply({ statusCode: rule.stub.statusCode, body: rule.stub.body ?? {} });
+        return;
+      }
+      // Presence traffic is a socket.io long-poll that the page aborts on every
+      // navigation; waiting for its response turned each abort into an
+      // unhandled rejection that failed the test. It is recorded, not timed.
+      if (rule.name === WRITES.presence.name) {
+        req.continue();
         return;
       }
       req.continue((res) => {

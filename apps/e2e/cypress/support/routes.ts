@@ -50,7 +50,9 @@ export const MODULES = {
     id: 'bog',
     label: 'Bog (messenger)',
     path: '/messages',
-    marker: 'Místnosti',
+    // The messenger's tabs are Zprávy / Skupiny / Volání since September 2026
+    // (Místnosti belonged to the previous design).
+    marker: 'Volání',
     requiresAuth: true,
   },
   profiles: {
