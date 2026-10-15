@@ -1,0 +1,46 @@
+{
+  "cs": {
+    "welcome": {
+      "brand": "libertin",
+      "formerly": "dříve swingerslife.cz",
+      "you": "TY",
+      "friends": "Přátelé",
+      "circle": "Okruh kontaktů",
+      "cardFriendsTitle": "Přátelé vidí tebe",
+      "cardFriendsSub": "jméno i profil",
+      "cardCircleTitle": "Okruh vidí inzerát",
+      "cardCircleSub": "bez jména autora",
+      "headline1": "Tvoje komunita.",
+      "headline2": "Blíž, než si myslíš.",
+      "step1": "Ověř své číslo",
+      "step2": "Zveřejni inzerát. Přátelé tě poznají, ostatní z okruhu uvidí jen inzerát",
+      "step3": "Odhalte se jen tehdy, když souhlasí oba",
+      "privacy": "Kontakty z telefonu používáme jen k doručení inzerátů. Rozšíření mimo přátele zapínáš u každého příspěvku zvlášť a kdykoli ho můžeš vypnout.",
+      "continue": "Pokračovat",
+      "adults": "Komunita pro dospělé · 18+",
+      "haveAccount": "Už máš účet? Přihlásit se"
+    }
+  },
+  "en": {
+    "welcome": {
+      "brand": "libertin",
+      "formerly": "formerly swingerslife.cz",
+      "you": "YOU",
+      "friends": "Friends",
+      "circle": "Contact circle",
+      "cardFriendsTitle": "Friends see you",
+      "cardFriendsSub": "name and profile",
+      "cardCircleTitle": "The circle sees the ad",
+      "cardCircleSub": "without the author's name",
+      "headline1": "Your community.",
+      "headline2": "Closer than you think.",
+      "step1": "Verify your number",
+      "step2": "Post an ad. Friends recognize you, others in the circle see only the ad",
+      "step3": "Reveal yourselves only when both agree",
+      "privacy": "We use your phone contacts only to deliver ads. You enable reach beyond friends per post and can turn it off at any time.",
+      "continue": "Continue",
+      "adults": "Adults-only community · 18+",
+      "haveAccount": "Already have an account? Log in"
+    }
+  }
+}
