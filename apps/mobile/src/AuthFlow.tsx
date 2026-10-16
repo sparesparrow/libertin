@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { createClient } from '@libertin/api/client';
 import {
   FeedScreen,
@@ -13,18 +13,21 @@ import {
   nextStepAfterLogin,
   supportsFrozenContractNetwork,
 } from './authFlowLogic';
-import { runtimeConfig } from './runtimeConfig';
-
-// The frozen JSON/bearer contract is a mock/demo contract until the live
-// swingerslife.cz session flow is reproduced safely. Never point it at a live
-// base URL merely because one was configured.
-const client = supportsFrozenContractNetwork(runtimeConfig.networkMode)
-  ? createClient(runtimeConfig.apiBaseUrl)
-  : null;
+import type { RuntimeConfig } from './runtimeConfig';
 
 type Step = 'login' | 'verify' | 'success' | 'onboarding' | 'feed';
 
-export function AuthFlow() {
+export function AuthFlow({ config }: { config: RuntimeConfig }) {
+  // The frozen JSON/bearer contract is a mock/demo contract until the live
+  // swingerslife.cz session flow is reproduced safely. Never point it at a live
+  // base URL merely because one was configured.
+  const client = useMemo(
+    () =>
+      supportsFrozenContractNetwork(config.networkMode)
+        ? createClient(config.apiBaseUrl)
+        : null,
+    [config],
+  );
   const [step, setStep] = useState<Step>('login');
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
@@ -43,7 +46,7 @@ export function AuthFlow() {
     setLoading(true);
     try {
       const res = await client.auth.login({ email: inputEmail, password });
-      const nextStep = nextStepAfterLogin(res.user.verified, runtimeConfig.networkMode);
+      const nextStep = nextStepAfterLogin(res.user.verified, config.networkMode);
 
       if (nextStep === 'blocked') {
         setToken('');
@@ -65,14 +68,14 @@ export function AuthFlow() {
     // VerifyEmailScreen is explicitly a mock/dev affordance. Never turn its
     // button into a real verification request unless the live contract has
     // been observed and implemented deliberately.
-    if (runtimeConfig.networkMode !== 'mock') {
+    if (config.networkMode !== 'mock') {
       setToken('');
       setError('Ověření e-mailu není pro živý backend zatím potvrzené.');
       setStep('login');
       return;
     }
     setStep('success');
-  }, []);
+  }, [config.networkMode]);
 
   const handleFinish = useCallback(async () => {
     setError(undefined);

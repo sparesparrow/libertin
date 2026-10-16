@@ -1,18 +1,18 @@
 # Android: sestavení, preview a release safety
 
 Status: implementováno v GitHub Actions; **Google Play publikace je záměrně zablokovaná**.  
-Poslední aktualizace: 2026-10-16.
+Poslední aktualizace: 2026-10-17.
 
 ## Co workflow dělá
 
 | Job | Kdy | Co |
 |---|---|---|
 | `verify` | PR, release build | frozen-lockfile install, mobile dependency type-check, mobile Vitest |
-| `preview-apk` | PR | release-mode APK s vloženým JS bundlem, explicitní mock režim, package `cz.libertin.preview`, jednorázový CI podpis |
+| `preview-apk` | PR | release-mode APK s vloženým JS bundlem, explicitní mock režim, package `cz.libertin.preview.run<RUN>.attempt<ATTEMPT>`, jednorázový CI podpis |
 | `release-aab` | tag `android-vX.Y.Z` nebo ručně z `main` | pouze podepsaný AAB artefakt; live režim vyžaduje explicitní ověřený API base a production package |
 | `publish-play` | pouze ručně z `main` s `publish=true` | samostatný chráněný Play krok; dnes vždy skončí na eligibility gate a nic neodešle |
 
-Preview není debug build. Workflow spouští `assembleRelease` a následně ověří, že APK obsahuje `assets/index.android.bundle`, má package id `cz.libertin.preview` a je podepsané disposable certifikátem `Libertin Preview`. Nemá tedy potřebovat Metro na `localhost:8081`.
+Preview není debug build. Workflow spouští `assembleRelease` a následně ověří, že APK obsahuje `assets/index.android.bundle`, má package id `cz.libertin.preview.run<RUN>.attempt<ATTEMPT>` a je podepsané disposable certifikátem `Libertin Preview`. Každý run/attempt dostane unikátní package, protože podpisový klíč se pokaždé mění; starší testovací instalace a její data tak zůstanou nedotčené. Nemá tedy potřebovat Metro na `localhost:8081`.
 
 Preview je záměrně **mock-backed demo**. `EXPO_PUBLIC_NETWORK_MODE=mock` je nastavené explicitně. Release AAB je naopak `live` a build se zastaví, pokud není nakonfigurován `LIBERTIN_API_BASE_URL`; žádný odhadovaný backend se nepoužije jako fallback.
 

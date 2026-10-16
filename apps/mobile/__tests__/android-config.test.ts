@@ -34,6 +34,13 @@ describe('buildConfig', () => {
     expect(config.version).toBe('1.2.3');
   });
 
+  it('accepts a run-and-attempt-isolated preview package id', () => {
+    const config = buildConfig(base, {
+      ANDROID_PACKAGE: 'cz.libertin.preview.run52.attempt1',
+    });
+    expect(config.android?.package).toBe('cz.libertin.preview.run52.attempt1');
+  });
+
   it('treats empty variables as unset', () => {
     const config = buildConfig(base, { ANDROID_PACKAGE: '', APP_VERSION: ' ' });
     expect(config.android?.package).toBe(DEFAULT_ANDROID_PACKAGE);

@@ -59,6 +59,8 @@ jobs:
         run: pnpm exec turbo run type-check --filter=@libertin/mobile...
       - name: test
         run: pnpm exec vitest run apps/mobile
+      - name: test Android launch smoke helpers
+        run: python3 -m unittest scripts.tests.test_android_launch_smoke
 
   # Installable PR artifact with the JS bundle embedded. It is deliberately a
   # mock-backed preview, under a package id distinct from any Play application,
@@ -70,7 +72,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      PREVIEW_PACKAGE: cz.libertin.preview
+      # Each build attempt is a separate package because this job rotates its
+      # disposable signing key; never force-install over another run's data.
+      PREVIEW_PACKAGE: cz.libertin.preview.run${{ github.run_number }}.attempt${{ github.run_attempt }}
       EXPO_PUBLIC_NETWORK_MODE: mock
     steps:
       - uses: actions/checkout@v4
@@ -156,6 +160,60 @@ jobs:
 
           printf 'mode=mock\npackage=%s\nstandalone_bundle=assets/index.android.bundle\n' \
             "$actual_package" > "$RUNNER_TEMP/preview-metadata.txt"
+
+      - name: install Android emulator system image
+        env:
+          SYSTEM_IMAGE: system-images;android-35;google_apis;x86_64
+        run: |
+          set -euo pipefail
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+          set +o pipefail
+          yes | sdkmanager --licenses >/dev/null
+          set -o pipefail
+          sdkmanager --install "emulator" "platform-tools" "platforms;android-35" "$SYSTEM_IMAGE"
+          printf 'no\n' | avdmanager create avd \
+            --force \
+            --name libertin-preview-smoke \
+            --package "$SYSTEM_IMAGE" \
+            --device pixel_2
+
+      - name: start isolated Android emulator
+        env:
+          ANDROID_SERIAL: emulator-5554
+        run: |
+          set -euo pipefail
+          export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
+          emulator -avd libertin-preview-smoke \
+            -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data \
+            -gpu swiftshader_indirect > "$RUNNER_TEMP/libertin-emulator.log" 2>&1 &
+          echo "$!" > "$RUNNER_TEMP/libertin-emulator.pid"
+          timeout 120s adb -s "$ANDROID_SERIAL" wait-for-device
+          ready=false
+          for attempt in $(seq 1 120); do
+            if [ "$(adb -s "$ANDROID_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)" = '1' ]; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            tail -n 80 "$RUNNER_TEMP/libertin-emulator.log"
+            echo '::error::Android preview smoke emulator did not finish booting.'
+            exit 1
+          fi
+
+      - name: cold-start and accessibility smoke test
+        env:
+          ANDROID_SERIAL: emulator-5554
+        run: |
+          python3 scripts/android_launch_smoke.py \
+            --serial "$ANDROID_SERIAL" \
+            --apk apps/mobile/android/app/build/outputs/apk/release/app-release.apk \
+            --package "$PREVIEW_PACKAGE" \
+            --expected-text 'Přihlášení' \
+            --duration-seconds 20 \
+            --relaunch-seconds 5 \
+            --evidence-dir "$RUNNER_TEMP/libertin-startup-smoke"
 
       - uses: actions/upload-artifact@v4
         with:
