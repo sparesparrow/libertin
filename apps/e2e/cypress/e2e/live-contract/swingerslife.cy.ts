@@ -82,24 +82,26 @@ describe('swingerslife.cz public contract discovery', () => {
         const origin = form.ownerDocument.location.origin;
         const action = new URL(form.action, origin);
 
-        if (form.method.toUpperCase() !== 'POST') {
-          throw new Error(`Refusing synthetic login probe because form method is ${form.method}.`);
-        }
         if (action.origin !== origin) {
           throw new Error('Refusing synthetic login probe because the form action is cross-origin.');
         }
 
-        cy.intercept('POST', action.href, (req) => {
-          const requestKind = contentKind(req.headers['content-type']);
-          const fields = requestFieldNames(req.body);
+        // The live page currently declares method=GET. Do not assume that is
+        // the transport: a submit handler may replace it with fetch/XHR. Match
+        // the action path and record only structural metadata from whatever the
+        // browser actually sends.
+        cy.intercept(`${action.origin}${action.pathname}*`, (req) => {
+          const bodyFields = requestFieldNames(req.body);
+          const queryFields = Object.keys(req.query ?? {}).sort();
           req.continue((res) => {
             record(
               'invalid-login-network',
               [
                 `method=${req.method.toUpperCase()}`,
                 `action=${safeLoginAction(action.href, origin)}`,
-                `request=${requestKind}`,
-                `fields=[${fields.join(',')}]`,
+                `request=${contentKind(req.headers['content-type'])}`,
+                `body_fields=[${bodyFields.join(',')}]`,
+                `query_fields=[${queryFields.join(',')}]`,
                 `status=${statusClass(res.statusCode)}`,
                 `response=${contentKind(res.headers['content-type'])}`,
               ].join(' '),
