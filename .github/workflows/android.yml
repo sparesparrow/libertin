@@ -186,6 +186,17 @@ jobs:
             exit 1
           fi
 
+      - name: Enable and verify KVM for the Android emulator
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
+          ls -l /dev/kvm
+          emulator -accel-check
+
       - name: start isolated Android emulator
         env:
           ANDROID_SERIAL: emulator-5554
