@@ -72,9 +72,9 @@ PR 12 remains an independent documentation PR.
   Hermes bundle. Metro warned that MSW/interceptor package export targets
   contain parent-directory paths and used file-based resolution. The GitHub
   release-like APK build and emulator launch smoke remain required.
-- Pre-existing working-tree edits to `docs/live-contract-discovery.md` were
-  left untouched. Existing proposal-plan, traceability, checkpoint, and ADR
-  work was inspected and preserved while making this pass more granular.
+- The prior update to `docs/live-contract-discovery.md` was reviewed and
+  incorporated with sanitized evidence for the accidental PR 13 CI repeat.
+  Proposal tracking and ADR changes remain separate from feature activation.
 
 ## Milestones
 
@@ -86,8 +86,8 @@ PR 12 remains an independent documentation PR.
 | M3 | Implement safe CS/EN onboarding and independent identity-state model | planned | Startup recovery is being validated first; then use real tokens/components and default-off gates. No live phone, contact, certification or payment services. |
 | M4 | Implement server-authorized audience/reveal contracts and permission tests | blocked | D-003 direction is recorded; legacy source/schema review, D-004 topology, graph semantics, and legal/privacy review remain. Do not invent routes or expose unlinked identities. |
 | M5 | Implement synthetic marketplace/commission and sandbox payment slice | planned | No named-business implication or real charging. Bundle rate, eligible categories, provider terms and legal model remain unresolved. |
-| M6 | Verify current live authentication transport and preserve sanitized evidence | in_progress | Existing sanitized evidence records one synthetic JSON POST to the observed login route and a 4xx response; valid-account behavior and a general API contract remain unverified. No further production probe is planned. |
-| M7 | Focused CI, implementation PR, exact artifact and selected-device loop | in_progress | Draft PR 13 is open. Verify run `38980049915` and CI run `38980049956` are building; then inspect the exact artifact and repeat the launch test on `moto-g54-test-01`. No merge or store release is authorized. |
+| M6 | Verify current live authentication transport and preserve sanitized evidence | in_progress | Sanitized runs `38962784873` and `38980049943` show the same synthetic JSON POST and 4xx response; the second was an accidental CI repeat completed before cancellation. Valid auth and a general API contract remain unverified. No further production probe is planned. |
+| M7 | Focused CI, implementation PR, exact artifact and selected-device loop | in_progress | Draft PR 13 is open. CI run `38980049956` passed; Android run `38980049915` is still building its release-like APK and emulator smoke. Then inspect the exact artifact and repeat the launch test on `moto-g54-test-01`. No merge or store release is authorized. |
 
 ## Requirement precedence and guardrails
 

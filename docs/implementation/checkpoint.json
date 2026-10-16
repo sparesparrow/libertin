@@ -5,8 +5,8 @@
   "current_pr": 13,
   "working_tree": {
     "proposal_tracking_updated": true,
-    "preexisting_modified_path_preserved": "docs/live-contract-discovery.md",
-    "uncommitted": true,
+    "prior_live_contract_discovery_update": "included and corrected with sanitized accidental-repeat evidence in draft PR 14",
+    "uncommitted": false,
     "device_startup_fix": true,
     "startup_smoke_helper": true
   },
@@ -77,7 +77,7 @@
   "phase2": {
     "status": "in_progress",
     "scope": "proposal work is authorized for development only, not signed contract delivery",
-    "tracking_documents": "ready_for_review: execution plan, traceability, checkpoint and ADRs drafted; separate docs PR pending",
+    "tracking_documents": "draft PR 14 updated with current live-contract evidence; proposal tracking and ADRs ready for review",
     "feature_implementation": "proposal UI/domain work not started; startup recovery is in progress first",
     "requirements_matrix": "docs/implementation/proposals-traceability.md",
     "execution_plan": "docs/implementation/proposals-execplan.md",
@@ -109,7 +109,7 @@
     "M3_safe_native_onboarding": "planned after startup recovery is verified",
     "M4_server_audience_and_reveal": "blocked by legacy source/schema audit, D-004 topology, graph semantics, legal/privacy review",
     "M5_synthetic_marketplace_slice": "planned; commercial policy, legal model, and provider activation unresolved",
-    "M6_live_auth_contract": "in_progress: sanitized run 38962784873 reviewed; synthetic invalid login returned JSON 4xx from observed api.libertin.app route; valid auth unverified",
+    "M6_live_auth_contract": "in_progress: sanitized runs 38962784873 and 38980049943 show the same synthetic invalid-login transport and JSON 4xx; the latter was an accidental CI repeat completed before cancellation; valid auth unverified",
     "M7_GitHub_artifact_device_loop": "in_progress: draft PR 13 pushed; Android build/emulator smoke and repository CI are running; exact artifact device retest pending"
   },
   "last_verified_run": {
@@ -147,7 +147,7 @@
     "physical_android_fix": "not run; requires successful new GitHub artifact",
     "PR11_CI": "verify and preview build succeeded; module E2E, perf, release, and Play publish skipped",
     "PR12_CI": "install, type-check, pack, test, build and web E2E succeeded; module E2E and perf skipped",
-    "live_contract": "one sanitized synthetic invalid-login transport observation reviewed from PR 11 run 38962784873; no valid authentication proved; PR 13 trigger repeated one probe before cancellation could stop the completed step"
+    "live_contract": "sanitized artifacts from runs 38962784873 and 38980049943 record the same synthetic invalid-login transport and 4xx class; run 38980049943 was an accidental CI repeat completed before cancellation; no valid authentication proved"
   },
   "blockers": [
     "New implementation commit must pass GitHub Android verify/build and isolated emulator accessibility smoke before downloading its exact artifact.",
@@ -179,7 +179,7 @@
       },
       "ci": {
         "id": 38980049956,
-        "status": "in_progress",
+        "status": "completed_success",
         "url": "https://github.com/sparesparrow/libertin/actions/runs/38980049956"
       },
       "web_image": {
@@ -189,10 +189,12 @@
       },
       "live_contract": {
         "id": 38980049943,
-        "status": "completed_with_probe_before_cancel",
-        "url": "https://github.com/sparesparrow/libertin/actions/runs/38980049943"
+        "status": "completed_cancelled_after_probe",
+        "url": "https://github.com/sparesparrow/libertin/actions/runs/38980049943",
+        "artifact_id": 12080088887,
+        "artifact_name": "public-live-contract-findings"
       }
     },
-    "latest_ci_probe_note": "The broad pull_request trigger ran one synthetic invalid-login probe before cancellation completed. Do not repeat production probes; use the prior sanitized run and local fixtures."
+    "latest_ci_probe_note": "The broad pull_request trigger ran one synthetic invalid-login probe before cancellation completed. Sanitized artifact confirmed the same transport/status as run 38962784873. Workflow path is now restricted; do not repeat production probes."
   }
 }
