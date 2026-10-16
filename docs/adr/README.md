@@ -19,7 +19,7 @@ rozhodnutí, včetně **pojmenovaných kompromisů**.
 | # | Rozhodnutí | Stav | Role | Backlog | Smluvní kódy |
 |---|---|---|---|---|---|
 | [0001](0001-2fa-architecture.md) | Architektura 2FA — TOTP + passkey/WebAuthn + SMS pro web i React Native | Navrženo | `security` | E2-T1 | **B4.2**, B4.1, B4.4, B14 |
-| [0002](0002-contact-graph-reach-semantics.md) | Sémantika dosahu kontaktního grafu | Navrženo, blokováno rozhodnutím vlastníka a privacy/security review | `architect` / `security` | proposed PR 12 | proposal-only |
+| [0002](0002-contact-graph-reach-semantics.md) | Sémantika dosahu kontaktního grafu | Vlastník vybral přímé směrované hrany pro syntetický model; produkční zpracování blokuje privacy/security a legal review | `architect` / `security` | proposed PR 12 | proposal-only |
 | [0003](0003-marketplace-payment-activation.md) | Aktivace plateb a provizí Marketplace | Navrženo, blokováno rozhodnutím vlastníka, právním posouzením a podmínkami poskytovatele | `architect` / `security` | proposed PR 12 | proposal-only |
 | [0004](0004-identity-certification-states.md) | Oddělení telefonního ověření, certifikace a obchodního stavu | Navrženo; poskytovatelé a produkční pravidla zůstávají otevřené | `architect` / `security` | proposed PR 12 | proposal-only |
 | [0005](0005-legacy-laravel-extension-direction.md) | Směr rozšíření legacy Laravelu | Směr vlastníka potvrzen; zdrojový kód, schéma a migrační cesta se ověřují | `architect` / `backend` | E9-T1, D-003 | architecture direction only |

@@ -36,10 +36,11 @@ PR 12 remains an independent documentation PR.
 - The importing seam was the original static `msw/native` import in
   `apps/mobile/src/App.tsx`: the fetch interceptor defines
   `BrotliDecompressionStream extends TransformStream` during evaluation. PR 13
-  (`6b221491a53529018a86607905c33533c33efb95`) adds the pinned Web Streams
+  (`7ce29375ae35ea70cc8c89cb2504af2e1cafb7ac`) adds the pinned Web Streams
   polyfill before `App`, loads MSW only in explicit mock mode, resolves runtime
-  configuration after mount, and shows a retryable startup error. Local checks
-  pass; the exact GitHub APK and selected-device retest are pending.
+  configuration after mount, and shows a retryable startup error. Its updated
+  CI passes; the release-like APK and emulator smoke are running, and the exact
+  artifact and selected-device retest are pending.
 - The current API snapshot/client has observed login/feed/profile surfaces and
   designed 2FA only; there is no proposal contact, certification, reveal,
   booking, or marketplace API implementation. SMS 2FA is not phone-possession
@@ -75,6 +76,12 @@ PR 12 remains an independent documentation PR.
 - The prior update to `docs/live-contract-discovery.md` was reviewed and
   incorporated with sanitized evidence for the accidental PR 13 CI repeat.
   Proposal tracking and ADR changes remain separate from feature activation.
+- PR 15 (`dad83fd03332114e0f3a8a8dfc978ccb7de3a67b`) contains the first
+  synthetic contact-audience slice: a pure helper over outgoing directed
+  author-to-recipient edges and six unit cases. It adds no API route, contact
+  import, graph persistence, or production processing. Local tests, API
+  type-check, frozen install, and repository-wide type-check passed; its
+  GitHub checks are running.
 
 ## Milestones
 
@@ -82,12 +89,12 @@ PR 12 remains an independent documentation PR.
 |---|---|---|---|
 | M0 | Recheck PRs, proposal sources, repository guidance, PR 11 changes/checks/artifact | verified | Current GitHub state and all nine PR 12 files inspected. Exact PR 11 run/artifact, APK hash, package, bundle, signature and merge commit recorded above. |
 | M1 | Reproduce preview cold start and diagnose app-scoped native/JS evidence | verified | Exact PR 11 APK exits before registration; the Hermes `TransformStream` failure is confirmed in UID-filtered logs. The fix and its validation are tracked in M7. |
-| M2 | Maintain proposal scope, requirement matrix, owner directions, ADRs and checkpoint | in_progress | PR 12 mapping is complete. Owner chose Laravel extension (D-003) and maximum on-premise (D-004); graph semantics and several legal/provider decisions remain open. |
+| M2 | Maintain proposal scope, requirement matrix, owner directions, ADRs and checkpoint | in_progress | PR 12 mapping is complete. Owner chose Laravel extension (D-003), maximum on-premise (D-004), and direct directed edges for the first synthetic graph. Production graph, hosting topology and legal/provider decisions remain open. |
 | M3 | Implement safe CS/EN onboarding and independent identity-state model | planned | Startup recovery is being validated first; then use real tokens/components and default-off gates. No live phone, contact, certification or payment services. |
-| M4 | Implement server-authorized audience/reveal contracts and permission tests | blocked | D-003 direction is recorded; legacy source/schema review, D-004 topology, graph semantics, and legal/privacy review remain. Do not invent routes or expose unlinked identities. |
+| M4 | Implement server-authorized audience/reveal contracts and permission tests | in_progress (synthetic only) | The direct-edge helper is in draft PR 15 and its six local unit cases pass. Server authorization, audience projection, identity reveal, and any real graph processing remain blocked by legacy source/schema review, D-004 topology, and legal/privacy/security decisions. |
 | M5 | Implement synthetic marketplace/commission and sandbox payment slice | planned | No named-business implication or real charging. Bundle rate, eligible categories, provider terms and legal model remain unresolved. |
 | M6 | Verify current live authentication transport and preserve sanitized evidence | in_progress | Sanitized runs `38962784873` and `38980049943` show the same synthetic JSON POST and 4xx response; the second was an accidental CI repeat completed before cancellation. Valid auth and a general API contract remain unverified. No further production probe is planned. |
-| M7 | Focused CI, implementation PR, exact artifact and selected-device loop | in_progress | Draft PR 13 is open. CI run `38980049956` passed; Android run `38980049915` is still building its release-like APK and emulator smoke. Then inspect the exact artifact and repeat the launch test on `moto-g54-test-01`. No merge or store release is authorized. |
+| M7 | Focused CI, implementation PR, exact artifact and selected-device loop | in_progress | Draft PR 13 is open at `7ce29375ae35ea70cc8c89cb2504af2e1cafb7ac`. CI run `38981213788` passed; Android run `38981213728` is building its release-like APK and emulator smoke. Inspect that exact artifact and repeat the launch test on `moto-g54-test-01` after the run passes. No merge or store release is authorized. |
 
 ## Requirement precedence and guardrails
 
@@ -103,12 +110,15 @@ PR 12 remains an independent documentation PR.
    and payment are independent state axes. SMS is not age or legal-identity
    proof. Payment cannot buy certification or profile reveal.
 4. Earlier restrictions on direct contacts, graph-degree display, and photos
-   for uncertified recipients are proposals, not approved final rules. Graph
-   direction/reach, audience thresholds, moderator access, retention, and
-   media handling remain explicit owner/privacy decisions.
+   for uncertified recipients are proposals, not approved final rules. The
+   owner selected direct outgoing edges for the synthetic model only. Production
+   audience thresholds, moderator access, retention, and media handling remain
+   explicit owner/privacy decisions.
 5. Keep market assumptions separate from executable policy. Keep mock mode
    hermetic; no live fallback, real contact import, live SMS, certification,
-   payment, payout, production migration, or sensitive-category activation.
+   payment, payout, production migration, or sensitive-category activation. The
+   direct graph choice applies to synthetic edges only; audience thresholds,
+   retention, and legal/privacy/security gates remain open.
 6. Add no proposal routes to the frozen OpenAPI snapshot until the contract is
    deliberately designed and reviewed. The snapshot's `designed` 2FA routes
    remain distinct from observed live endpoints.

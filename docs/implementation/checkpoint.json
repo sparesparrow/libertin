@@ -1,7 +1,7 @@
 {
   "repository": "sparesparrow/libertin",
   "branch": "feat/proposals-implementation",
-  "head_sha": "6b221491a53529018a86607905c33533c33efb95",
+  "head_sha": "7ce29375ae35ea70cc8c89cb2504af2e1cafb7ac",
   "current_pr": 13,
   "working_tree": {
     "proposal_tracking_updated": true,
@@ -77,8 +77,8 @@
   "phase2": {
     "status": "in_progress",
     "scope": "proposal work is authorized for development only, not signed contract delivery",
-    "tracking_documents": "draft PR 14 updated with current live-contract evidence; proposal tracking and ADRs ready for review",
-    "feature_implementation": "proposal UI/domain work not started; startup recovery is in progress first",
+    "tracking_documents": "draft PR 14 traceability/ADRs/checkpoint; synthetic direct-edge model tracked in draft PR 15",
+    "feature_implementation": "synthetic direct-edge model in progress in PR 15; native onboarding follows startup recovery; production graph/reveal and live services remain disabled",
     "requirements_matrix": "docs/implementation/proposals-traceability.md",
     "execution_plan": "docs/implementation/proposals-execplan.md",
     "adr_added": "docs/adr/0005-legacy-laravel-extension-direction.md",
@@ -90,7 +90,7 @@
     "owner_directions": {
       "D-003": "extend legacy Laravel; direction recorded, ADR/source/schema verification in progress",
       "D-004": "maximize on-premise; concrete topology and capacity remain open",
-      "contact_graph": "choice requested; pending owner response; real contacts disabled"
+      "contact_graph": "owner selected direct directed author-to-recipient edges for the synthetic model; multi-hop/shared intersections excluded; real contacts and production graph remain disabled pending legal/privacy/security review"
     },
     "signed_scope_changed": false,
     "backlog_owner_decisions_updated": true,
@@ -100,17 +100,27 @@
       "url": "https://github.com/sparesparrow/libertin/pull/14",
       "branch": "docs/proposals-execution",
       "head_commit_when_opened": "59e7f998dbdf96805eaa0e74a759dccf84f3e048"
+    },
+    "synthetic_contact_model_pr": {
+      "number": 15,
+      "state": "OPEN_DRAFT",
+      "url": "https://github.com/sparesparrow/libertin/pull/15",
+      "branch": "feat/synthetic-direct-contact-audience",
+      "head_sha": "dad83fd03332114e0f3a8a8dfc978ccb7de3a67b",
+      "scope": "pure helper over synthetic author outgoing edges; no route, import, persistence, or production graph",
+      "local_validation": "6 API unit tests, API type-check, frozen install, repository type-check across 7 packages passed",
+      "github_checks": "pending at checkpoint update"
     }
   },
   "milestones": {
     "M0_current_inputs_and_PR_review": "verified; exact PR heads and nine proposal sources read",
     "M1_preview_launch_crash_reproduction": "verified: exact PR 11 artifact exited with TransformStream ReferenceError before main registration",
-    "M2_proposal_traceability_and_decisions": "in_progress: owner directions recorded; graph choice pending",
+    "M2_proposal_traceability_and_decisions": "in_progress: D-003, D-004 and direct-edge synthetic graph direction recorded; remaining legal/provider/topology decisions stay open",
     "M3_safe_native_onboarding": "planned after startup recovery is verified",
-    "M4_server_audience_and_reveal": "blocked by legacy source/schema audit, D-004 topology, graph semantics, legal/privacy review",
+    "M4_server_audience_and_reveal": "in_progress: synthetic direct-edge model may proceed; production audience/reveal remains blocked by legacy source/schema audit, D-004 topology, and legal/privacy/security review",
     "M5_synthetic_marketplace_slice": "planned; commercial policy, legal model, and provider activation unresolved",
     "M6_live_auth_contract": "in_progress: sanitized runs 38962784873 and 38980049943 show the same synthetic invalid-login transport and JSON 4xx; the latter was an accidental CI repeat completed before cancellation; valid auth unverified",
-    "M7_GitHub_artifact_device_loop": "in_progress: draft PR 13 pushed; Android build/emulator smoke and repository CI are running; exact artifact device retest pending"
+    "M7_GitHub_artifact_device_loop": "in_progress: PR 13 head 7ce29375ae35ea70cc8c89cb2504af2e1cafb7ac; CI run 38981213788 passed; Android run 38981213728 is building release-like APK and emulator smoke; physical retest pending"
   },
   "last_verified_run": {
     "run_id": 38962784863,
@@ -153,10 +163,10 @@
     "New implementation commit must pass GitHub Android verify/build and isolated emulator accessibility smoke before downloading its exact artifact.",
     "Repeat the successful exact GitHub APK loop on owner-selected Moto G54 5G test device moto-g54-test-01; do not clear data or uninstall on signature mismatch.",
     "D-004 topology remains open despite owner priority for maximum on-premise; capacity/HA/DR/operations review is needed.",
-    "Contact graph reach choice is pending the owner response; real contacts stay disabled.",
     "Legacy Laravel source/schema access and migration audit are not present in this workspace.",
     "Certification/age assurance, SMS provider, payment provider/terms, commercial rates, and legal/privacy review remain open.",
-    "Valid production authentication remains unverified; no raw credential, session, HAR, or UGC capture is authorized."
+    "Valid production authentication remains unverified; no raw credential, session, HAR, or UGC capture is authorized.",
+    "Contact graph direct-edge processing is approved only for synthetic development; production audience thresholds, legal basis/DPIA, retention, deletion, and security boundaries remain open."
   ],
   "phase1": {
     "status": "in_progress",
@@ -169,32 +179,35 @@
   "implementation_pr": {
     "number": 13,
     "state": "OPEN_DRAFT",
-    "head_sha": "6b221491a53529018a86607905c33533c33efb95",
+    "head_sha": "7ce29375ae35ea70cc8c89cb2504af2e1cafb7ac",
     "url": "https://github.com/sparesparrow/libertin/pull/13",
     "runs": {
       "android": {
-        "id": 38980049915,
+        "id": 38981213728,
         "status": "in_progress",
-        "url": "https://github.com/sparesparrow/libertin/actions/runs/38980049915"
+        "url": "https://github.com/sparesparrow/libertin/actions/runs/38981213728"
       },
       "ci": {
-        "id": 38980049956,
+        "id": 38981213788,
         "status": "completed_success",
-        "url": "https://github.com/sparesparrow/libertin/actions/runs/38980049956"
+        "url": "https://github.com/sparesparrow/libertin/actions/runs/38981213788"
       },
       "web_image": {
-        "id": 38980049955,
-        "status": "in_progress",
-        "url": "https://github.com/sparesparrow/libertin/actions/runs/38980049955"
-      },
-      "live_contract": {
-        "id": 38980049943,
-        "status": "completed_cancelled_after_probe",
-        "url": "https://github.com/sparesparrow/libertin/actions/runs/38980049943",
-        "artifact_id": 12080088887,
-        "artifact_name": "public-live-contract-findings"
+        "id": 38981213701,
+        "status": "completed_success",
+        "url": "https://github.com/sparesparrow/libertin/actions/runs/38981213701"
       }
     },
-    "latest_ci_probe_note": "The broad pull_request trigger ran one synthetic invalid-login probe before cancellation completed. Sanitized artifact confirmed the same transport/status as run 38962784873. Workflow path is now restricted; do not repeat production probes."
+    "latest_ci_probe_note": "The workflow path filter prevented unrelated contract probes for this commit; do not repeat production login probes."
+  },
+  "last_attempt": {
+    "android_pr": 13,
+    "head_sha": "7ce29375ae35ea70cc8c89cb2504af2e1cafb7ac",
+    "android_run": 38981213728,
+    "android_status": "in_progress",
+    "ci_run": 38981213788,
+    "ci_status": "success",
+    "artifact": "libertin-preview-mock-apk",
+    "physical_device_retest": "pending exact successful artifact"
   }
 }
