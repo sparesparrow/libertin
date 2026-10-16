@@ -79,12 +79,14 @@ function dismissCookieOverlay(): void {
         // Real UI interaction only. No force, DOM removal, storage seeding,
         // accept-all control or automated age assertion.
         cy.wrap(control, { log: false }).click({ log: false });
-        cy.then({ log: false }, () => { record('login-cookie-overlay', 'dismissed_via_visible_control'); });
+        cy.then(() => { record('login-cookie-overlay', 'dismissed_via_visible_control'); });
       }
     });
 }
 
-function loginForm(): Cypress.Chainable<HTMLFormElement> {
+// Cypress yields DOM elements from .then() wrapped in jQuery, both in its types
+// and at runtime. Callers unwrap with .get(0).
+function loginForm(): Cypress.Chainable<JQuery<HTMLFormElement>> {
   return cy.get('input[type="password"]', { log: false })
     .should(($passwords) => {
       if (availableLoginForm($passwords) === undefined) {
@@ -147,7 +149,9 @@ describe('swingerslife.cz public contract discovery', () => {
   it('observes one invalid synthetic login request without exposing request values', () => {
     cy.visit('/login', { failOnStatusCode: false, log: false });
     dismissCookieOverlay();
-    loginForm().then((form) => {
+    loginForm().then(($form) => {
+      const form = $form.get(0) as HTMLFormElement | undefined;
+      if (form === undefined) throw new Error('Login form disappeared before interaction.');
       const origin = form.ownerDocument.location.origin;
       if (new URL(form.action, origin).origin !== origin) {
         throw new Error('Refusing synthetic login probe because the form action is cross-origin.');
@@ -174,7 +178,7 @@ describe('swingerslife.cz public contract discovery', () => {
       cy.wrap(identifier, { log: false }).type(SYNTHETIC_IDENTIFIER, { log: false });
       cy.wrap(password, { log: false }).clear({ log: false });
       cy.wrap(password, { log: false }).type(SYNTHETIC_PASSWORD, { log: false });
-      cy.then({ log: false }, () => {
+      cy.then(() => {
         const submitter = Array.from(form.querySelectorAll<HTMLElement>(
           'button:not([type]), button[type="submit"], input[type="submit"]',
         )).find(unobscured);
