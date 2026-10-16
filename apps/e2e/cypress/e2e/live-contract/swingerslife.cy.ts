@@ -23,7 +23,9 @@ describe('swingerslife.cz public contract discovery', () => {
     cy.get('input[type="password"]', { log: false })
       .first()
       .then(($password) => {
-        const form = $password[0].form;
+        const passwordInput = $password.get(0) as HTMLInputElement | undefined;
+        if (passwordInput === undefined) throw new Error('Login password input was not found.');
+        const form = passwordInput.form;
         if (form === null) throw new Error('Login password input is not inside a form.');
 
         const fields = [...form.querySelectorAll('input')]
