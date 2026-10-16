@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { completeFeedLoad, nextStepAfterLogin } from '../src/authFlowLogic';
+import {
+  completeFeedLoad,
+  nextStepAfterLogin,
+  supportsFrozenContractNetwork,
+} from '../src/authFlowLogic';
+
+describe('supportsFrozenContractNetwork', () => {
+  it('allows the frozen JSON/bearer client only in explicit mock mode', () => {
+    expect(supportsFrozenContractNetwork('mock')).toBe(true);
+    expect(supportsFrozenContractNetwork('live')).toBe(false);
+  });
+});
 
 describe('nextStepAfterLogin', () => {
   it('continues verified users in either network mode', () => {
