@@ -8,8 +8,8 @@ export interface RuntimeConfig {
 }
 
 type RuntimeEnv = {
-  readonly EXPO_PUBLIC_NETWORK_MODE?: string;
-  readonly EXPO_PUBLIC_API_BASE_URL?: string;
+  readonly EXPO_PUBLIC_NETWORK_MODE?: string | undefined;
+  readonly EXPO_PUBLIC_API_BASE_URL?: string | undefined;
 };
 
 function liveBaseUrl(raw: string | undefined): string {
