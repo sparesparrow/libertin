@@ -19,6 +19,10 @@ rozhodnutí, včetně **pojmenovaných kompromisů**.
 | # | Rozhodnutí | Stav | Role | Backlog | Smluvní kódy |
 |---|---|---|---|---|---|
 | [0001](0001-2fa-architecture.md) | Architektura 2FA — TOTP + passkey/WebAuthn + SMS pro web i React Native | Navrženo | `security` | E2-T1 | **B4.2**, B4.1, B4.4, B14 |
+| [0002](0002-contact-graph-reach-semantics.md) | Sémantika dosahu kontaktního grafu | Navrženo, blokováno rozhodnutím vlastníka a privacy/security review | `architect` / `security` | proposed PR 12 | proposal-only |
+| [0003](0003-marketplace-payment-activation.md) | Aktivace plateb a provizí Marketplace | Navrženo, blokováno rozhodnutím vlastníka, právním posouzením a podmínkami poskytovatele | `architect` / `security` | proposed PR 12 | proposal-only |
+| [0004](0004-identity-certification-states.md) | Oddělení telefonního ověření, certifikace a obchodního stavu | Navrženo; poskytovatelé a produkční pravidla zůstávají otevřené | `architect` / `security` | proposed PR 12 | proposal-only |
+| [0005](0005-legacy-laravel-extension-direction.md) | Směr rozšíření legacy Laravelu | Směr vlastníka potvrzen; zdrojový kód, schéma a migrační cesta se ověřují | `architect` / `backend` | E9-T1, D-003 | architecture direction only |
 
 Index je autoritativní seznam ADR. **Když přidáte soubor, přidejte řádek** —
 jinak rozhodnutí nikdo nenajde.
@@ -30,10 +34,10 @@ souboru — **čísla se nerezervují dopředu** (viz §Číslování).
 
 | Téma | Backlog | Výzkum | Poznámka |
 |---|---|---|---|
-| Backend stack a struktura služeb | E9-T1 | RES-001 | `blocked` rozhodnutím **D-003** |
+| Backend stack a struktura služeb | E9-T1 | RES-001 | Vlastník zvolil rozšíření legacy Laravelu; ADR 0005 a audit zdrojů probíhají |
 | Mapová vrstva — on-premise tiles a privacy-preserving geolokace | E4-T1 | RES-004 | musí být opt-in, střet s diskrétností |
 | Self-hosted analytika s per-objekt granularitou | E7-T1 | RES-005 | C2 (minimalizace externích služeb) |
-| Platební brána a model předplatného | E8-T1 | — | jedna z mála povolených externích služeb |
+| Platební brána a Marketplace provize | E8-T1 | — | PR 12 nově preferuje provize před povinným členstvím; návrh nenahrazuje podepsaný backlog |
 | Realtime audio/video — WebRTC SFU vs. hostovaná služba | E3-T6 | RES-003 | ADR požadované v akceptačních kritériích tasku |
 
 Otevřené výzkumné otázky (`research:` v `docs/backlog.yaml`, id `RES-*`) mají
@@ -68,13 +72,15 @@ označí za nahrazené. Historie důvodů je celá cena tohoto formátu.
 
 Pokud rozhodnutí vlastní objednatel, ADR ho **nesmí předstírat**. Zapíše se do
 `decisions:` v `docs/backlog.yaml` (id `D-NNN`), závislé tasky zůstávají
-`blocked` a ADR ten blok pojmenuje. Dnes blokují: **D-001** Figma editor access,
-**D-002** GitLab vs GitHub, **D-003** backend stack, **D-004** hosting,
-**D-005** AI moderace.
+`blocked`, dokud není rozhodnutí skutečně zaznamenáno, a ADR ten blok pojmenuje.
+Aktuální rozhodnutí jsou v backlogu; návrhy PR 12 je nesmějí potichu měnit.
+**D-003** nyní zaznamenává směr rozšířit Laravel; **D-004** zaznamenává prioritu
+on-premise, ale konkrétní topologie zůstává otevřená. Další otevřené body zahrnují
+Figma, GitLab vs GitHub, AI moderaci, 2FA, C12.1 a modulové E2E.
 
 ADR smí **navrhnout** nové `D-NNN`, ale nesmí ho považovat za existující, dokud
-není v `docs/backlog.yaml`. Aktuálně: `0001-2fa-architecture.md` §15 navrhuje
-**D-006**, které v backlogu ještě není zapsané — doplnění vlastní `architect`.
+není v `docs/backlog.yaml`. Návrh D-006 z `0001-2fa-architecture.md` je již
+v backlogu; jeho stav a text se řídí výhradně tam uvedeným záznamem.
 
 ---
 

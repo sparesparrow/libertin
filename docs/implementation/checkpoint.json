@@ -1,0 +1,191 @@
+{
+  "repository": "sparesparrow/libertin",
+  "branch": "feat/proposals-implementation",
+  "head_sha": "6b221491a53529018a86607905c33533c33efb95",
+  "current_pr": 13,
+  "working_tree": {
+    "proposal_tracking_updated": true,
+    "preexisting_modified_path_preserved": "docs/live-contract-discovery.md",
+    "uncommitted": true,
+    "device_startup_fix": true,
+    "startup_smoke_helper": true
+  },
+  "proposal_pr": {
+    "number": 12,
+    "state": "OPEN",
+    "head_sha": "4ad6cd21323f8a8f2f5369059d3b77b7d4c6906d",
+    "latest_check_run": 38962270169,
+    "checks": {
+      "successful": [
+        "install",
+        "type-check",
+        "pack",
+        "test",
+        "build",
+        "e2e (apps/web)"
+      ],
+      "skipped": [
+        "e2e (modules, deployed)",
+        "perf (C12.1)"
+      ]
+    }
+  },
+  "android_pr": {
+    "number": 11,
+    "state": "MERGED",
+    "head_sha": "8930e4a47830fafffb379d0d96135e9bca68da17",
+    "merge_commit_sha": "6e3de0c98b638a4cd4d03a929b39bfc7fde3fa20"
+  },
+  "tooling": {
+    "git": "2.55.0",
+    "gh": "2.102.0",
+    "node": "26.8.2",
+    "corepack": "unavailable on PATH",
+    "pnpm": "unavailable on PATH",
+    "java": "Temurin 17.0.20.1 available by full path; mise shim has no selected version",
+    "adb": "1.0.41",
+    "aapt": "Android Build Tools 36.1.0",
+    "apksigner": "Android Build Tools 36.1.0; verified with explicit JDK path",
+    "python": "3.14.7",
+    "setup_readme": "README-CODEX-SETUP.md not present in repository",
+    "device_loop_script": "scripts/android_device_loop.py not present in repository",
+    "mobile_mcp": "tool schema is available; runtime version and telemetry setting not revalidated in this phase",
+    "package_manager": "pnpm@10.33.0 invoked via npx; frozen lockfile install passed",
+    "metro_export": "Android export passed locally; 839 modules, 2.94 MB Hermes bundle; MSW package export warnings fell back to file resolution"
+  },
+  "device": {
+    "adb_inventory_count": 1,
+    "authorized": true,
+    "model": "moto g54 5G",
+    "android_sdk": 35,
+    "package": "cz.libertin.preview",
+    "package_installed": true,
+    "app_data_cleared": false,
+    "uninstalled": false,
+    "baseline_launch": "failed: process exited during cold start before the 23-second check",
+    "deployment": "baseline artifact installed; new GitHub artifact pending",
+    "device_commands_run": [
+      "adb -s <owner-selected-serial> device identity and Android version",
+      "test package inventory and package-manager activity resolution",
+      "adb install -r exact PR 11 artifact",
+      "adb am start -W exact resolved preview launcher",
+      "23-second app process check and app-UID-filtered logcat capture"
+    ],
+    "private_evidence_path": ".local/device-runs/pr11-run-38962784863/device/",
+    "owner_selected_device_ref": "moto-g54-test-01"
+  },
+  "phase2": {
+    "status": "in_progress",
+    "scope": "proposal work is authorized for development only, not signed contract delivery",
+    "tracking_documents": "ready_for_review: execution plan, traceability, checkpoint and ADRs drafted; separate docs PR pending",
+    "feature_implementation": "proposal UI/domain work not started; startup recovery is in progress first",
+    "requirements_matrix": "docs/implementation/proposals-traceability.md",
+    "execution_plan": "docs/implementation/proposals-execplan.md",
+    "adr_added": "docs/adr/0005-legacy-laravel-extension-direction.md",
+    "existing_contact_and_payment_adrs": [
+      "docs/adr/0002-contact-graph-reach-semantics.md",
+      "docs/adr/0003-marketplace-payment-activation.md"
+    ],
+    "proposal_routes_added": false,
+    "owner_directions": {
+      "D-003": "extend legacy Laravel; direction recorded, ADR/source/schema verification in progress",
+      "D-004": "maximize on-premise; concrete topology and capacity remain open",
+      "contact_graph": "choice requested; pending owner response; real contacts disabled"
+    },
+    "signed_scope_changed": false,
+    "backlog_owner_decisions_updated": true
+  },
+  "milestones": {
+    "M0_current_inputs_and_PR_review": "verified; exact PR heads and nine proposal sources read",
+    "M1_preview_launch_crash_reproduction": "verified: exact PR 11 artifact exited with TransformStream ReferenceError before main registration",
+    "M2_proposal_traceability_and_decisions": "in_progress: owner directions recorded; graph choice pending",
+    "M3_safe_native_onboarding": "planned after startup recovery is verified",
+    "M4_server_audience_and_reveal": "blocked by legacy source/schema audit, D-004 topology, graph semantics, legal/privacy review",
+    "M5_synthetic_marketplace_slice": "planned; commercial policy, legal model, and provider activation unresolved",
+    "M6_live_auth_contract": "in_progress: sanitized run 38962784873 reviewed; synthetic invalid login returned JSON 4xx from observed api.libertin.app route; valid auth unverified",
+    "M7_GitHub_artifact_device_loop": "in_progress: draft PR 13 pushed; Android build/emulator smoke and repository CI are running; exact artifact device retest pending"
+  },
+  "last_verified_run": {
+    "run_id": 38962784863,
+    "workflow": ".github/workflows/android.yml",
+    "event": "pull_request",
+    "head_sha": "8930e4a47830fafffb379d0d96135e9bca68da17",
+    "merge_commit_sha": "6e3de0c98b638a4cd4d03a929b39bfc7fde3fa20",
+    "conclusion": "success",
+    "artifact": "libertin-preview-mock-apk",
+    "artifact_id": 12073039964,
+    "artifact_expires_at": "2026-10-23T20:38:30Z",
+    "package": "cz.libertin.preview",
+    "version_name": "1.0.0",
+    "version_code": 23,
+    "apk_sha256": "9a3b5995450ed5bd6c4c83f8b4e36ebd562378217fc1da67f2571c3db93a9aa5",
+    "embedded_bundle": "assets/index.android.bundle",
+    "signature_scheme_verified": "v2",
+    "signer": "CN=Libertin Preview, O=CI, C=CZ",
+    "signer_certificate_sha256": "070d4c228323f43b302f45f5595d13530839b748f70b95e3209c637d1b702c95",
+    "device_install_or_launch": true,
+    "local_evidence_path": ".local/device-runs/pr11-run-38962784863/",
+    "device_baseline_result": "cold-start crash reproduced on owner-selected Moto G54 5G test device moto-g54-test-01; TransformStream missing before AppRegistry main registration",
+    "local_device_evidence": ".local/device-runs/pr11-run-38962784863/device/"
+  },
+  "tests": {
+    "frozen_install": "passed with pnpm@10.33.0; lockfile current",
+    "mobile_vitest": "42 passed",
+    "android_launch_smoke_helper": "6 Python unittest cases passed",
+    "mobile_dependency_type_check": "passed for all 7 packages via Turbo",
+    "metro_android_export": "passed; 839 modules, 2.94 MB Hermes bundle; package export warnings noted",
+    "workflow_yaml_parse": "passed with PyYAML; actionlint unavailable",
+    "git_diff_check": "passed",
+    "physical_android_baseline": "failed as expected: confirmed TransformStream startup crash",
+    "physical_android_fix": "not run; requires successful new GitHub artifact",
+    "PR11_CI": "verify and preview build succeeded; module E2E, perf, release, and Play publish skipped",
+    "PR12_CI": "install, type-check, pack, test, build and web E2E succeeded; module E2E and perf skipped",
+    "live_contract": "one sanitized synthetic invalid-login transport observation reviewed from PR 11 run 38962784873; no valid authentication proved; PR 13 trigger repeated one probe before cancellation could stop the completed step"
+  },
+  "blockers": [
+    "New implementation commit must pass GitHub Android verify/build and isolated emulator accessibility smoke before downloading its exact artifact.",
+    "Repeat the successful exact GitHub APK loop on owner-selected Moto G54 5G test device moto-g54-test-01; do not clear data or uninstall on signature mismatch.",
+    "D-004 topology remains open despite owner priority for maximum on-premise; capacity/HA/DR/operations review is needed.",
+    "Contact graph reach choice is pending the owner response; real contacts stay disabled.",
+    "Legacy Laravel source/schema access and migration audit are not present in this workspace.",
+    "Certification/age assurance, SMS provider, payment provider/terms, commercial rates, and legal/privacy review remain open.",
+    "Valid production authentication remains unverified; no raw credential, session, HAR, or UGC capture is authorized."
+  ],
+  "phase1": {
+    "status": "in_progress",
+    "baseline_crash": "verified on exact PR 11 GitHub artifact",
+    "root_cause": "Hermes lacks TransformStream; static MSW native fetch interceptor evaluates BrotliDecompressionStream extends TransformStream before AppRegistry main registration",
+    "fix": "in_progress: early Web Streams polyfill, mock-only async MSW import, lazy runtime config validation, visible retry screen",
+    "ci_smoke": "added: isolated API 35 emulator, 20-second foreground, accessibility title, background/relaunch; current GitHub execution pending",
+    "physical_retest": "pending new successful GitHub preview artifact"
+  },
+  "implementation_pr": {
+    "number": 13,
+    "state": "OPEN_DRAFT",
+    "head_sha": "6b221491a53529018a86607905c33533c33efb95",
+    "url": "https://github.com/sparesparrow/libertin/pull/13",
+    "runs": {
+      "android": {
+        "id": 38980049915,
+        "status": "in_progress",
+        "url": "https://github.com/sparesparrow/libertin/actions/runs/38980049915"
+      },
+      "ci": {
+        "id": 38980049956,
+        "status": "in_progress",
+        "url": "https://github.com/sparesparrow/libertin/actions/runs/38980049956"
+      },
+      "web_image": {
+        "id": 38980049955,
+        "status": "in_progress",
+        "url": "https://github.com/sparesparrow/libertin/actions/runs/38980049955"
+      },
+      "live_contract": {
+        "id": 38980049943,
+        "status": "completed_with_probe_before_cancel",
+        "url": "https://github.com/sparesparrow/libertin/actions/runs/38980049943"
+      }
+    },
+    "latest_ci_probe_note": "The broad pull_request trigger ran one synthetic invalid-login probe before cancellation completed. Do not repeat production probes; use the prior sanitized run and local fixtures."
+  }
+}
