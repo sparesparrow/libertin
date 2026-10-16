@@ -28,7 +28,7 @@ describe('swingerslife.cz public contract discovery', () => {
         const form = passwordInput.form;
         if (form === null) throw new Error('Login password input is not inside a form.');
 
-        const fields = [...form.querySelectorAll('input')]
+        const fields = Array.from(form.querySelectorAll('input'))
           .map((input) => input.name)
           .filter((name) => name.length > 0)
           .sort();
