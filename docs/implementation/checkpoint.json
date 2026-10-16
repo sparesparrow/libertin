@@ -109,7 +109,7 @@
       "head_sha": "dad83fd03332114e0f3a8a8dfc978ccb7de3a67b",
       "scope": "pure helper over synthetic author outgoing edges; no route, import, persistence, or production graph",
       "local_validation": "6 API unit tests, API type-check, frozen install, repository type-check across 7 packages passed",
-      "github_checks": "success: CI run 38981584089 and Android emulator-smoke run 38981584022; release/Play skipped"
+      "github_checks": "success: CI run 38981584089; Android run 38981584022 built and verified standalone APK; workflow at that head had no emulator-smoke steps"
     }
   },
   "milestones": {
@@ -222,7 +222,16 @@
     "head_sha": "dad83fd03332114e0f3a8a8dfc978ccb7de3a67b",
     "ci_run": 38981584089,
     "android_run": 38981584022,
-    "android_conclusion": "success including standalone preview verification and emulator cold-start/relaunch accessibility smoke",
-    "device_install": "not applicable: API-only change, no native UI or changed phone interaction"
+    "android_conclusion": "success: APK assembled; standalone bundle/package/signature verified; no emulator launch-smoke steps existed in the workflow at this PR head",
+    "artifact_id": 12081288548,
+    "artifact_name": "libertin-preview-mock-apk",
+    "artifact_sha256": "788c60018e78c2d3dfe767c4db21fc673f5bce4d90f0fd108956db5cde1e1d0e",
+    "package": "cz.libertin.preview",
+    "version_name": "1.0.0",
+    "version_code": 26,
+    "embedded_bundle": "assets/index.android.bundle",
+    "signature_scheme_verified": "v2",
+    "signer_certificate_sha256": "27dc12e6034f7cc7d3aaa96efc5e679993a72a88720fc381b83eff3298d83dfe",
+    "phone_install": "not performed: API-only change; this base package is already installed on the selected device and the artifact uses a disposable signer"
   }
 }

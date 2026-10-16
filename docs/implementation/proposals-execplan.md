@@ -81,8 +81,10 @@ PR 12 remains an independent documentation PR.
   author-to-recipient edges and six unit cases. It adds no API route, contact
   import, graph persistence, or production processing. Local tests, API
   type-check, frozen install, and repository-wide type-check passed. GitHub CI
-  run `38981584089` and Android preview/emulator run `38981584022` passed; release
-  and Play publish were skipped. The API-only slice adds no new native
+  run `38981584089` passed. Android run `38981584022` built and verified the
+  standalone APK, but that branch's workflow had no emulator-smoke steps;
+  release and Play publish were skipped. Its base package and disposable
+  signer were not installed on the phone. The API-only slice adds no native
   interaction.
 
 ## Milestones
