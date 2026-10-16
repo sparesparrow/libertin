@@ -89,14 +89,31 @@ def assert_accessible_screen(serial: str, package: str, expected_text: str) -> N
         adb(serial, "shell", "rm", "-f", REMOTE_HIERARCHY)
 
     if not hierarchy_has_expected_text(hierarchy, package, expected_text):
-        raise SmokeFailure("The preview accessibility tree does not contain its expected screen title")
+        raise SmokeFailure(
+            "The preview accessibility tree does not contain its expected screen title"
+        )
+
+
+def parse_apk_application_id(output: str, tool_name: str) -> str:
+    """Read an application id from apkanalyzer or aapt output."""
+    if Path(tool_name).name == "aapt":
+        for line in output.splitlines():
+            match = re.match(r"^package: name='([^']+)'", line.strip())
+            if match:
+                return match.group(1)
+        return ""
+    return output.strip()
 
 
 def apk_application_id(apk_path: Path) -> str:
-    candidates = [shutil.which("apkanalyzer")]
+    sdk_tools: dict[str, list[str | None]] = {
+        "apkanalyzer": [shutil.which("apkanalyzer")],
+        "aapt": [shutil.which("aapt")],
+    }
     sdk_root = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
     if sdk_root:
-        candidates.extend(glob.glob(f"{sdk_root}/build-tools/*/apkanalyzer"))
+        for name, candidates in sdk_tools.items():
+            candidates.extend(glob.glob(f"{sdk_root}/build-tools/*/{name}"))
 
     def tool_version(tool: str) -> tuple[int, ...]:
         return tuple(
@@ -104,24 +121,31 @@ def apk_application_id(apk_path: Path) -> str:
             for part in Path(tool).parent.name.split(".")
         )
 
-    tools = sorted(
-        {tool for tool in candidates if tool},
-        key=tool_version,
-        reverse=True,
-    )
-    if not tools:
-        raise SmokeFailure("apkanalyzer is required to verify the APK package before installation")
+    for name, args in (
+        ("apkanalyzer", ["manifest", "application-id"]),
+        ("aapt", ["dump", "badging"]),
+    ):
+        tools = sorted(
+            {tool for tool in sdk_tools[name] if tool},
+            key=tool_version,
+            reverse=True,
+        )
+        for tool in tools:
+            result = subprocess.run(
+                [tool, *args, str(apk_path)],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            if result.returncode == 0:
+                application_id = parse_apk_application_id(result.stdout, name)
+                if application_id:
+                    return application_id
 
-    result = subprocess.run(
-        [tools[0], "manifest", "application-id", str(apk_path)],
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=30,
+    raise SmokeFailure(
+        "apkanalyzer or aapt is required to verify the APK package before installation"
     )
-    if result.returncode != 0:
-        raise SmokeFailure("Could not read the APK application id")
-    return result.stdout.strip()
 
 
 def assert_stable(serial: str, package: str, seconds: int) -> None:

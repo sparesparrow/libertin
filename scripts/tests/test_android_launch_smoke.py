@@ -1,9 +1,14 @@
 import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from scripts.android_launch_smoke import (
+    apk_application_id,
     hierarchy_has_expected_text,
     is_allowed_preview_package,
     is_target_foreground,
+    parse_apk_application_id,
     resolve_launch_activity,
 )
 
@@ -49,6 +54,38 @@ class AndroidLaunchSmokeHelpersTest(unittest.TestCase):
 
     def test_malformed_accessibility_xml_fails_closed(self):
         self.assertFalse(hierarchy_has_expected_text("<hierarchy><node>", PACKAGE, "Přihlášení"))
+
+    def test_reads_application_id_from_apkanalyzer_output(self):
+        self.assertEqual(
+            parse_apk_application_id(f"{PACKAGE}\n", "apkanalyzer"),
+            PACKAGE,
+        )
+
+    def test_reads_application_id_from_aapt_badging_output(self):
+        output = f"package: name='{PACKAGE}' versionCode='27' versionName='1.0.0'\n"
+        self.assertEqual(parse_apk_application_id(output, "aapt"), PACKAGE)
+
+    def test_uses_aapt_when_apkanalyzer_is_unavailable(self):
+        output = f"package: name='{PACKAGE}' versionCode='27' versionName='1.0.0'\n"
+
+        def sdk_tool_glob(pattern):
+            return ["/sdk/build-tools/36.0.0/aapt"] if pattern.endswith("/aapt") else []
+
+        with (
+            patch.dict("os.environ", {"ANDROID_HOME": "/sdk"}),
+            patch("scripts.android_launch_smoke.shutil.which", return_value=None),
+            patch("scripts.android_launch_smoke.glob.glob", side_effect=sdk_tool_glob),
+            patch(
+                "scripts.android_launch_smoke.subprocess.run",
+                return_value=SimpleNamespace(returncode=0, stdout=output),
+            ) as run,
+        ):
+            self.assertEqual(apk_application_id(Path("preview.apk")), PACKAGE)
+
+        self.assertEqual(run.call_args.args[0][1:3], ["dump", "badging"])
+
+    def test_missing_aapt_package_record_fails_closed(self):
+        self.assertEqual(parse_apk_application_id("application-label:'Libertin'\n", "aapt"), "")
 
 
 if __name__ == "__main__":
