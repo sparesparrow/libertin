@@ -8,10 +8,19 @@ import {
   VerifyEmailScreen,
   type FeedScreenItem,
 } from '@libertin/ui/native';
+import {
+  completeFeedLoad,
+  nextStepAfterLogin,
+  supportsFrozenContractNetwork,
+} from './authFlowLogic';
+import { runtimeConfig } from './runtimeConfig';
 
-// Matches the base URL the MSW handlers intercept.
-const API_BASE = 'https://api.libertin.cz/v1';
-const client = createClient(API_BASE);
+// The frozen JSON/bearer contract is a mock/demo contract until the live
+// swingerslife.cz session flow is reproduced safely. Never point it at a live
+// base URL merely because one was configured.
+const client = supportsFrozenContractNetwork(runtimeConfig.networkMode)
+  ? createClient(runtimeConfig.apiBaseUrl)
+  : null;
 
 type Step = 'login' | 'verify' | 'success' | 'onboarding' | 'feed';
 
@@ -24,13 +33,27 @@ export function AuthFlow() {
   const [feed, setFeed] = useState<FeedScreenItem[]>([]);
 
   const handleLogin = useCallback(async (inputEmail: string, password: string) => {
-    setLoading(true);
     setError(undefined);
+    if (client === null) {
+      setToken('');
+      setError('Živý backend zatím nemá bezpečně ověřený přihlašovací kontrakt.');
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await client.auth.login({ email: inputEmail, password });
+      const nextStep = nextStepAfterLogin(res.user.verified, runtimeConfig.networkMode);
+
+      if (nextStep === 'blocked') {
+        setToken('');
+        setError('Stav účtu nelze v živém režimu bezpečně ověřit.');
+        return;
+      }
+
       setEmail(res.user.email);
       setToken(res.token);
-      setStep(res.user.verified ? 'success' : 'verify');
+      setStep(nextStep);
     } catch {
       setError('Přihlášení se nezdařilo. Zkontrolujte údaje.');
     } finally {
@@ -38,30 +61,37 @@ export function AuthFlow() {
     }
   }, []);
 
-  const handleVerified = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await client.auth.verify({ token: 'mock-verification-token' });
-      if (res.success) setStep('success');
-    } finally {
-      setLoading(false);
+  const handleVerified = useCallback(() => {
+    // VerifyEmailScreen is explicitly a mock/dev affordance. Never turn its
+    // button into a real verification request unless the live contract has
+    // been observed and implemented deliberately.
+    if (runtimeConfig.networkMode !== 'mock') {
+      setToken('');
+      setError('Ověření e-mailu není pro živý backend zatím potvrzené.');
+      setStep('login');
+      return;
     }
+    setStep('success');
   }, []);
 
   const handleFinish = useCallback(async () => {
+    setError(undefined);
+    if (client === null) {
+      setError('Živý feed zatím nemá bezpečně ověřený kontrakt.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await client.feed.get({ page: 1, limit: 20 }, token);
-      setFeed(
-        res.items.map((item) => ({
-          id: item.id,
-          author: item.author?.displayName ?? 'Anonym',
-          content: item.content ?? null,
-        })),
-      );
+      const result = await completeFeedLoad(() => client.feed.get({ page: 1, limit: 20 }, token));
+      setFeed(result.items);
+      setStep(result.step);
+    } catch {
+      // Stay on onboarding. A failed request must never look like a successful
+      // transition to the native feed.
+      setError('Feed se nepodařilo načíst. Zkuste to znovu.');
     } finally {
       setLoading(false);
-      setStep('feed');
     }
   }, [token]);
 

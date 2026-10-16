@@ -1,0 +1,47 @@
+name: Live contract audit (temporary)
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CI: 'true'
+  CYPRESS_BASE_URL: https://swingerslife.cz
+  CYPRESS_LIVE_CONTRACT: '1'
+  DO_NOT_TRACK: '1'
+
+jobs:
+  public-login-contract:
+    name: public login contract (sanitized)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: cache the Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: cypress-${{ runner.os }}-
+      - name: install Cypress
+        run: pnpm --filter @libertin/e2e cy:install
+      - name: verify Cypress
+        run: pnpm --filter @libertin/e2e cy:verify
+      - name: run public live-contract probe
+        run: pnpm --filter @libertin/e2e e2e:live-contract
+      - name: archive sanitized structural findings only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-live-contract-findings
+          path: apps/e2e/reports/swingerslife.cz/
+          if-no-files-found: warn
+          retention-days: 1

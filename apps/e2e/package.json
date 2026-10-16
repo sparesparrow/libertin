@@ -13,6 +13,7 @@
     "e2e:platform": "cypress run --spec \"cypress/e2e/platform/**/*.cy.ts\"",
     "e2e:local": "cypress run --spec \"cypress/e2e/local/**/*.cy.ts\"",
     "e2e:local:ci": "start-server-and-test \"pnpm --filter @libertin/web start\" http://localhost:3000/gate \"pnpm e2e:local\"",
+    "e2e:live-contract": "CYPRESS_LIVE_CONTRACT=1 cypress run --spec \"cypress/e2e/live-contract/**/*.cy.ts\"",
     "type-check": "tsc --noEmit",
     "evidence": "cypress run --spec \"cypress/e2e/evidence/**/*.cy.ts\"",
     "evidence:publish": "node scripts/publish-evidence.mjs"

@@ -5,22 +5,26 @@ import { nativeTheme } from '@libertin/theme/native';
 import { initI18n } from '@libertin/i18n';
 import { AuthFlow } from './AuthFlow';
 import { server } from './mocks/native';
+import { runtimeConfig } from './runtimeConfig';
 
 export default function App() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Boot offline against MSW mocks in development.
-    if (__DEV__) {
-      server.listen({ onUnhandledRequest: 'bypass' });
+    const useMocks = runtimeConfig.networkMode === 'mock';
+    if (useMocks) {
+      // Mock preview builds must be hermetic. An unhandled request is a test
+      // failure, not permission to leak onto a guessed or production host.
+      server.listen({ onUnhandledRequest: 'error' });
     }
+
     let active = true;
     void initI18n('cs').then(() => {
       if (active) setReady(true);
     });
     return () => {
       active = false;
-      if (__DEV__) server.close();
+      if (useMocks) server.close();
     };
   }, []);
 

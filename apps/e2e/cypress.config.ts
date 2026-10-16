@@ -19,6 +19,7 @@ import { defineConfig } from 'cypress';
 const DEFAULT_BASE_URL = 'http://localhost:3000';
 
 const BASE_URL = process.env.CYPRESS_BASE_URL ?? DEFAULT_BASE_URL;
+const LIVE_CONTRACT = process.env.CYPRESS_LIVE_CONTRACT === '1';
 
 /**
  * Artifacts are kept per target host.
@@ -78,7 +79,9 @@ export default defineConfig({
     downloadsFolder: 'downloads',
 
     video: false,
-    screenshotOnRunFailure: true,
+    // Live contract discovery may use a real member session. Never persist a
+    // failure screenshot from that mode; a screenshot can contain private UGC.
+    screenshotOnRunFailure: !LIVE_CONTRACT,
 
     viewportWidth: 1280,
     viewportHeight: 800,
@@ -89,7 +92,8 @@ export default defineConfig({
     pageLoadTimeout: 60_000,
     requestTimeout: 20_000,
 
-    retries: { runMode: 2, openMode: 0 },
+    // Do not repeat login/navigation against a live third-party service.
+    retries: LIVE_CONTRACT ? { runMode: 0, openMode: 0 } : { runMode: 2, openMode: 0 },
 
     experimentalMemoryManagement: true,
 
