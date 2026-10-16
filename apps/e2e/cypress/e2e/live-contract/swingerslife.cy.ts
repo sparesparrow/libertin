@@ -1,13 +1,7 @@
 /// <reference types="cypress" />
 
 import { recordFinding } from '../../support/findings';
-import {
-  contentKind,
-  cookieKinds,
-  requestFieldNames,
-  safeLoginAction,
-  statusClass,
-} from '../../support/liveContract';
+import { contentKind, cookieKinds, requestFieldNames, safeLoginAction, statusClass } from '../../support/liveContract';
 
 const MODULE = 'live-contract';
 const ROUTE = 'swingerslife.cz';
@@ -20,50 +14,81 @@ function record(kind: string, detail: string): void {
   recordFinding({ module: MODULE, route: ROUTE, kind, detail });
 }
 
-function unobscured(input: HTMLInputElement): boolean {
-  if (input.disabled || !Cypress.$(input).is(':visible')) return false;
-  const rect = input.getBoundingClientRect();
-  const hit = input.ownerDocument.elementFromPoint(
-    rect.left + rect.width / 2,
-    rect.top + rect.height / 2,
+function unobscured(element: HTMLElement): boolean {
+  if (element.matches(':disabled') || !Cypress.$(element).is(':visible')) return false;
+  const rect = element.getBoundingClientRect();
+  const hit = element.ownerDocument.elementFromPoint(
+    rect.left + rect.width / 2, rect.top + rect.height / 2,
   );
-  return hit === input || (hit !== null && input.contains(hit));
+  return hit !== null && (hit === element || element.contains(hit));
 }
 
 function availableLoginForm($passwords: JQuery<HTMLElement>): HTMLFormElement | undefined {
-  // Prefer the topmost available form, not the first password input in the DOM.
   for (const element of $passwords.toArray().reverse()) {
     const password = element as HTMLInputElement;
     const form = password.form;
     if (form === null || !unobscured(password)) continue;
-    const identifier = Array.from(form.querySelectorAll<HTMLInputElement>(IDENTIFIER_SELECTOR))
-      .find(unobscured);
-    if (identifier !== undefined) return form;
+    if (Array.from(form.querySelectorAll<HTMLInputElement>(IDENTIFIER_SELECTOR)).some(unobscured)) {
+      return form;
+    }
   }
   return undefined;
 }
 
-function optionalConsent(): void {
-  // Only use an explicit reject/necessary-only cookie control. Never force a
-  // click, delete overlays, grant marketing consent or bypass an age gate.
-  cy.get('body', { log: false }).then(($body) => {
-    const candidates = $body.find('button').filter(':visible').toArray().filter((button) => {
-      const label = (button.textContent ?? '').replace(/\s+/g, ' ').trim();
-      return /^(odmítnout vše|odmítnout všechny|odmítnout volitelné cookies|pouze nezbytné|jen nezbytné|reject all|necessary only)$/i.test(label);
-    });
-    if (candidates.length === 1) {
-      cy.wrap(candidates[0]!, { log: false }).click({ log: false });
+function cookieControl($passwords: JQuery<HTMLElement>): HTMLElement | undefined {
+  for (const input of $passwords.toArray()) {
+    if (!Cypress.$(input).is(':visible')) continue;
+    const rect = input.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    let panel: Element | null = input.ownerDocument.elementFromPoint(x, y);
+    if (panel === null || panel === input) continue;
+    // Follow only the actual blocker ancestry, not all buttons on the page.
+    // Stop before reaching a common ancestor that also contains the login.
+    while (panel !== null && panel !== input.ownerDocument.body && !panel.contains(input)) {
+      const text = panel.textContent ?? '';
+      if (/cookie|cookies|soubory cookie/i.test(text) && !/plnolet|starší.*18|over.*18/i.test(text)) {
+        const buttons = Array.from(panel.querySelectorAll<HTMLElement>('button, [role="button"]'))
+          .filter(unobscured);
+        const label = (button: HTMLElement): string =>
+          (button.getAttribute('aria-label') || button.getAttribute('title') || button.textContent || '')
+            .replace(/\s+/g, ' ').trim();
+        const close = buttons.filter((button) => /zavřít|close|dismiss/i.test(label(button)));
+        if (close.length === 1) return close[0];
+        const reject = buttons.filter((button) =>
+          /^(odmítnout vše|odmítnout všechny|odmítnout volitelné cookies|pouze nezbytné|jen nezbytné|reject all|necessary only)$/i.test(label(button)),
+        );
+        if (reject.length === 1) return reject[0];
+      }
+      panel = panel.parentElement;
     }
-  });
+  }
+  return undefined;
+}
+
+function dismissCookieOverlay(): void {
+  cy.get('input[type="password"]', { log: false })
+    .should(($passwords) => {
+      if (availableLoginForm($passwords) === undefined && cookieControl($passwords) === undefined) {
+        throw new Error('Login is blocked and no unambiguous cookie close/reject control is available.');
+      }
+    })
+    .then(($passwords) => {
+      const control = cookieControl($passwords);
+      if (control !== undefined) {
+        // Real UI interaction only. No force, DOM removal, storage seeding,
+        // accept-all control or automated age assertion.
+        cy.wrap(control, { log: false }).click({ log: false });
+        cy.then({ log: false }, () => { record('login-cookie-overlay', 'dismissed_via_visible_control'); });
+      }
+    });
 }
 
 function loginForm(): Cypress.Chainable<HTMLFormElement> {
   return cy.get('input[type="password"]', { log: false })
     .should(($passwords) => {
       if (availableLoginForm($passwords) === undefined) {
-        throw new Error(
-          'No unobscured login form is available. Inspect the visible dialog; do not bypass it with force:true.',
-        );
+        throw new Error('No unobscured login form is available after cookie handling.');
       }
     })
     .then(($passwords) => {
@@ -79,14 +104,10 @@ function containsProbe(value: unknown): boolean {
     if (text.startsWith('{')) {
       try { return containsProbe(JSON.parse(text) as unknown); } catch { return false; }
     }
-    return Array.from(new URLSearchParams(text).values()).some(
-      (item) => item === SYNTHETIC_IDENTIFIER,
-    );
+    return Array.from(new URLSearchParams(text).values()).some((item) => item === SYNTHETIC_IDENTIFIER);
   }
   if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-    return Object.values(value as Record<string, unknown>).some(
-      (item) => item === SYNTHETIC_IDENTIFIER,
-    );
+    return Object.values(value as Record<string, unknown>).some((item) => item === SYNTHETIC_IDENTIFIER);
   }
   return false;
 }
@@ -101,8 +122,11 @@ describe('swingerslife.cz public contract discovery', () => {
 
   it('records the public login form structure without submitting credentials', () => {
     cy.visit('/login', { failOnStatusCode: false, log: false });
-    optionalConsent();
-    loginForm().then((form) => {
+    // Structural inspection needs no click or consent interaction.
+    cy.get('input[type="password"]', { log: false }).first().then(($password) => {
+      const password = $password.get(0) as HTMLInputElement | undefined;
+      const form = password?.form;
+      if (form === undefined || form === null) throw new Error('No login form found for structural inspection.');
       const fields = Array.from(form.querySelectorAll('input'))
         .map((input) => input.name).filter((name) => name.length > 0).sort();
       const origin = form.ownerDocument.location.origin;
@@ -122,15 +146,12 @@ describe('swingerslife.cz public contract discovery', () => {
 
   it('observes one invalid synthetic login request without exposing request values', () => {
     cy.visit('/login', { failOnStatusCode: false, log: false });
-    optionalConsent();
+    dismissCookieOverlay();
     loginForm().then((form) => {
       const origin = form.ownerDocument.location.origin;
       if (new URL(form.action, origin).origin !== origin) {
         throw new Error('Refusing synthetic login probe because the form action is cross-origin.');
       }
-
-      // A React handler may submit to a different same-origin path. Alias only
-      // a request containing our synthetic identifier, never RSC prefetches.
       cy.intercept(`${origin}/**`, (req) => {
         if (!containsProbe(req.body) && !containsProbe(req.query)) return;
         req.alias = 'invalidLogin';
@@ -139,44 +160,30 @@ describe('swingerslife.cz public contract discovery', () => {
         const action = safeLoginAction(req.url, origin);
         req.continue((res) => {
           record('invalid-login-network', [
-            `method=${req.method.toUpperCase()}`,
-            `action=${action}`,
+            `method=${req.method.toUpperCase()}`, `action=${action}`,
             `request=${contentKind(req.headers['content-type'])}`,
-            `body_fields=[${bodyFields.join(',')}]`,
-            `query_fields=[${queryFields.join(',')}]`,
-            `status=${statusClass(res.statusCode)}`,
-            `response=${contentKind(res.headers['content-type'])}`,
+            `body_fields=[${bodyFields.join(',')}]`, `query_fields=[${queryFields.join(',')}]`,
+            `status=${statusClass(res.statusCode)}`, `response=${contentKind(res.headers['content-type'])}`,
           ].join(' '));
         });
       });
-
-      const identifier = Array.from(form.querySelectorAll<HTMLInputElement>(IDENTIFIER_SELECTOR))
-        .find(unobscured);
-      const password = Array.from(form.querySelectorAll<HTMLInputElement>('input[type="password"]'))
-        .find(unobscured);
-      if (identifier === undefined || password === undefined) {
-        throw new Error('Login inputs became unavailable before interaction.');
-      }
+      const identifier = Array.from(form.querySelectorAll<HTMLInputElement>(IDENTIFIER_SELECTOR)).find(unobscured);
+      const password = Array.from(form.querySelectorAll<HTMLInputElement>('input[type="password"]')).find(unobscured);
+      if (identifier === undefined || password === undefined) throw new Error('Login inputs became unavailable.');
       cy.wrap(identifier, { log: false }).clear({ log: false });
       cy.wrap(identifier, { log: false }).type(SYNTHETIC_IDENTIFIER, { log: false });
       cy.wrap(password, { log: false }).clear({ log: false });
       cy.wrap(password, { log: false }).type(SYNTHETIC_PASSWORD, { log: false });
-
       cy.then({ log: false }, () => {
         const submitter = Array.from(form.querySelectorAll<HTMLElement>(
           'button:not([type]), button[type="submit"], input[type="submit"]',
-        )).find((element) => Cypress.$(element).is(':visible'));
-        if (submitter === undefined) {
-          throw new Error('No visible login submit control found; refusing a guessed submission.');
-        }
+        )).find(unobscured);
+        if (submitter === undefined) throw new Error('No available login submit control found.');
         cy.wrap(submitter, { log: false }).click({ log: false });
       });
     });
-
     cy.wait('@invalidLogin', { log: false }).then((interception) => {
-      if (interception.response === undefined) {
-        throw new Error('The synthetic login request did not receive an HTTP response.');
-      }
+      if (interception.response === undefined) throw new Error('The synthetic login request did not receive an HTTP response.');
     });
     cy.getCookies({ log: false }).then((cookies) => {
       const kinds = cookieKinds(cookies.map((cookie) => cookie.name));
