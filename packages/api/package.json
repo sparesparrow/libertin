@@ -27,9 +27,11 @@
     "msw": "^2.6.4"
   },
   "devDependencies": {
-    "typescript": "*"
+    "typescript": "*",
+    "vitest": "^3.2.7"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run --config vitest.config.ts"
   }
 }

@@ -1,7 +1,13 @@
 name: Live contract audit (temporary)
 
 on:
+  # The live synthetic login probe is costly external evidence. Run it only
+  # when its test is deliberately changed or when manually dispatched; unrelated
+  # implementation/documentation PRs must not contact the production site.
   pull_request:
+    paths:
+      - 'apps/e2e/cypress/e2e/live-contract/**'
+  workflow_dispatch:
 
 permissions:
   contents: read
