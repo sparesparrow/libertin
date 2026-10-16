@@ -2,6 +2,10 @@ import type { NetworkMode } from './runtimeConfig';
 
 export type PostLoginStep = 'success' | 'verify' | 'blocked';
 
+export function supportsFrozenContractNetwork(networkMode: NetworkMode): boolean {
+  return networkMode === 'mock';
+}
+
 export function nextStepAfterLogin(verified: boolean, networkMode: NetworkMode): PostLoginStep {
   if (verified) return 'success';
   return networkMode === 'mock' ? 'verify' : 'blocked';

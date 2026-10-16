@@ -13,7 +13,9 @@ export default function App() {
   useEffect(() => {
     const useMocks = runtimeConfig.networkMode === 'mock';
     if (useMocks) {
-      server.listen({ onUnhandledRequest: 'bypass' });
+      // Mock preview builds must be hermetic. An unhandled request is a test
+      // failure, not permission to leak onto a guessed or production host.
+      server.listen({ onUnhandledRequest: 'error' });
     }
 
     let active = true;

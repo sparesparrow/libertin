@@ -8,10 +8,19 @@ import {
   VerifyEmailScreen,
   type FeedScreenItem,
 } from '@libertin/ui/native';
-import { completeFeedLoad, nextStepAfterLogin } from './authFlowLogic';
+import {
+  completeFeedLoad,
+  nextStepAfterLogin,
+  supportsFrozenContractNetwork,
+} from './authFlowLogic';
 import { runtimeConfig } from './runtimeConfig';
 
-const client = createClient(runtimeConfig.apiBaseUrl);
+// The frozen JSON/bearer contract is a mock/demo contract until the live
+// swingerslife.cz session flow is reproduced safely. Never point it at a live
+// base URL merely because one was configured.
+const client = supportsFrozenContractNetwork(runtimeConfig.networkMode)
+  ? createClient(runtimeConfig.apiBaseUrl)
+  : null;
 
 type Step = 'login' | 'verify' | 'success' | 'onboarding' | 'feed';
 
@@ -24,8 +33,14 @@ export function AuthFlow() {
   const [feed, setFeed] = useState<FeedScreenItem[]>([]);
 
   const handleLogin = useCallback(async (inputEmail: string, password: string) => {
-    setLoading(true);
     setError(undefined);
+    if (client === null) {
+      setToken('');
+      setError('Živý backend zatím nemá bezpečně ověřený přihlašovací kontrakt.');
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await client.auth.login({ email: inputEmail, password });
       const nextStep = nextStepAfterLogin(res.user.verified, runtimeConfig.networkMode);
@@ -60,8 +75,13 @@ export function AuthFlow() {
   }, []);
 
   const handleFinish = useCallback(async () => {
-    setLoading(true);
     setError(undefined);
+    if (client === null) {
+      setError('Živý feed zatím nemá bezpečně ověřený kontrakt.');
+      return;
+    }
+
+    setLoading(true);
     try {
       const result = await completeFeedLoad(() => client.feed.get({ page: 1, limit: 20 }, token));
       setFeed(result.items);
