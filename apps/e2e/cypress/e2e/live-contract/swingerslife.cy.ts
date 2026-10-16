@@ -5,7 +5,9 @@ import { contentKind, cookieKinds, requestFieldNames, safeLoginAction, statusCla
 
 const MODULE = 'live-contract';
 const ROUTE = 'swingerslife.cz';
-const SYNTHETIC_IDENTIFIER = 'libertin_contract_probe_nonexistent_20261016';
+// Short and alphanumeric so client-side validation or maxlength cannot reject or
+// truncate it. The request is matched on the value the field actually holds.
+const SYNTHETIC_IDENTIFIER = 'lcprobe20261016x';
 const SYNTHETIC_PASSWORD = 'contract-probe-invalid-password';
 const IDENTIFIER_SELECTOR =
   'input:not([type="hidden"]):not([type="password"]):not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"])';
@@ -100,18 +102,55 @@ function loginForm(): Cypress.Chainable<JQuery<HTMLFormElement>> {
     });
 }
 
-function containsProbe(value: unknown): boolean {
-  if (typeof value === 'string') {
-    const text = value.trim();
-    if (text.startsWith('{')) {
-      try { return containsProbe(JSON.parse(text) as unknown); } catch { return false; }
-    }
-    return Array.from(new URLSearchParams(text).values()).some((item) => item === SYNTHETIC_IDENTIFIER);
+function bodyText(body: unknown): string {
+  if (typeof body === 'string') return body;
+  if (body instanceof ArrayBuffer) return new TextDecoder().decode(body);
+  if (ArrayBuffer.isView(body)) return new TextDecoder().decode(body);
+  if (body !== null && typeof body === 'object') {
+    try { return JSON.stringify(body); } catch { return ''; }
   }
-  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-    return Object.values(value as Record<string, unknown>).some((item) => item === SYNTHETIC_IDENTIFIER);
+  return '';
+}
+
+function bodyShape(contentType: unknown, text: string): string {
+  const kind = contentKind(contentType);
+  if (kind === 'multipart') return 'multipart';
+  if (kind === 'form') return 'urlencoded';
+  const trimmed = text.trim();
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      return Array.isArray(parsed) ? `json-array(${parsed.length})` : 'json';
+    } catch { return 'text'; }
   }
-  return false;
+  if (trimmed.startsWith('{')) return 'json-object';
+  return trimmed ? 'text' : 'empty';
+}
+
+function multipartNames(text: string): string[] {
+  const names = new Set<string>();
+  const pattern = /name="([^"]+)"/g;
+  let match = pattern.exec(text);
+  while (match !== null) {
+    if (match[1]) names.add(match[1]);
+    match = pattern.exec(text);
+  }
+  return Array.from(names).sort();
+}
+
+// Host and path are public facts of the site. Numeric and hash-like path
+// segments are replaced so identifiers never reach the report.
+function safePath(url: string, origin: string): string {
+  try {
+    const parsed = new URL(url);
+    const path = parsed.pathname
+      .split('/')
+      .map((segment) => (/^(\d+|[0-9a-f]{8,}|[0-9a-f-]{36})$/i.test(segment) ? ':id' : segment))
+      .join('/');
+    return parsed.origin === origin ? path : `cross-origin:${parsed.hostname}${path}`;
+  } catch {
+    return 'invalid';
+  }
 }
 
 describe('swingerslife.cz public contract discovery', () => {
@@ -153,24 +192,41 @@ describe('swingerslife.cz public contract discovery', () => {
       const form = $form.get(0) as HTMLFormElement | undefined;
       if (form === undefined) throw new Error('Login form disappeared before interaction.');
       const origin = form.ownerDocument.location.origin;
-      if (new URL(form.action, origin).origin !== origin) {
-        throw new Error('Refusing synthetic login probe because the form action is cross-origin.');
-      }
-      cy.intercept(`${origin}/**`, (req) => {
-        if (!containsProbe(req.body) && !containsProbe(req.query)) return;
-        req.alias = 'invalidLogin';
-        const bodyFields = requestFieldNames(req.body);
+      let probeToken = '';
+      let clicked = false;
+
+      // Observe every request after the click, not only same-origin ones: the
+      // login may be a server action or call another host. A probe request is
+      // recognised by the value the field actually holds, in the raw body or URL.
+      cy.intercept('**', (req) => {
+        if (!clicked || req.method === 'OPTIONS') return;
+        const text = bodyText(req.body);
+        let url = req.url;
+        try { url = decodeURIComponent(req.url); } catch { /* keep the raw URL */ }
+        const isProbe = probeToken !== '' && (text.includes(probeToken) || url.includes(probeToken));
+        if (!isProbe && req.method.toUpperCase() === 'GET') return;
+        if (isProbe) req.alias = 'invalidLogin';
+
+        const shape = bodyShape(req.headers['content-type'], text);
+        const fields = shape === 'multipart' ? multipartNames(text) : requestFieldNames(req.body);
         const queryFields = Object.keys(req.query ?? {}).sort();
-        const action = safeLoginAction(req.url, origin);
+        const path = safePath(req.url, origin);
+        const nextAction = 'next-action' in req.headers ? 'present' : 'absent';
         req.continue((res) => {
-          record('invalid-login-network', [
-            `method=${req.method.toUpperCase()}`, `action=${action}`,
+          record(isProbe ? 'invalid-login-network' : 'post-click-request', [
+            `method=${req.method.toUpperCase()}`,
+            `path=${path}`,
             `request=${contentKind(req.headers['content-type'])}`,
-            `body_fields=[${bodyFields.join(',')}]`, `query_fields=[${queryFields.join(',')}]`,
-            `status=${statusClass(res.statusCode)}`, `response=${contentKind(res.headers['content-type'])}`,
+            `shape=${shape}`,
+            `fields=[${fields.join(',')}]`,
+            `query_fields=[${queryFields.join(',')}]`,
+            `next_action=${nextAction}`,
+            `status=${statusClass(res.statusCode)}`,
+            `response=${contentKind(res.headers['content-type'])}`,
           ].join(' '));
         });
       });
+
       const identifier = Array.from(form.querySelectorAll<HTMLInputElement>(IDENTIFIER_SELECTOR)).find(unobscured);
       const password = Array.from(form.querySelectorAll<HTMLInputElement>('input[type="password"]')).find(unobscured);
       if (identifier === undefined || password === undefined) throw new Error('Login inputs became unavailable.');
@@ -179,10 +235,17 @@ describe('swingerslife.cz public contract discovery', () => {
       cy.wrap(password, { log: false }).clear({ log: false });
       cy.wrap(password, { log: false }).type(SYNTHETIC_PASSWORD, { log: false });
       cy.then(() => {
+        probeToken = identifier.value;
+        if (probeToken.length < 8) {
+          throw new Error('The typed login identifier is too short to recognise the probe request.');
+        }
+        record('login-probe-input', `identifier_length=${probeToken.length} maxlength=${identifier.maxLength}`);
         const submitter = Array.from(form.querySelectorAll<HTMLElement>(
           'button:not([type]), button[type="submit"], input[type="submit"]',
         )).find(unobscured);
         if (submitter === undefined) throw new Error('No available login submit control found.');
+        record('login-submit-control', `tag=${submitter.tagName.toLowerCase()} type=${submitter.getAttribute('type') ?? 'none'}`);
+        clicked = true;
         cy.wrap(submitter, { log: false }).click({ log: false });
       });
     });
