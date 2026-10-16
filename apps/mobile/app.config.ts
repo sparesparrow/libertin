@@ -40,7 +40,11 @@ export function buildConfig(config: Partial<ExpoConfig>, env: Env): ExpoConfig {
     name: config.name ?? 'Libertin',
     slug: config.slug ?? 'libertin',
     version: appVersion ?? config.version ?? '1.0.0',
-    plugins: [...(config.plugins ?? []), './plugins/withReleaseSigning'],
+    plugins: [
+      ...(config.plugins ?? []),
+      './plugins/withReleaseSigning',
+      './plugins/withKotlinVersion',
+    ],
     android: {
       ...config.android,
       package: androidPackage,

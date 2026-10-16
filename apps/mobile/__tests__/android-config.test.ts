@@ -7,6 +7,12 @@ const { patchBuildGradle } = require('../plugins/patchBuildGradle.js') as {
   patchBuildGradle: (source: string) => string;
 };
 
+type PropertyItem = { type: string; key?: string; value?: string };
+const { setGradleProperty, pinKotlinGradlePlugin } = require('../plugins/patchKotlin.js') as {
+  setGradleProperty: (items: PropertyItem[], key: string, value: string) => PropertyItem[];
+  pinKotlinGradlePlugin: (source: string, version: string) => string;
+};
+
 const base = { name: 'Libertin', slug: 'libertin', version: '1.0.0' };
 
 describe('buildConfig', () => {
@@ -57,9 +63,13 @@ describe('buildConfig', () => {
     );
   });
 
-  it('registers the release signing plugin once, keeping existing plugins', () => {
+  it('registers the native build plugins, keeping existing plugins', () => {
     const config = buildConfig({ ...base, plugins: ['expo-status-bar'] }, {});
-    expect(config.plugins).toEqual(['expo-status-bar', './plugins/withReleaseSigning']);
+    expect(config.plugins).toEqual([
+      'expo-status-bar',
+      './plugins/withReleaseSigning',
+      './plugins/withKotlinVersion',
+    ]);
   });
 });
 
@@ -115,5 +125,50 @@ describe('patchBuildGradle', () => {
   it('fails loudly when the release build type no longer uses the debug key', () => {
     const changed = 'android { signingConfigs { debug {} } buildTypes { release { minifyEnabled true } } }';
     expect(() => patchBuildGradle(changed)).toThrow(/release build type/);
+  });
+});
+
+describe('setGradleProperty', () => {
+  it('adds a missing property and keeps the others', () => {
+    const items = [
+      { type: 'comment', value: 'Project-wide settings' },
+      { type: 'property', key: 'org.gradle.jvmargs', value: '-Xmx2048m' },
+    ];
+    const result = setGradleProperty(items, 'android.kotlinVersion', '1.9.25');
+    expect(result).toEqual([
+      ...items,
+      { type: 'property', key: 'android.kotlinVersion', value: '1.9.25' },
+    ]);
+  });
+
+  it('replaces an existing value without duplicating the key', () => {
+    const items = [{ type: 'property', key: 'android.kotlinVersion', value: '1.9.24' }];
+    const result = setGradleProperty(items, 'android.kotlinVersion', '1.9.25');
+    expect(result).toEqual([{ type: 'property', key: 'android.kotlinVersion', value: '1.9.25' }]);
+  });
+
+  it('does not mutate its input', () => {
+    const items = [{ type: 'property', key: 'a', value: '1' }];
+    setGradleProperty(items, 'b', '2');
+    expect(items).toHaveLength(1);
+  });
+});
+
+describe('pinKotlinGradlePlugin', () => {
+  it('pins an unversioned Kotlin Gradle plugin classpath entry', () => {
+    const source = "dependencies {\n    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')\n}";
+    expect(pinKotlinGradlePlugin(source, '1.9.25')).toBe(
+      "dependencies {\n    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25')\n}",
+    );
+  });
+
+  it('leaves an already versioned entry alone', () => {
+    const source = "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24')";
+    expect(pinKotlinGradlePlugin(source, '1.9.25')).toBe(source);
+  });
+
+  it('leaves sources without the entry alone', () => {
+    const source = 'dependencies { }';
+    expect(pinKotlinGradlePlugin(source, '1.9.25')).toBe(source);
   });
 });
