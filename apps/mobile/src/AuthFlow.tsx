@@ -8,10 +8,9 @@ import {
   VerifyEmailScreen,
   type FeedScreenItem,
 } from '@libertin/ui/native';
+import { runtimeConfig } from './runtimeConfig';
 
-// Matches the base URL the MSW handlers intercept.
-const API_BASE = 'https://api.libertin.cz/v1';
-const client = createClient(API_BASE);
+const client = createClient(runtimeConfig.apiBaseUrl);
 
 type Step = 'login' | 'verify' | 'success' | 'onboarding' | 'feed';
 

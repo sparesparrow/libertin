@@ -5,22 +5,24 @@ import { nativeTheme } from '@libertin/theme/native';
 import { initI18n } from '@libertin/i18n';
 import { AuthFlow } from './AuthFlow';
 import { server } from './mocks/native';
+import { runtimeConfig } from './runtimeConfig';
 
 export default function App() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Boot offline against MSW mocks in development.
-    if (__DEV__) {
+    const useMocks = runtimeConfig.networkMode === 'mock';
+    if (useMocks) {
       server.listen({ onUnhandledRequest: 'bypass' });
     }
+
     let active = true;
     void initI18n('cs').then(() => {
       if (active) setReady(true);
     });
     return () => {
       active = false;
-      if (__DEV__) server.close();
+      if (useMocks) server.close();
     };
   }, []);
 
