@@ -1,5 +1,5 @@
-# Android — verify, debug build on pull requests, signed release to Google Play.
-# Setup, secrets and known limits: docs/android-release.md
+# Android — verification, standalone PR preview, signed AAB build, protected Play handoff.
+# Setup, secrets, current Play blockers and known limits: docs/android-release.md
 name: Android
 
 on:
@@ -14,12 +14,16 @@ on:
       - 'android-v*'
   workflow_dispatch:
     inputs:
-      release:
-        description: 'Build a signed AAB and upload it to Google Play (main branch only)'
+      build_release:
+        description: 'Build a signed release AAB from main (does not publish)'
+        type: boolean
+        default: false
+      publish:
+        description: 'Attempt the separately protected Google Play draft step (currently eligibility-blocked)'
         type: boolean
         default: false
       track:
-        description: 'Google Play track (production is promoted manually in Play Console)'
+        description: 'Google Play track; production promotion remains manual in Play Console'
         type: choice
         options:
           - internal
@@ -56,14 +60,18 @@ jobs:
       - name: test
         run: pnpm exec vitest run apps/mobile
 
-  # Proves the native project builds. Needs no secrets, so it also runs for
-  # pull requests from forks.
-  debug-apk:
-    name: build (debug APK)
+  # Installable PR artifact with the JS bundle embedded. It is deliberately a
+  # mock-backed preview, under a package id distinct from any Play application,
+  # and is signed with a disposable key generated inside this job.
+  preview-apk:
+    name: build (standalone mock preview APK)
     needs: verify
-    if: github.event_name != 'push'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      PREVIEW_PACKAGE: cz.libertin.preview
+      EXPO_PUBLIC_NETWORK_MODE: mock
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -76,33 +84,105 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
+
       # React Native's Gradle autolinking does not cope with pnpm's isolated
       # node_modules (.npmrc: shamefully-hoist=false). The lockfile is
       # linker-independent, so a hoisted install is valid for this job only.
       - name: pnpm install (hoisted)
         run: pnpm install --frozen-lockfile --config.node-linker=hoisted
-      - name: expo prebuild (android)
+
+      - name: create disposable preview signing key
+        env:
+          STORE: ${{ runner.temp }}/libertin-preview.p12
+        run: |
+          set -euo pipefail
+          keytool -genkeypair -noprompt \
+            -storetype PKCS12 \
+            -keystore "$STORE" \
+            -storepass preview-only-password \
+            -keypass preview-only-password \
+            -alias libertin-preview \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 30 \
+            -dname 'CN=Libertin Preview,O=CI,C=CZ'
+
+      - name: expo prebuild (preview android)
+        env:
+          ANDROID_PACKAGE: ${{ env.PREVIEW_PACKAGE }}
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
         run: pnpm --filter @libertin/mobile exec expo prebuild --platform android --no-install --clean
-      - name: gradle assembleDebug
+
+      - name: gradle assembleRelease (embedded JS)
         working-directory: apps/mobile/android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        env:
+          LIBERTIN_UPLOAD_STORE_FILE: ${{ runner.temp }}/libertin-preview.p12
+          LIBERTIN_UPLOAD_STORE_PASSWORD: preview-only-password
+          LIBERTIN_UPLOAD_KEY_ALIAS: libertin-preview
+          LIBERTIN_UPLOAD_KEY_PASSWORD: preview-only-password
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: verify standalone preview artifact
+        env:
+          EXPECTED_PACKAGE: ${{ env.PREVIEW_PACKAGE }}
+        run: |
+          set -euo pipefail
+          apk='apps/mobile/android/app/build/outputs/apk/release/app-release.apk'
+          test -f "$apk"
+
+          if ! unzip -l "$apk" | grep -q 'assets/index.android.bundle'; then
+            echo '::error::Release APK is missing assets/index.android.bundle and may require Metro.'
+            exit 1
+          fi
+
+          aapt="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
+          if [ -z "$aapt" ]; then
+            echo '::error::Could not locate aapt to verify the preview application id.'
+            exit 1
+          fi
+          actual_package="$("$aapt" dump badging "$apk" | sed -n "s/^package: name='\([^']*\)'.*/\1/p" | head -1)"
+          if [ "$actual_package" != "$EXPECTED_PACKAGE" ]; then
+            echo "::error::Preview package mismatch: expected $EXPECTED_PACKAGE, got $actual_package"
+            exit 1
+          fi
+
+          apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
+          if [ -z "$apksigner" ]; then
+            echo '::error::Could not locate apksigner to verify the disposable preview signature.'
+            exit 1
+          fi
+          "$apksigner" verify --verbose --print-certs "$apk" | tee "$RUNNER_TEMP/preview-signature.txt"
+          grep -q 'CN=Libertin Preview' "$RUNNER_TEMP/preview-signature.txt"
+
+          printf 'mode=mock\npackage=%s\nstandalone_bundle=assets/index.android.bundle\n' \
+            "$actual_package" > "$RUNNER_TEMP/preview-metadata.txt"
+
       - uses: actions/upload-artifact@v4
         with:
-          name: libertin-debug-apk
-          path: apps/mobile/android/app/build/outputs/apk/debug/*.apk
+          name: libertin-preview-mock-apk
+          path: |
+            apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+            ${{ runner.temp }}/preview-metadata.txt
           if-no-files-found: error
           retention-days: 7
 
-  release:
-    name: release (Google Play)
+  # Builds a production-signed AAB only. It does NOT publish to Google Play.
+  # Live mode has no default backend: both package id and verified API base URL
+  # must be configured explicitly in the protected play-release environment.
+  release-aab:
+    name: release (build signed AAB only)
     needs: verify
     if: >-
       startsWith(github.ref, 'refs/tags/android-v') ||
-      (github.event_name == 'workflow_dispatch' && inputs.release == true && github.ref == 'refs/heads/main')
+      (github.event_name == 'workflow_dispatch' &&
+       (inputs.build_release == true || inputs.publish == true) &&
+       github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    # Configure required reviewers on this environment. Secrets live here too.
     environment: play-release
+    env:
+      EXPO_PUBLIC_NETWORK_MODE: live
+      EXPO_PUBLIC_API_BASE_URL: ${{ vars.LIBERTIN_API_BASE_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -117,6 +197,20 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: pnpm install (hoisted)
         run: pnpm install --frozen-lockfile --config.node-linker=hoisted
+
+      - name: require explicit release identity and verified API base
+        env:
+          ANDROID_PACKAGE: ${{ vars.ANDROID_PACKAGE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANDROID_PACKAGE:-}" ]; then
+            echo '::error::ANDROID_PACKAGE repository/environment variable is required for a release build.'
+            exit 1
+          fi
+          if [ -z "${EXPO_PUBLIC_API_BASE_URL:-}" ]; then
+            echo '::error::LIBERTIN_API_BASE_URL must be configured from verified live-contract evidence.'
+            exit 1
+          fi
 
       - name: resolve version
         id: version
@@ -127,7 +221,7 @@ jobs:
           OFFSET: ${{ vars.ANDROID_VERSION_CODE_OFFSET }}
         run: |
           set -euo pipefail
-          if [ "$REF_TYPE" = "tag" ]; then
+          if [ "$REF_TYPE" = 'tag' ]; then
             version="${REF_NAME#android-v}"
             if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
               echo "::error::Tag must look like android-v1.2.3, got $REF_NAME"
@@ -143,7 +237,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "::error::ANDROID_KEYSTORE_BASE64 is not set"
+            echo '::error::ANDROID_KEYSTORE_BASE64 is not set'
             exit 1
           fi
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.keystore"
@@ -169,17 +263,17 @@ jobs:
           EXPECTED_SHA256: ${{ vars.ANDROID_UPLOAD_CERT_SHA256 }}
         run: |
           set -euo pipefail
-          aab="apps/mobile/android/app/build/outputs/bundle/release/app-release.aab"
+          aab='apps/mobile/android/app/build/outputs/bundle/release/app-release.aab'
           out="$(keytool -printcert -jarfile "$aab")"
           echo "$out"
           if grep -q 'CN=Android Debug' <<<"$out"; then
-            echo "::error::The bundle is signed with the debug key"
+            echo '::error::The bundle is signed with the debug key'
             exit 1
           fi
           if [ -n "${EXPECTED_SHA256:-}" ]; then
             actual="$(grep -m1 'SHA256:' <<<"$out" | awk '{print $2}')"
             if [ "$actual" != "$EXPECTED_SHA256" ]; then
-              echo "::error::Upload certificate fingerprint mismatch"
+              echo '::error::Upload certificate fingerprint mismatch'
               exit 1
             fi
           fi
@@ -191,11 +285,40 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  # Separate protected handoff. It is intentionally blocked while Expo SDK 52
+  # targets API 34: since 2026-08-31 Google Play requires API 36 for new apps
+  # and updates. Remove this gate only in the PR that proves targetSdk >= 36 and
+  # completes the outstanding Play policy/store configuration.
+  publish-play:
+    name: publish (Google Play draft — eligibility gate)
+    needs: release-aab
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.publish == true &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: play-release
+    steps:
+      - name: current Play eligibility gate
+        run: |
+          echo '::error::Google Play submission is intentionally blocked: Expo SDK 52 targets API 34; Google Play requires API 36 for new apps and updates since 2026-08-31.'
+          exit 1
+
+      # Kept behind the hard gate above so the release capability is explicit
+      # without allowing this PR to submit anything to the store.
+      - uses: actions/download-artifact@v4
+        if: ${{ false }}
+        with:
+          name: libertin-release-aab
+          path: dist
+
       - name: upload to Google Play
-        uses: r0adkll/upload-google-play@v1
+        if: ${{ false }}
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: ${{ vars.ANDROID_PACKAGE || 'cz.libertin.app' }}
-          releaseFiles: apps/mobile/android/app/build/outputs/bundle/release/app-release.aab
-          track: ${{ inputs.track || 'internal' }}
+          packageName: ${{ vars.ANDROID_PACKAGE }}
+          releaseFiles: dist/app-release.aab
+          track: ${{ inputs.track }}
           status: draft

@@ -1,46 +1,118 @@
-# Android: sestavení a vydání do Google Play
+# Android: sestavení, preview a release safety
 
-Status: návrh implementace. Workflow ani konfigurace nebyly spuštěny. První běh CI pravděpodobně vyžádá úpravy, hlavně kvůli pnpm a Gradle (viz Rizika).
+Status: implementováno v GitHub Actions; **Google Play publikace je záměrně zablokovaná**.  
+Poslední aktualizace: 2026-10-16.
 
-## Co CI dělá
+## Co workflow dělá
 
 | Job | Kdy | Co |
 |---|---|---|
-| verify | PR, tag, ručně | type-check mobilní aplikace a závislostí, testy `apps/mobile` |
-| debug-apk | PR, ručně | `expo prebuild` + `assembleDebug`, APK jako artefakt, bez tajemství |
-| release | tag `android-vX.Y.Z` nebo ručně z `main` | podepsané AAB, kontrola podpisu, nahrání do Google Play (`draft`) |
+| `verify` | PR, release build | frozen-lockfile install, mobile dependency type-check, mobile Vitest |
+| `preview-apk` | PR | release-mode APK s vloženým JS bundlem, explicitní mock režim, package `cz.libertin.preview`, jednorázový CI podpis |
+| `release-aab` | tag `android-vX.Y.Z` nebo ručně z `main` | pouze podepsaný AAB artefakt; live režim vyžaduje explicitní ověřený API base a production package |
+| `publish-play` | pouze ručně z `main` s `publish=true` | samostatný chráněný Play krok; dnes vždy skončí na eligibility gate a nic neodešle |
 
-Nativní projekt `apps/mobile/android/` se negeneruje do gitu, vzniká v CI přes `expo prebuild`. Release nikdy nenahrává na track `production`; povyšování dělá člověk v Play Console.
+Preview není debug build. Workflow spouští `assembleRelease` a následně ověří, že APK obsahuje `assets/index.android.bundle`, má package id `cz.libertin.preview` a je podepsané disposable certifikátem `Libertin Preview`. Nemá tedy potřebovat Metro na `localhost:8081`.
 
-## Jednorázová příprava
+Preview je záměrně **mock-backed demo**. `EXPO_PUBLIC_NETWORK_MODE=mock` je nastavené explicitně. Release AAB je naopak `live` a build se zastaví, pokud není nakonfigurován `LIBERTIN_API_BASE_URL`; žádný odhadovaný backend se nepoužije jako fallback.
 
-1. **Application id.** Výchozí je `cz.libertin.app` (`apps/mobile/app.config.ts`). Po prvním nahrání se nedá změnit, rozhodnutí patří vlastníkovi. Jiné id nastav v repo variable `ANDROID_PACKAGE` a změň i výchozí hodnotu v `app.config.ts` a ve workflow.
-2. **Upload keystore.** `keytool -genkeypair -v -storetype PKCS12 -keystore upload.keystore -alias libertin-upload -keyalg RSA -keysize 2048 -validity 10000`. Soubor nikdy necommituj. `base64 -w0 upload.keystore` dá hodnotu pro secret.
-3. **Secrets v environment `play-release`:** `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, `PLAY_SERVICE_ACCOUNT_JSON`. Environment nastav s povinným schválením.
-4. **Variables:** `ANDROID_UPLOAD_CERT_SHA256` (otisk z `keytool -list -v`, workflow podle něj ověří podpis), `ANDROID_VERSION_CODE_OFFSET` (viz níže), volitelně `ANDROID_PACKAGE`.
-5. **Play Console.** Vytvoř aplikaci, zapni Play App Signing (ztráta upload klíče je pak řešitelná) a **první verzi nahraj ručně** na interní testování. API upload nové aplikace bez prvního ručního vydání neprojde.
-6. **Servisní účet.** V Google Cloud zapni Google Play Android Developer API, vytvoř servisní účet a JSON klíč. V Play Console ho pozvi do Users and permissions s právem vydávat tuto aplikaci.
-7. **versionCode** je `github.run_number + ANDROID_VERSION_CODE_OFFSET`. Offset nastav nad nejvyšší ručně nahraný versionCode, jinak Play nahrání odmítne.
+## Runtime konfigurace
 
-## Vydání
+Mobil rozlišuje dva režimy:
 
-- Tag: `git tag android-v0.1.0 && git push origin android-v0.1.0`. Název tagu určí `versionName`.
-- Ručně: Actions, Android, Run workflow, `release=true`, track `internal`, `alpha` nebo `beta`. Funguje jen z `main`.
+- `mock` — lokální MSW kontrakt pro demo/preview;
+- `live` — vyžaduje `EXPO_PUBLIC_API_BASE_URL` jako validní HTTPS URL bez credentials, query nebo fragmentu.
 
-## Lokální reprodukce
+`EXPO_PUBLIC_*` hodnoty jsou součástí JS bundle. **Nikdy do nich nepatří hesla, cookies, bearer tokeny, CSRF tokeny ani jiné secrets.**
+
+Dokud není bezpečně zopakován autentizovaný live audit, `docs/live-contract-discovery.md` výslovně označuje skutečný auth/feed/profile kontrakt jako neověřený.
+
+## Jednorázová příprava produkčního AAB
+
+Protected environment `play-release` musí mít required reviewers a následující hodnoty:
+
+Secrets:
+
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
+- `PLAY_SERVICE_ACCOUNT_JSON` — používá ho až samostatný publish krok
+
+Variables:
+
+- `ANDROID_PACKAGE` — bez fallbacku v release jobu; vlastník musí potvrdit finální Play application id
+- `ANDROID_UPLOAD_CERT_SHA256`
+- `ANDROID_VERSION_CODE_OFFSET`
+- `LIBERTIN_API_BASE_URL` — pouze URL potvrzená live-contract auditem
+
+Upload keystore se nesmí commitovat. Play App Signing je doporučené; první Play verze a store konfigurace vyžadují ruční nastavení v Play Console.
+
+## Aktuální Google Play blocker — target SDK
+
+Od **31. 8. 2026** musí nové aplikace a aktualizace pro běžný Android cílit na **Android 16 / API level 36 nebo vyšší**:
+
+- https://developer.android.com/google/play/requirements/target-sdk
+
+Expo SDK 52 používá React Native 0.76 a má `targetSdkVersion 34` (compile SDK 35):
+
+- https://docs.expo.dev/versions/v54.0.0/ (tabulka kompatibility SDK verzí)
+- https://expo.dev/changelog/2024-11-12-sdk-52
+
+Proto současný projekt může sestavit AAB, ale **není dnes způsobilý k novému Play submissionu**. `publish-play` obsahuje hard failure před upload akcí. Tuto bránu je možné odstranit až v PR, které:
+
+1. upgraduje Expo/React Native nebo jinak prokazatelně nastaví `targetSdkVersion >= 36` podporovaným způsobem;
+2. úspěšně sestaví a otestuje nový native build;
+3. znovu ověří Kotlin/Compose kompatibilitu;
+4. dokončí níže uvedené Play policy/store požadavky.
+
+## Google Play policy / store readiness
+
+Technický build sám o sobě nestačí. Libertin je social/dating/UGC aplikace pro dospělé a před store submissionem je nutné samostatně ověřit zejména:
+
+- Inappropriate Content / sexual content policy;
+- Age-Restricted Content and Functionality a ochranu nezletilých u dating/matchmaking funkcí;
+- User Generated Content: moderace, in-app reporting a blokování uživatelů;
+- Child Safety Standards pro social/dating aplikace;
+- Privacy policy a správný Data safety formulář;
+- content rating a další App content declarations;
+- store listing, ikony, screenshots a support/privacy URL.
+
+Oficiální zdroje:
+
+- https://support.google.com/googleplay/android-developer/answer/9878810
+- https://support.google.com/googleplay/android-developer/answer/9876937
+- https://support.google.com/googleplay/android-developer/answer/16838200
+- https://support.google.com/googleplay/android-developer/answer/10787469
+
+Současný PR tyto produktové/policy podmínky neprohlašuje za splněné.
+
+## Kotlin / Compose
+
+Expo SDK 52 v tomto repozitáři narazilo na Compose Compiler 1.5.15 vs Kotlin 1.9.24. Plugin `withKotlinVersion` pinuje Kotlin 1.9.25. Předchozí Android CI po tomto pinu úspěšně dokončilo `expo prebuild` a `assembleDebug`; nový standalone preview musí tento výsledek znovu prokázat přes `assembleRelease`.
+
+Pin se nesmí obejít vypnutím compatibility checku. Při budoucím Expo upgradu se má odstranit až po zeleném native buildu.
+
+## Lokální reprodukce preview
+
+Bez produkčních secrets lze reprodukovat princip preview takto (keystore je pouze disposable testovací):
 
 ```bash
 pnpm install --frozen-lockfile --config.node-linker=hoisted
+export EXPO_PUBLIC_NETWORK_MODE=mock
+export ANDROID_PACKAGE=cz.libertin.preview
 pnpm --filter @libertin/mobile exec expo prebuild --platform android --no-install --clean
-cd apps/mobile/android && ./gradlew assembleDebug
+# Vytvoř dočasný test keystore a nastav LIBERTIN_UPLOAD_* proměnné.
+cd apps/mobile/android
+./gradlew assembleRelease --no-daemon --stacktrace
 ```
 
-Hoisted instalace změní rozložení `node_modules`. Pro běžnou práci spusť pak znovu obyčejný `pnpm install`.
+Nativní projekt `apps/mobile/android/` je generovaný a necommitovaný.
 
-## Rizika a co není hotové
+## Co není ověřeno / hotovo
 
-- **Neověřeno.** Nic z toho nebylo spuštěno. Největší riziko je React Native Gradle v pnpm monorepu (`shamefully-hoist=false`) a záplata podpisu `plugins/patchBuildGradle.js`, která závisí na šabloně Expo SDK 52. Při neshodě spadne build, nepodepí se tiše debug klíčem.
-- **Backend.** Aplikace míří na `https://api.libertin.cz/v1` a backend je podle backlogu blokován rozhodnutím D-003. Ověřit, zda release build nespouští MSW mocky, před nahráním komukoli mimo tým.
-- **Pravidla Google Play.** Aplikace se sexuální tematikou a seznamovací funkce podléhají pravidlům obchodu. Před veřejným vydáním je potřeba politika soukromí, formulář bezpečnosti dat, hodnocení obsahu a cílová skupina.
-- **Chybí:** ikona a adaptivní ikona, snímky obrazovky a popis aplikace, iOS, ekvivalent pro GitLab CI (D-002). Oprávnění ke kontaktům je zablokované, dokud funkce kontaktního dosahu není schválený rozsah.
-- **Akce r0adkll/upload-google-play@v1** je připnutá na značku. Pro přínos pin na commit SHA.
+- Autentizovaný Cypress audit skutečného swingerslife.cz backendu nebylo možné v tomto execution environment bezpečně spustit; viz `docs/live-contract-discovery.md`.
+- Reálný native cookie/session nebo bearer adapter proto ještě není implementován — jeho implementace bez capture by byla guesswork.
+- Release AAB nebyl v tomto PR spuštěn, protože chráněné production signing secrets nejsou součástí PR jobu.
+- GitLab Android runner parity není provedena. `.gitlab-ci.yml` zůstává neexecuted podle D-002; nepředstíráme zelený GitLab build.
+- Google Play submission je hard-blocked a tento PR nic do Play neodesílá.
