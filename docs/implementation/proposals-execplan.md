@@ -80,8 +80,10 @@ PR 12 remains an independent documentation PR.
   synthetic contact-audience slice: a pure helper over outgoing directed
   author-to-recipient edges and six unit cases. It adds no API route, contact
   import, graph persistence, or production processing. Local tests, API
-  type-check, frozen install, and repository-wide type-check passed; its
-  GitHub checks are running.
+  type-check, frozen install, and repository-wide type-check passed. GitHub CI
+  run `38981584089` and Android preview/emulator run `38981584022` passed; release
+  and Play publish were skipped. The API-only slice adds no new native
+  interaction.
 
 ## Milestones
 
@@ -94,7 +96,7 @@ PR 12 remains an independent documentation PR.
 | M4 | Implement server-authorized audience/reveal contracts and permission tests | in_progress (synthetic only) | The direct-edge helper is in draft PR 15 and its six local unit cases pass. Server authorization, audience projection, identity reveal, and any real graph processing remain blocked by legacy source/schema review, D-004 topology, and legal/privacy/security decisions. |
 | M5 | Implement synthetic marketplace/commission and sandbox payment slice | planned | No named-business implication or real charging. Bundle rate, eligible categories, provider terms and legal model remain unresolved. |
 | M6 | Verify current live authentication transport and preserve sanitized evidence | in_progress | Sanitized runs `38962784873` and `38980049943` show the same synthetic JSON POST and 4xx response; the second was an accidental CI repeat completed before cancellation. Valid auth and a general API contract remain unverified. No further production probe is planned. |
-| M7 | Focused CI, implementation PR, exact artifact and selected-device loop | in_progress | Draft PR 13 is open at `7ce29375ae35ea70cc8c89cb2504af2e1cafb7ac`. CI run `38981213788` passed; Android run `38981213728` is building its release-like APK and emulator smoke. Inspect that exact artifact and repeat the launch test on `moto-g54-test-01` after the run passes. No merge or store release is authorized. |
+| M7 | Focused CI, implementation PR, exact artifact and selected-device loop | in_progress | Draft PR 13 is open at `f3351a2f975ff78d4ac8a0d6654df52d26f6bef4`. Prior CI run `38981213788` passed. Android run `38981213728` built the APK but failed before upload because the named AVD was not discoverable; explicit AVD path and registration checks were added. Retry `38982181982` is running. Inspect the exact artifact and repeat launch testing on `moto-g54-test-01` after the run passes. No merge or store release is authorized. |
 
 ## Requirement precedence and guardrails
 
