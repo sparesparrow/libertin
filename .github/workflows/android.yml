@@ -186,10 +186,28 @@ jobs:
           emulator -avd libertin-preview-smoke \
             -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data \
             -gpu swiftshader_indirect > "$RUNNER_TEMP/libertin-emulator.log" 2>&1 &
-          echo "$!" > "$RUNNER_TEMP/libertin-emulator.pid"
-          timeout 120s adb -s "$ANDROID_SERIAL" wait-for-device
+          emulator_pid=$!
+          echo "$emulator_pid" > "$RUNNER_TEMP/libertin-emulator.pid"
+          adb_ready=false
+          for attempt in $(seq 1 180); do
+            if [ "$(adb -s "$ANDROID_SERIAL" get-state 2>/dev/null || true)" = 'device' ]; then
+              adb_ready=true
+              break
+            fi
+            if ! kill -0 "$emulator_pid" 2>/dev/null; then
+              tail -n 120 "$RUNNER_TEMP/libertin-emulator.log"
+              echo '::error::Android preview smoke emulator exited before ADB connected.'
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$adb_ready" != true ]; then
+            tail -n 120 "$RUNNER_TEMP/libertin-emulator.log"
+            echo '::error::Android preview smoke emulator did not connect to ADB within 180 seconds.'
+            exit 1
+          fi
           ready=false
-          for attempt in $(seq 1 120); do
+          for attempt in $(seq 1 180); do
             if [ "$(adb -s "$ANDROID_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)" = '1' ]; then
               ready=true
               break
@@ -197,7 +215,7 @@ jobs:
             sleep 1
           done
           if [ "$ready" != true ]; then
-            tail -n 80 "$RUNNER_TEMP/libertin-emulator.log"
+            tail -n 120 "$RUNNER_TEMP/libertin-emulator.log"
             echo '::error::Android preview smoke emulator did not finish booting.'
             exit 1
           fi
