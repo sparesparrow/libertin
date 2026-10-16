@@ -164,22 +164,32 @@ jobs:
       - name: install Android emulator system image
         env:
           SYSTEM_IMAGE: system-images;android-35;google_apis;x86_64
+          ANDROID_AVD_HOME: ${{ runner.temp }}/libertin-avd
         run: |
           set -euo pipefail
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+          mkdir -p "$ANDROID_AVD_HOME"
           set +o pipefail
           yes | sdkmanager --licenses >/dev/null
           set -o pipefail
           sdkmanager --install "emulator" "platform-tools" "platforms;android-35" "$SYSTEM_IMAGE"
           printf 'no\n' | avdmanager create avd \
             --force \
+            --path "$ANDROID_AVD_HOME" \
             --name libertin-preview-smoke \
             --package "$SYSTEM_IMAGE" \
             --device pixel_2
+          export PATH="$ANDROID_HOME/emulator:$PATH"
+          if ! emulator -list-avds | grep -Fxq libertin-preview-smoke; then
+            find "$ANDROID_AVD_HOME" -maxdepth 2 -print
+            echo '::error::Android preview smoke AVD was not registered after creation.'
+            exit 1
+          fi
 
       - name: start isolated Android emulator
         env:
           ANDROID_SERIAL: emulator-5554
+          ANDROID_AVD_HOME: ${{ runner.temp }}/libertin-avd
         run: |
           set -euo pipefail
           export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
