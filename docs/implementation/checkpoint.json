@@ -93,7 +93,14 @@
       "contact_graph": "choice requested; pending owner response; real contacts disabled"
     },
     "signed_scope_changed": false,
-    "backlog_owner_decisions_updated": true
+    "backlog_owner_decisions_updated": true,
+    "documentation_pr": {
+      "number": 14,
+      "state": "OPEN_DRAFT",
+      "url": "https://github.com/sparesparrow/libertin/pull/14",
+      "branch": "docs/proposals-execution",
+      "head_commit_when_opened": "59e7f998dbdf96805eaa0e74a759dccf84f3e048"
+    }
   },
   "milestones": {
     "M0_current_inputs_and_PR_review": "verified; exact PR heads and nine proposal sources read",
