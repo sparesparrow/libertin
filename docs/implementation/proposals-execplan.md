@@ -36,11 +36,13 @@ PR 12 remains an independent documentation PR.
 - The importing seam was the original static `msw/native` import in
   `apps/mobile/src/App.tsx`: the fetch interceptor defines
   `BrotliDecompressionStream extends TransformStream` during evaluation. PR 13
-  (`7ce29375ae35ea70cc8c89cb2504af2e1cafb7ac`) adds the pinned Web Streams
+  (`3101863d3c6136ed5184e1b573e591641d6e0b49`) adds the pinned Web Streams
   polyfill before `App`, loads MSW only in explicit mock mode, resolves runtime
-  configuration after mount, and shows a retryable startup error. Its updated
-  CI passes; the release-like APK and emulator smoke are running, and the exact
-  artifact and selected-device retest are pending.
+  configuration after mount, and shows a retryable startup error. Repository CI
+  passed on the previous code commit; current CI `38983070623` and Android
+  `38983070510` are running. Earlier Android attempts found a missing AVD path
+  and unusable KVM permissions; both now have explicit setup and assertions.
+  The exact artifact and selected-device retest remain pending.
 - The current API snapshot/client has observed login/feed/profile surfaces and
   designed 2FA only; there is no proposal contact, certification, reveal,
   booking, or marketplace API implementation. SMS 2FA is not phone-possession
@@ -98,7 +100,7 @@ PR 12 remains an independent documentation PR.
 | M4 | Implement server-authorized audience/reveal contracts and permission tests | in_progress (synthetic only) | The direct-edge helper is in draft PR 15 and its six local unit cases pass. Server authorization, audience projection, identity reveal, and any real graph processing remain blocked by legacy source/schema review, D-004 topology, and legal/privacy/security decisions. |
 | M5 | Implement synthetic marketplace/commission and sandbox payment slice | planned | No named-business implication or real charging. Bundle rate, eligible categories, provider terms and legal model remain unresolved. |
 | M6 | Verify current live authentication transport and preserve sanitized evidence | in_progress | Sanitized runs `38962784873` and `38980049943` show the same synthetic JSON POST and 4xx response; the second was an accidental CI repeat completed before cancellation. Valid auth and a general API contract remain unverified. No further production probe is planned. |
-| M7 | Focused CI, implementation PR, exact artifact and selected-device loop | in_progress | Draft PR 13 is open at `f3351a2f975ff78d4ac8a0d6654df52d26f6bef4`. Prior CI run `38981213788` passed. Android run `38981213728` built the APK but failed before upload because the named AVD was not discoverable; explicit AVD path and registration checks were added. Retry `38982181982` is running. Inspect the exact artifact and repeat launch testing on `moto-g54-test-01` after the run passes. No merge or store release is authorized. |
+| M7 | Focused CI, implementation PR, exact artifact and selected-device loop | in_progress | Draft PR 13 is open at `3101863d3c6136ed5184e1b573e591641d6e0b49`. Prior repository CI run `38982181947` passed. Android run `38981213728` could not find the created AVD; run `38982181982` then showed unusable KVM access. The workflow now uses an explicit AVD directory, checks registration, and configures/verifies KVM. Retry `38983070510` is running. Inspect the exact artifact and repeat launch testing on `moto-g54-test-01` after the run passes. No merge or store release is authorized. |
 
 ## Requirement precedence and guardrails
 

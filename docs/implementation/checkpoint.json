@@ -1,7 +1,7 @@
 {
   "repository": "sparesparrow/libertin",
   "branch": "feat/proposals-implementation",
-  "head_sha": "f3351a2f975ff78d4ac8a0d6654df52d26f6bef4",
+  "head_sha": "3101863d3c6136ed5184e1b573e591641d6e0b49",
   "current_pr": 13,
   "working_tree": {
     "proposal_tracking_updated": true,
@@ -120,7 +120,7 @@
     "M4_server_audience_and_reveal": "in_progress: synthetic direct-edge model may proceed; production audience/reveal remains blocked by legacy source/schema audit, D-004 topology, and legal/privacy/security review",
     "M5_synthetic_marketplace_slice": "planned; commercial policy, legal model, and provider activation unresolved",
     "M6_live_auth_contract": "in_progress: sanitized runs 38962784873 and 38980049943 show the same synthetic invalid-login transport and JSON 4xx; the latter was an accidental CI repeat completed before cancellation; valid auth unverified",
-    "M7_GitHub_artifact_device_loop": "in_progress: PR 13 head f3351a2f975ff78d4ac8a0d6654df52d26f6bef4; prior CI passed; Android run 38981213728 built APK but emulator could not find AVD; explicit ANDROID_AVD_HOME/path and registration check added; retry 38982181982 running; physical retest pending"
+    "M7_GitHub_artifact_device_loop": "in_progress: PR 13 head 3101863d3c6136ed5184e1b573e591641d6e0b49; prior repository CI run 38982181947 passed; Android run 38981213728 failed because AVD was not found, run 38982181982 failed because KVM was unavailable; explicit AVD path and KVM permission/check added; retry 38983070510 running; physical retest pending"
   },
   "last_verified_run": {
     "run_id": 38962784863,
@@ -173,49 +173,58 @@
     "baseline_crash": "verified on exact PR 11 GitHub artifact",
     "root_cause": "Hermes lacks TransformStream; static MSW native fetch interceptor evaluates BrotliDecompressionStream extends TransformStream before AppRegistry main registration",
     "fix": "in_progress: early Web Streams polyfill, mock-only async MSW import, lazy runtime config validation, visible retry screen",
-    "ci_smoke": "AVD directory mismatch diagnosed in run 38981213728; explicit ANDROID_AVD_HOME and registration assertion added in f3351a2f975ff78d4ac8a0d6654df52d26f6bef4; retry run 38982181982 pending",
+    "ci_smoke": "AVD discovery failure in run 38981213728 fixed with explicit ANDROID_AVD_HOME; KVM access failure in run 38982181982 fixed with ephemeral runner udev permissions and emulator -accel-check; retry 38983070510 pending",
     "physical_retest": "pending new successful GitHub preview artifact"
   },
   "implementation_pr": {
     "number": 13,
     "state": "OPEN_DRAFT",
-    "head_sha": "f3351a2f975ff78d4ac8a0d6654df52d26f6bef4",
+    "head_sha": "3101863d3c6136ed5184e1b573e591641d6e0b49",
     "url": "https://github.com/sparesparrow/libertin/pull/13",
     "runs": {
       "android": {
-        "id": 38982181982,
+        "id": 38983070510,
         "status": "in_progress",
-        "url": "https://github.com/sparesparrow/libertin/actions/runs/38982181982"
+        "url": "https://github.com/sparesparrow/libertin/actions/runs/38983070510"
       },
       "ci": {
-        "id": 38982181947,
+        "id": 38983070623,
         "status": "in_progress",
-        "url": "https://github.com/sparesparrow/libertin/actions/runs/38982181947"
+        "url": "https://github.com/sparesparrow/libertin/actions/runs/38983070623"
       },
       "web_image": {
-        "id": 38982182001,
+        "id": 38983070554,
         "status": "in_progress",
-        "url": "https://github.com/sparesparrow/libertin/actions/runs/38982182001"
+        "url": "https://github.com/sparesparrow/libertin/actions/runs/38983070554"
       }
     },
     "latest_ci_probe_note": "The workflow path filter prevented unrelated contract probes for this commit; do not repeat production login probes."
   },
   "last_attempt": {
     "android_pr": 13,
-    "head_sha": "f3351a2f975ff78d4ac8a0d6654df52d26f6bef4",
-    "android_run": 38982181982,
+    "head_sha": "3101863d3c6136ed5184e1b573e591641d6e0b49",
+    "android_run": 38983070510,
     "android_status": "in_progress",
-    "ci_run": 38982181947,
+    "ci_run": 38983070623,
     "ci_status": "in_progress",
     "artifact": "libertin-preview-mock-apk",
     "physical_device_retest": "pending exact successful artifact",
-    "previous_attempt": {
-      "run_id": 38981213728,
-      "head_sha": "7ce29375ae35ea70cc8c89cb2504af2e1cafb7ac",
-      "conclusion": "failure before artifact upload",
-      "cause": "emulator could not discover AVD created without an explicit shared AVD home",
-      "fix_commit": "f3351a2f975ff78d4ac8a0d6654df52d26f6bef4"
-    }
+    "previous_attempts": [
+      {
+        "run_id": 38981213728,
+        "head_sha": "7ce29375ae35ea70cc8c89cb2504af2e1cafb7ac",
+        "conclusion": "failure before artifact upload",
+        "cause": "emulator could not discover AVD created without an explicit shared AVD home",
+        "fix_commit": "f3351a2f975ff78d4ac8a0d6654df52d26f6bef4"
+      },
+      {
+        "run_id": 38982181982,
+        "head_sha": "f3351a2f975ff78d4ac8a0d6654df52d26f6bef4",
+        "conclusion": "failure before artifact upload",
+        "cause": "Android emulator reported x86_64 requires hardware acceleration; runner KVM access was not configured",
+        "fix_commit": "3101863d3c6136ed5184e1b573e591641d6e0b49"
+      }
+    ]
   },
   "proposal_model_verification": {
     "pr": 15,
