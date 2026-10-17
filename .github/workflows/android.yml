@@ -173,6 +173,10 @@ jobs:
           ANDROID_AVD_HOME: ${{ runner.temp }}/libertin-avd
         run: |
           set -euo pipefail
+          # Persist SDK tools for later workflow steps too; PATH exports are step-local.
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/emulator" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
           mkdir -p "$ANDROID_AVD_HOME"
           set +o pipefail
