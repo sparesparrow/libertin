@@ -70,7 +70,14 @@ def adb(serial: str, *args: str, timeout: int = 30) -> str:
         timeout=timeout,
     )
     if result.returncode != 0:
-        raise SmokeFailure(f"ADB operation failed ({args[0]}); no app data was cleared")
+        # Keep the failing subcommand and its device-side diagnostic visible in CI.
+        detail = re.sub(r"\\s+", " ", result.stderr).strip()[:500]
+        operation = " ".join(args)
+        suffix = f": {detail}" if detail else ""
+        raise SmokeFailure(
+            f"ADB operation failed ({operation}, exit {result.returncode}){suffix}; "
+            "no app data was cleared"
+        )
     return result.stdout.strip()
 
 
