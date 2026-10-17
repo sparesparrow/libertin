@@ -8,7 +8,7 @@
 | **Backlog** | E2-T1 (feeds → E2-T2, E2-T3, E2-T4, E2-T5) |
 | **Smluvní kódy** | **B4.2** (primární), B4.1, B4.4, B14, podpůrně B1, B2, B13, C2, C12.1, C13 |
 | **Výzkum** | RES-002 (tento ADR je jeho výstupem) |
-| **Nutná návazná rozhodnutí** | D-003 (backend stack), D-004 (hosting), nově navrhované **D-006** (§15) |
+| **Nutná návazná rozhodnutí** | D-003 směr potvrzen (ADR 0005 ověřuje architekturu), D-004 topologie otevřená, **D-006** (§15) |
 
 > Tento dokument je psán tak, aby podle něj implementoval i externí inženýr bez
 > přístupu k autorovi (C8 — předatelnost). Kde je rozhodnutí kompromis, je
@@ -31,10 +31,11 @@ tím, že se přidá `AsyncStorage` (viz §10).
 
 Legacy platforma (`docs/live-audit.md`): Laravel, session cookie
 `swingerslife_session` + XSRF token, login POST posílá pole `user`, ne `email`.
-Náš snapshot modeluje JSON + bearer. Rozhodnutí o backendu (**D-003**) je otevřené.
-Návrh v tomto ADR je proto **nezávislý na volbě backendu** — pro obě varianty je
-uvedena knihovna a je popsáno, kde se liší jen nosič `mfaToken` (tělo requestu
-vs. dočasná `HttpOnly` cookie), nikoli logika.
+Náš snapshot modeluje JSON + bearer. Vlastník potvrdil rozšíření legacy Laravelu
+jako technický směr (**D-003**); ověření skutečného zdrojového kódu, schématu a
+migrační cesty probíhá v ADR 0005. Návrh v tomto ADR zůstává **nezávislý na
+backendovém frameworku** — liší se pouze nosič `mfaToken` (tělo requestu vs.
+dočasná `HttpOnly` cookie), nikoli logika.
 
 **Proč je tohle u Libertinu jiné než u běžného e-shopu.** Populace platformy
 (naturisté / swingers / BDSM) čelí reálné škodě z prozrazení: ztráta zaměstnání,
@@ -112,8 +113,8 @@ Serverová strana podle **D-003**:
 | Rozšíření Laravelu | `laravel/passkeys` **0.2.x** (staví na `web-auth/webauthn-lib` 5.3) + Fortify `Features::passkeys()` | Fortify / `pragmarx/google2fa` |
 
 Obě cesty produkují a konzumují stejné WebAuthn JSON struktury, takže **klientská
-implementace se volbou backendu nemění** — to je hlavní důvod, proč lze E2-T3 a
-E2-T5 rozjet ještě před rozhodnutím D-003 (proti MSW mockům).
+implementace se volbou backendu nemění**. E2-T3 a E2-T5 lze rozvíjet proti MSW
+mockům, zatímco E9-T1 ověřuje zvolený Laravel směr.
 
 ---
 

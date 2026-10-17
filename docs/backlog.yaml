@@ -66,17 +66,23 @@ decisions:
   - id: D-003
     title: Backend stack — rozšířit legacy Laravel, nebo psát nově?
     req: [A3, C3, C6]
-    status: blocked
-    blocker: >
-      Smlouva říká "vyvíjen od nuly", ale legacy je Laravel s daty k migraci
-      (C13). Volba určuje E9 i migrační strategii. Podklad: RES-001.
+    status: done
+    owner_direction: Rozšířit legacy Laravel (potvrzeno 2026-10-17).
+    note: >
+      Jde o technický směr pro návrh, nikoli o změnu podepsaného rozsahu nebo
+      povolení produkční migrace. Původní podklad uvádí požadavek „vyvíjen od
+      nuly“; jeho právní výklad zůstává otevřený. E9-T1 ověří skutečný zdrojový
+      kód, schéma, rozhraní a migrační cestu před návrhem databáze; ADR 0005 je
+      zatím navrženo.
   - id: D-004
     title: Hosting a poskytovatel cloudu
     req: [A1, C2, C5]
-    status: blocked
+    status: in_progress
+    owner_direction: Maximum on-premise (potvrzeno 2026-10-17).
     blocker: >
-      Smlouva jmenuje DigitalOcean/AWS a zároveň žádá maximum on-premise (C2).
-      Nutno sladit s rozpočtem a požadavkem na HA.
+      Směr je potvrzen, ale umístění jednotlivých služeb, dostupná on-premise
+      kapacita, HA/DR, provozní odpovědnost, rozpočet a případné odůvodněné
+      cloudové výjimky se musí ověřit před výběrem topologie nebo provisioningem.
   - id: D-006
     title: Smí být SMS jediným aktivním druhým faktorem člena?
     req: [B4.2, B14]
@@ -473,7 +479,7 @@ epics:
         title: ADR — backend stack a struktura služeb
         scope: decision
         role: architect
-        status: blocked
+        status: in_progress
         blocked_by: [D-003]
       - id: E9-T2
         title: Datový model a schéma databáze
@@ -920,7 +926,11 @@ research:
       migrace dat, cloud-ready kontejnerizace, HA, rychlost dodání, udržitelnost
       externím subjektem.
     feeds: [D-003, E9-T1]
-    status: todo
+    status: in_progress
+    note: >
+      Vlastník 2026-10-17 zvolil směr rozšířit Laravel. ADR 0005 zaznamenává
+      směr, ale výzkum pokračuje: chybí přístup ke zdroji, schématu a migračnímu
+      prostředí; nejde o právní potvrzení změny rozsahu.
   - id: RES-002
     question: >
       Passkey/WebAuthn + TOTP + SMS 2FA napříč Next.js a React Native/Expo —
