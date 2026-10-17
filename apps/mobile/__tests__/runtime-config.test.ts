@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MOCK_API_BASE_URL, readRuntimeConfig } from '../src/runtimeConfig';
 
 describe('readRuntimeConfig', () => {
@@ -46,5 +46,21 @@ describe('readRuntimeConfig', () => {
     expect(() => readRuntimeConfig({ EXPO_PUBLIC_NETWORK_MODE: 'production' })).toThrow(
       /EXPO_PUBLIC_NETWORK_MODE/,
     );
+  });
+
+  it('defers invalid live build configuration until mounted startup validation', async () => {
+    vi.stubEnv('EXPO_PUBLIC_NETWORK_MODE', 'live');
+    vi.stubEnv('EXPO_PUBLIC_API_BASE_URL', '');
+    vi.resetModules();
+
+    try {
+      const runtimeConfigModule = await import('../src/runtimeConfig');
+      expect(() => runtimeConfigModule.readBuildRuntimeConfig()).toThrow(
+        /EXPO_PUBLIC_API_BASE_URL/,
+      );
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
   });
 });

@@ -46,3 +46,7 @@ apps/mobile/android/
 *.keystore
 credentials.json
 play-service-account*.json
+
+# Private native-device runs may contain APKs, logs and screenshots. Commit
+# only sanitized synthetic-flow evidence after review.
+.local/device-runs/

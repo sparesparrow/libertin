@@ -59,6 +59,8 @@ jobs:
         run: pnpm exec turbo run type-check --filter=@libertin/mobile...
       - name: test
         run: pnpm exec vitest run apps/mobile
+      - name: test Android launch smoke helpers
+        run: python3 -m unittest scripts.tests.test_android_launch_smoke
 
   # Installable PR artifact with the JS bundle embedded. It is deliberately a
   # mock-backed preview, under a package id distinct from any Play application,
@@ -69,8 +71,16 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # actions: read and pull-requests: write are used only by the failure
+    # diagnostics step, which comments on same-repository PRs.
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
     env:
-      PREVIEW_PACKAGE: cz.libertin.preview
+      # Each build attempt is a separate package because this job rotates its
+      # disposable signing key; never force-install over another run's data.
+      PREVIEW_PACKAGE: cz.libertin.preview.run${{ github.run_number }}.attempt${{ github.run_attempt }}
       EXPO_PUBLIC_NETWORK_MODE: mock
     steps:
       - uses: actions/checkout@v4
@@ -157,6 +167,105 @@ jobs:
           printf 'mode=mock\npackage=%s\nstandalone_bundle=assets/index.android.bundle\n' \
             "$actual_package" > "$RUNNER_TEMP/preview-metadata.txt"
 
+      - name: install Android emulator system image
+        env:
+          SYSTEM_IMAGE: system-images;android-35;google_apis;x86_64
+          ANDROID_AVD_HOME: ${{ runner.temp }}/libertin-avd
+        run: |
+          set -euo pipefail
+          # Persist SDK tools for later workflow steps too; PATH exports are step-local.
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/emulator" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+          mkdir -p "$ANDROID_AVD_HOME"
+          set +o pipefail
+          yes | sdkmanager --licenses >/dev/null
+          set -o pipefail
+          sdkmanager --install "emulator" "platform-tools" "platforms;android-35" "$SYSTEM_IMAGE"
+          printf 'no\n' | avdmanager create avd \
+            --force \
+            --path "$ANDROID_AVD_HOME" \
+            --name libertin-preview-smoke \
+            --package "$SYSTEM_IMAGE" \
+            --device pixel_2
+          export PATH="$ANDROID_HOME/emulator:$PATH"
+          if ! emulator -list-avds | grep -Fxq libertin-preview-smoke; then
+            find "$ANDROID_AVD_HOME" -maxdepth 2 -print
+            echo '::error::Android preview smoke AVD was not registered after creation.'
+            exit 1
+          fi
+
+      - name: Enable and verify KVM for the Android emulator
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
+          ls -l /dev/kvm
+          emulator -accel-check
+
+      - name: start isolated Android emulator
+        env:
+          ANDROID_SERIAL: emulator-5554
+          ANDROID_AVD_HOME: ${{ runner.temp }}/libertin-avd
+        run: |
+          set -euo pipefail
+          export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
+          emulator -avd libertin-preview-smoke \
+            -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data \
+            -gpu swiftshader_indirect > "$RUNNER_TEMP/libertin-emulator.log" 2>&1 &
+          emulator_pid=$!
+          echo "$emulator_pid" > "$RUNNER_TEMP/libertin-emulator.pid"
+          adb_ready=false
+          for attempt in $(seq 1 180); do
+            if [ "$(adb -s "$ANDROID_SERIAL" get-state 2>/dev/null || true)" = 'device' ]; then
+              adb_ready=true
+              break
+            fi
+            if ! kill -0 "$emulator_pid" 2>/dev/null; then
+              tail -n 120 "$RUNNER_TEMP/libertin-emulator.log"
+              echo '::error::Android preview smoke emulator exited before ADB connected.'
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$adb_ready" != true ]; then
+            tail -n 120 "$RUNNER_TEMP/libertin-emulator.log"
+            echo '::error::Android preview smoke emulator did not connect to ADB within 180 seconds.'
+            exit 1
+          fi
+          ready=false
+          for attempt in $(seq 1 180); do
+            if [ "$(adb -s "$ANDROID_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)" = '1' ]; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            tail -n 120 "$RUNNER_TEMP/libertin-emulator.log"
+            echo '::error::Android preview smoke emulator did not finish booting.'
+            exit 1
+          fi
+
+      - name: cold-start and accessibility smoke test
+        env:
+          ANDROID_SERIAL: emulator-5554
+        run: |
+          set -euo pipefail
+          python3 scripts/android_launch_smoke.py \
+            --serial "$ANDROID_SERIAL" \
+            --apk apps/mobile/android/app/build/outputs/apk/release/app-release.apk \
+            --package "$PREVIEW_PACKAGE" \
+            --expected-text 'Přihlášení' \
+            --duration-seconds 20 \
+            --relaunch-seconds 5 \
+            --evidence-dir "$RUNNER_TEMP/libertin-startup-smoke" 2>&1 \
+            | tee "$RUNNER_TEMP/smoke-output.txt"
+
       - uses: actions/upload-artifact@v4
         with:
           name: libertin-preview-mock-apk
@@ -165,6 +274,45 @@ jobs:
             ${{ runner.temp }}/preview-metadata.txt
           if-no-files-found: error
           retention-days: 7
+
+      # Mock-only preview: nothing here is secret. This makes a CI failure
+      # readable from the PR without downloading job logs.
+      - name: report failure diagnostics to the PR
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set +e
+          report="$RUNNER_TEMP/failure-report.md"
+          logcat="$RUNNER_TEMP/libertin-startup-smoke/preview-app-logcat.txt"
+          {
+            echo '### Android preview job failure diagnostics'
+            echo "Commit \`$HEAD_SHA\`, run $RUN_ID, attempt $RUN_ATTEMPT"
+            echo
+            echo 'Failed steps:'
+            gh api "repos/$REPO/actions/runs/$RUN_ID/attempts/$RUN_ATTEMPT/jobs" \
+              --jq '.jobs[] | select(.name == "build (standalone mock preview APK)") | .steps[] | select(.conclusion == "failure") | "- " + .name'
+            echo
+            echo 'Smoke output (tail):'
+            echo '```'
+            tail -n 40 "$RUNNER_TEMP/smoke-output.txt" 2>/dev/null || echo '(none)'
+            echo '```'
+            echo 'App logcat, errors only (tail):'
+            echo '```'
+            grep -E -B 8 -A 10 'TypeError|ReferenceError|TransformStream|ReactNativeJS|FATAL EXCEPTION|Exception|Error:' "$logcat" 2>/dev/null | tail -n 100 || echo '(none)'
+            echo '```'
+            echo 'Emulator log (tail):'
+            echo '```'
+            tail -n 25 "$RUNNER_TEMP/libertin-emulator.log" 2>/dev/null || echo '(none)'
+            echo '```'
+          } > "$report"
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file "$report"
+          exit 0
 
   # Builds a production-signed AAB only. It does NOT publish to Google Play.
   # Live mode has no default backend: both package id and verified API base URL

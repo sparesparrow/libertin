@@ -62,7 +62,12 @@ export function readRuntimeConfig(env: RuntimeEnv): RuntimeConfig {
 // EXPO_PUBLIC_* variables because they become part of the application bundle.
 declare const process: { env: RuntimeEnv };
 
-export const runtimeConfig = readRuntimeConfig({
-  EXPO_PUBLIC_NETWORK_MODE: process.env.EXPO_PUBLIC_NETWORK_MODE,
-  EXPO_PUBLIC_API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
-});
+// Resolve build configuration from the mounted app's startup effect instead of
+// during module evaluation. Invalid live configuration can then render the
+// startup error screen rather than preventing AppRegistry registration.
+export function readBuildRuntimeConfig(): RuntimeConfig {
+  return readRuntimeConfig({
+    EXPO_PUBLIC_NETWORK_MODE: process.env.EXPO_PUBLIC_NETWORK_MODE,
+    EXPO_PUBLIC_API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
+  });
+}
