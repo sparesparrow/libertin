@@ -71,6 +71,12 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # actions: read and pull-requests: write are used only by the failure
+    # diagnostics step, which comments on same-repository PRs.
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
     env:
       # Each build attempt is a separate package because this job rotates its
       # disposable signing key; never force-install over another run's data.
@@ -245,6 +251,7 @@ jobs:
         env:
           ANDROID_SERIAL: emulator-5554
         run: |
+          set -euo pipefail
           python3 scripts/android_launch_smoke.py \
             --serial "$ANDROID_SERIAL" \
             --apk apps/mobile/android/app/build/outputs/apk/release/app-release.apk \
@@ -252,7 +259,8 @@ jobs:
             --expected-text 'Přihlášení' \
             --duration-seconds 20 \
             --relaunch-seconds 5 \
-            --evidence-dir "$RUNNER_TEMP/libertin-startup-smoke"
+            --evidence-dir "$RUNNER_TEMP/libertin-startup-smoke" 2>&1 \
+            | tee "$RUNNER_TEMP/smoke-output.txt"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -262,6 +270,45 @@ jobs:
             ${{ runner.temp }}/preview-metadata.txt
           if-no-files-found: error
           retention-days: 7
+
+      # Mock-only preview: nothing here is secret. This makes a CI failure
+      # readable from the PR without downloading job logs.
+      - name: report failure diagnostics to the PR
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set +e
+          report="$RUNNER_TEMP/failure-report.md"
+          logcat="$RUNNER_TEMP/libertin-startup-smoke/preview-app-logcat.txt"
+          {
+            echo '### Android preview job failure diagnostics'
+            echo "Commit \`$HEAD_SHA\`, run $RUN_ID, attempt $RUN_ATTEMPT"
+            echo
+            echo 'Failed steps:'
+            gh api "repos/$REPO/actions/runs/$RUN_ID/attempts/$RUN_ATTEMPT/jobs" \
+              --jq '.jobs[] | select(.name == "build (standalone mock preview APK)") | .steps[] | select(.conclusion == "failure") | "- " + .name'
+            echo
+            echo 'Smoke output (tail):'
+            echo '```'
+            tail -n 40 "$RUNNER_TEMP/smoke-output.txt" 2>/dev/null || echo '(none)'
+            echo '```'
+            echo 'App logcat, errors only (tail):'
+            echo '```'
+            grep -E ' (E|F) |AndroidRuntime|ReactNativeJS|FATAL' "$logcat" 2>/dev/null | tail -n 60 || echo '(none)'
+            echo '```'
+            echo 'Emulator log (tail):'
+            echo '```'
+            tail -n 25 "$RUNNER_TEMP/libertin-emulator.log" 2>/dev/null || echo '(none)'
+            echo '```'
+          } > "$report"
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file "$report"
+          exit 0
 
   # Builds a production-signed AAB only. It does NOT publish to Google Play.
   # Live mode has no default backend: both package id and verified API base URL
