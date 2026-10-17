@@ -85,25 +85,6 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
 
-      # android-emulator-runner provides an emulator, but adb must also be
-      # available on PATH for scripts/android_launch_smoke.py and diagnostics.
-      - name: Ensure Android SDK Platform-Tools are available
-        shell: bash
-        run: |
-          set -euo pipefail
-          sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
-          if [[ -z "$sdk" ]]; then
-            echo "::error::ANDROID_HOME and ANDROID_SDK_ROOT are unset"
-            exit 1
-          fi
-          platform_tools="$sdk/platform-tools"
-          if [[ ! -x "$platform_tools/adb" ]]; then
-            echo "::error::adb is missing at $platform_tools/adb"
-            exit 1
-          fi
-          echo "$platform_tools" >> "$GITHUB_PATH"
-          "$platform_tools/adb" version
-
       # React Native's Gradle autolinking does not cope with pnpm's isolated
       # node_modules (.npmrc: shamefully-hoist=false). The lockfile is
       # linker-independent, so a hoisted install is valid for this job only.
@@ -131,6 +112,25 @@ jobs:
           ANDROID_PACKAGE: ${{ env.PREVIEW_PACKAGE }}
           ANDROID_VERSION_CODE: ${{ github.run_number }}
         run: pnpm --filter @libertin/mobile exec expo prebuild --platform android --no-install --clean
+
+      # Verify Platform-Tools after the runner's SDK setup and before smoke tests.
+      - name: Ensure Android SDK Platform-Tools are available
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [[ -z "$sdk" ]]; then
+            echo "::error::ANDROID_HOME and ANDROID_SDK_ROOT are unset"
+            exit 1
+          fi
+          platform_tools="$sdk/platform-tools"
+          if [[ ! -x "$platform_tools/adb" ]]; then
+            echo "::error::adb is missing at $platform_tools/adb"
+            exit 1
+          fi
+          echo "$platform_tools" >> "$GITHUB_PATH"
+          "$platform_tools/adb" version
+
 
       - name: gradle assembleRelease (embedded JS)
         working-directory: apps/mobile/android
