@@ -71,7 +71,7 @@ def adb(serial: str, *args: str, timeout: int = 30) -> str:
     )
     if result.returncode != 0:
         # Keep the failing subcommand and its device-side diagnostic visible in CI.
-        detail = re.sub(r"\\s+", " ", result.stderr).strip()[:500]
+        detail = re.sub(r"\s+", " ", result.stderr).strip()[:500]
         operation = " ".join(args)
         suffix = f": {detail}" if detail else ""
         raise SmokeFailure(
